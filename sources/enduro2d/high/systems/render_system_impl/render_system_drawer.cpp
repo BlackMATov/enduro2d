@@ -278,10 +278,10 @@ namespace e2d::render_system_impl
                     temp_vertices.resize(4*stride);
                 }
                 spRegionAttachment_computeWorldVertices(region, slot->bone, temp_vertices.data(), 0, stride);
-                vertex_count = 8;
+                vertex_count = 4*stride;
                 uvs = region->uvs;
                 indices = quad_indices;
-                index_count = std::size(quad_indices);
+                index_count = u32(std::size(quad_indices));
                 if ( texture_asset* asset = static_cast<texture_asset*>(static_cast<spAtlasRegion*>(region->rendererObject)->page->rendererObject) ) {
                     texture = asset->content();
                 }
@@ -362,13 +362,14 @@ namespace e2d::render_system_impl
                         .mag_filter(render::sampler_mag_filter::linear)));
 
                 for ( size_t j = 0, cnt = vertex_count >> 1; j < cnt; ++j ) {
-                    batch.vertices++ = vertex_v3f_t2f_c32b(
-                        v3f(v4f(vertices[j*2], vertices[j*2+1], 0.0f, 1.0f) * sm),
-                        v2f(uvs[j*2], uvs[j*2+1]),
-                        vert_color);
+                    auto& vert = batch.vertices[j];
+                    vert.v = v3f(v4f(vertices[j*2], vertices[j*2+1], 0.0f, 1.0f) * sm);
+                    vert.t = v2f(uvs[j*2], uvs[j*2+1]);
+                    vert.c = vert_color;
                 }
                 for ( size_t j = 0; j < index_count; ++j ) {
-                    batch.indices++ = indices[j];
+                    batch.indices = indices[j];
+                    ++batch.indices;
                 }
             }
             spSkeletonClipping_clipEnd(clipper, slot);

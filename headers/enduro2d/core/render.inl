@@ -7,10 +7,13 @@
 #pragma once
 
 #include "render.hpp"
+#include <typeindex>
 
 namespace e2d
 {
     class render::batchr final {
+    private:
+        static constexpr size_t vertex_stride_ = 16;
     public:
         using batch_index_t = u16;
 
@@ -18,16 +21,17 @@ namespace e2d
         class vertex_iterator final {
         public:
             vertex_iterator() = default;
-            vertex_iterator(u8* data, size_t size, size_t stride);
+            vertex_iterator(u8* data, size_t size);
             void operator = (const T& r) noexcept;
             vertex_iterator<T>& operator ++() noexcept;
             [[nodiscard]] vertex_iterator<T> operator ++(int) noexcept;
-            [[nodiscard]] T& operator [](u32 index) const noexcept;
+            [[nodiscard]] T& operator [](size_t index) const noexcept;
             [[nodiscard]] size_t size() const noexcept;
         private:
             u8* data_ = nullptr;
             size_t size_ = 0;
-            size_t stride_ = 1;
+            static constexpr size_t stride_ = 
+                ((sizeof(T) + vertex_stride_-1) / vertex_stride_) * vertex_stride_;
         };
 
         class index_iterator final {
@@ -119,7 +123,6 @@ namespace e2d
             size_t offset;
         };
 
-        static constexpr size_t vertex_stride_ = 16;
         static constexpr size_t index_stride_ = sizeof(batch_index_t);
         static constexpr size_t max_vertex_count_ = 1u << 15;
         static constexpr size_t vertex_buffer_size_ = max_vertex_count_ * vertex_stride_;
@@ -167,7 +170,8 @@ namespace e2d
             size_t min_vb_size,
             size_t min_ib_size);
 
-        vertex_attribs_ptr create_vertex_attribs_(vertex_declaration decl) const;
+        template < typename VertexType >
+        vertex_attribs_ptr create_vertex_attribs_();
 
     private:
         debug& debug_;
@@ -175,6 +179,7 @@ namespace e2d
         std::vector<batch_> batches_;
         std::vector<buffer_> vertex_buffers_;
         std::vector<buffer_> index_buffers_;
+        flat_map<std::type_index, vertex_attribs_ptr> va_cache_;
         bool dirty_ = false;
     };
 }
@@ -186,16 +191,14 @@ namespace e2d
     //
 
     template < typename T >
-    inline render::batchr::vertex_iterator<T>::vertex_iterator(u8* data, size_t size, size_t stride)
+    inline render::batchr::vertex_iterator<T>::vertex_iterator(u8* data, size_t size)
     : data_(data)
-    , size_(size)
-    , stride_(stride) {
+    , size_(size) {
         E2D_ASSERT(data_ && size_);
-        E2D_ASSERT(stride_ > 0);
     }
     
     template < typename T >
-    inline T& render::batchr::vertex_iterator<T>::operator [](u32 index) const noexcept {
+    inline T& render::batchr::vertex_iterator<T>::operator [](size_t index) const noexcept {
         E2D_ASSERT(index * stride_ < size_);
         return *reinterpret_cast<T*>(data_ + (index * stride_));
     }
@@ -314,7 +317,7 @@ namespace e2d
         const size_t vert_stride = math::align_ceil(sizeof(typename BatchType::vertex_type), vertex_stride_);
         const size_t vb_size = src_batch.vertex_count() * vert_stride;
         const size_t ib_size = (src_batch.index_count() + (is_strip ? 2 : 0)) * index_stride_;
-        vertex_attribs_ptr attribs = create_vertex_attribs_(BatchType::vertex_type::decl());
+        vertex_attribs_ptr attribs = create_vertex_attribs_<typename BatchType::vertex_type>();
         batch_& dst_batch = append_batch_(mtr, src_batch.topology(), attribs, vert_stride, vb_size, ib_size);
 
         auto& vb = vertex_buffers_[dst_batch.vb_index];
@@ -349,7 +352,7 @@ namespace e2d
         const size_t vert_stride = math::align_ceil(sizeof(VertexType), vertex_stride_);
         const size_t vb_size = vertex_count * vert_stride;
         const size_t ib_size = index_count * index_stride_;
-        vertex_attribs_ptr attribs = create_vertex_attribs_(VertexType::decl());
+        vertex_attribs_ptr attribs = create_vertex_attribs_<VertexType>();
         batch_& dst_batch = append_batch_(mtr, topo, attribs, vert_stride, vb_size, ib_size);
         
         auto& vb = vertex_buffers_[dst_batch.vb_index];
@@ -358,7 +361,7 @@ namespace e2d
 
         allocated_batch<VertexType> result;
         batch_index_t idx_offset = math::numeric_cast<batch_index_t>((vb.offset + vert_stride-1) / vert_stride);
-        result.vertices = vertex_iterator<VertexType>(vb.content.data() + vb.offset, vb_size, vert_stride);
+        result.vertices = vertex_iterator<VertexType>(vb.content.data() + vb.offset, vb_size);
         result.indices = index_iterator(ib.content.data() + ib.offset, ib_size, idx_offset);
         
         vb.offset += vb_size;
@@ -394,6 +397,21 @@ namespace e2d
     {
         src.get_vertices(vert_iter);
         src.get_indices(idx_iter);
+    }
+
+    template < typename VertexType >
+    vertex_attribs_ptr render::batchr::create_vertex_attribs_() {
+        std::type_index id = typeid(VertexType);
+        auto iter = va_cache_.find(id);
+        if ( iter != va_cache_.end() ) {
+            return iter->second;
+        }
+
+        vertex_declaration decl = VertexType::decl();
+        size_t stride = math::align_ceil(decl.bytes_per_vertex(), vertex_stride_);
+        decl.skip_bytes(stride - decl.bytes_per_vertex());
+        iter = va_cache_.insert({id, render_.create_vertex_attribs(decl)}).first;
+        return iter->second;
     }
 }
 

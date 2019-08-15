@@ -66,7 +66,10 @@ namespace e2d
         const u8* data() const noexcept;
         std::size_t size() const noexcept;
     private:
-        using data_t = std::unique_ptr<u8[]>;
+        struct deleter {
+            void operator()(u8*) const noexcept;
+        };
+        using data_t = std::unique_ptr<u8, deleter>;
         data_t data_;
         std::size_t size_ = 0;
     };

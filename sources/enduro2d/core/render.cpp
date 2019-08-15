@@ -1598,12 +1598,6 @@ namespace e2d
     , render_(r) {}
 
     render::batchr::~batchr() noexcept = default;
-    
-    vertex_attribs_ptr render::batchr::create_vertex_attribs_(vertex_declaration decl) const {
-        size_t stride = math::align_ceil(decl.bytes_per_vertex(), vertex_stride_);
-        decl.skip_bytes(stride - decl.bytes_per_vertex());
-        return render_.create_vertex_attribs(decl);
-    }
 
     render::batchr::batch_& render::batchr::append_batch_(
         const material& mtr,
