@@ -194,6 +194,38 @@ namespace
         }
     #endif
     }
+    
+    pixel_declaration gl_get_best_depth_render_target_format(
+        debug& debug, const gl_device_caps& caps) noexcept
+    {
+        // TODO: try to create framebuffer
+        if ( caps.depth32_supported ) {
+            return pixel_declaration::pixel_type::depth32;
+        }
+        if ( caps.depth24_supported ) {
+            return pixel_declaration::pixel_type::depth24;
+        }
+        if ( caps.depth16_supported ) {
+            return pixel_declaration::pixel_type::depth16;
+        }
+        return {};
+    }
+
+    pixel_declaration gl_get_best_depth_stencil_render_target_format(
+        debug& debug, const gl_device_caps& caps) noexcept
+    {
+        // TODO: try to create framebuffer
+        if ( caps.depth32_stencil8_supported ) {
+            return pixel_declaration::pixel_type::depth32_stencil8;
+        }
+        if ( caps.depth24_stencil8_supported ) {
+            return pixel_declaration::pixel_type::depth24_stencil8;
+        }
+        if ( caps.depth16_stencil8_supported ) {
+            return pixel_declaration::pixel_type::depth16_stencil8;
+        }
+        return {};
+    }
 
     const char* vertex_shader_header_cstr(render::api_profile profile) noexcept {
         switch ( profile ) {
@@ -1402,6 +1434,11 @@ namespace e2d::opengl
             version >= gl_version::gles_300 ||
             gl_has_any_extension(debug,
                 "GL_ARB_depth_buffer_float");
+
+        caps.depth_rt_format =
+            gl_get_best_depth_render_target_format(debug, caps_ext);
+        caps.depth_stencil_rt_format =
+            gl_get_best_depth_stencil_render_target_format(debug, caps_ext);
         
         caps_ext.framebuffer_discard_supported =
             gl_has_any_extension(debug,

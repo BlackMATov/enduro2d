@@ -829,6 +829,7 @@ namespace e2d
         
     render& render::execute(const bind_vertex_buffers_command& command) {
         E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
         for ( size_t i = 0; i < command.binding_count(); ++i ) {
             state_->bind_vertex_buffer(
                 i,
@@ -971,6 +972,7 @@ namespace e2d
         E2D_ASSERT(is_in_main_thread());
         E2D_ASSERT(cbuffer);
         auto& cb = cbuffer->state();
+        bool dirty = false;
 
         for ( auto& un : cb.block_template()->uniforms() ) {
             auto* value = properties.find(un.name_hash);
@@ -980,9 +982,13 @@ namespace e2d
                     cb.size(),
                     un.offset);
                 stdex::visit(visitor, *value);
+                dirty |= true;
             }
         }
-        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+        if ( !dirty ) {
+            return *this;
+        }
+        if ( !cb.id().empty() ) {
             with_gl_bind_buffer(state_->dbg(), cb.id(), [&cb]() noexcept{
                 GL_CHECK_CODE(cb.dbg(), glBufferSubData(
                     cb.id().target(),
@@ -1123,50 +1129,6 @@ namespace e2d
         }
     }
     
-    bool render::get_suitable_depth_texture_pixel_type(pixel_declaration& decl) const noexcept {
-        E2D_ASSERT(is_in_main_thread());
-        const auto& caps = device_capabilities();
-        if ( caps.depth_texture_supported ) {
-            return false;
-        }
-        const auto& caps_ext = state_->device_capabilities_ext();
-        if ( caps_ext.depth32_supported ) {
-            decl = pixel_declaration::pixel_type::depth32;
-            return true;
-        }
-        if ( caps_ext.depth24_supported ) {
-            decl = pixel_declaration::pixel_type::depth24;
-            return true;
-        }
-        if ( caps_ext.depth16_supported ) {
-            decl = pixel_declaration::pixel_type::depth16;
-            return true;
-        }
-        return false;
-    }
-    
-    bool render::get_suitable_depth_stencil_texture_pixel_type(pixel_declaration& decl) const noexcept {
-        E2D_ASSERT(is_in_main_thread());
-        const auto& caps = device_capabilities();
-        if ( caps.depth_texture_supported ) {
-            return false;
-        }
-        const auto& caps_ext = state_->device_capabilities_ext();
-        if ( caps_ext.depth32_stencil8_supported ) {
-            decl = pixel_declaration::pixel_type::depth32_stencil8;
-            return true;
-        }
-        if ( caps_ext.depth24_stencil8_supported ) {
-            decl = pixel_declaration::pixel_type::depth24_stencil8;
-            return true;
-        }
-        if ( caps_ext.depth16_stencil8_supported ) {
-            decl = pixel_declaration::pixel_type::depth16_stencil8;
-            return true;
-        }
-        return false;
-    }
-
     bool render::is_index_supported(const index_declaration& decl) const noexcept {
         E2D_ASSERT(is_in_main_thread());
         const device_caps& caps = device_capabilities();

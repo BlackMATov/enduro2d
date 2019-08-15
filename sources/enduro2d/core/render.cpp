@@ -22,6 +22,8 @@ namespace
     };
 
     const pixel_type_description pixel_type_descriptions[] = {
+        {"unknown",           0, false, false, false, pixel_declaration::pixel_type::unknown,          false, v2u(1)},
+
         {"depth16",          16, false, true,  false, pixel_declaration::pixel_type::depth16,          false, v2u(1)},
         {"depth16_stencil8",  0, false, true,  true,  pixel_declaration::pixel_type::depth16_stencil8, false, v2u(1)},
         {"depth24",          24, false, true,  false, pixel_declaration::pixel_type::depth24,          false, v2u(1)},
@@ -1619,11 +1621,13 @@ namespace e2d
                  vb.available(vert_stride) >= min_vb_size &&
                  ib.available(index_stride_) >= min_ib_size )
             {
+                ++curr_stats_.num_appended_batches;
                 return last;
             }
         }
 
         // create new batch
+        ++curr_stats_.num_created_batches;
         batch_& result = batches_.emplace_back(mtr);
 
         if ( vertex_buffers_.empty() ||
@@ -1701,6 +1705,14 @@ namespace e2d
         vertex_buffers_.clear();
         index_buffers_.clear();
         batches_.clear();
+
+        ++curr_stats_.flush_counter;
+    }
+    
+    void render::batchr::on_present_() {
+        flush();
+        last_stats_ = curr_stats_;
+        curr_stats_ = {};
     }
 }
 

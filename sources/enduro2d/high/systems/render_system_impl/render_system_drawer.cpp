@@ -119,6 +119,12 @@ namespace e2d::render_system_impl
             msh.indices_submesh_count(),
             node_r.materials().size());
 
+        if ( !submesh_count ) {
+            return;
+        }
+
+        render_.batcher().flush();
+
         // TODO: use temporary const_buffer
         if ( mdl_r.constants() ) {
             render_.update_buffer(
@@ -236,7 +242,7 @@ namespace e2d::render_system_impl
         const material_asset::ptr& src_mat = node_r.materials().front();
         const bool use_premultiplied_alpha = spine_r.model()->content().premultiplied_alpha();
 
-        if ( !skeleton || !clipper || !src_mat || skeleton->color.a == 0 ) {
+        if ( !skeleton || !clipper || !src_mat || math::approximately(skeleton->color.a, 0.0f) ) {
             return;
         }
 
@@ -254,7 +260,7 @@ namespace e2d::render_system_impl
             if ( !attachment ) {
                 continue;
             }
-            if ( slot->color.a == 0 ) {
+            if ( math::approximately(slot->color.a, 0.0f) ) {
                 spSkeletonClipping_clipEnd(clipper, slot);
                 continue;
             }
@@ -270,7 +276,7 @@ namespace e2d::render_system_impl
                 spRegionAttachment* region = reinterpret_cast<spRegionAttachment*>(attachment);
                 attachment_color = &region->color;
 
-                if ( attachment_color->a == 0 ) {
+                if ( math::approximately(attachment_color->a, 0.0f) ) {
                     spSkeletonClipping_clipEnd(clipper, slot);
                     continue;
                 }
@@ -289,7 +295,7 @@ namespace e2d::render_system_impl
                 spMeshAttachment* mesh = reinterpret_cast<spMeshAttachment*>(attachment);
                 attachment_color = &mesh->color;
 
-                if ( attachment_color->a == 0 ) {
+                if ( math::approximately(attachment_color->a, 0.0f) ) {
                     spSkeletonClipping_clipEnd(clipper, slot);
                     continue;
                 }

@@ -123,6 +123,12 @@ namespace e2d
             size_t offset;
         };
 
+        struct statistics {
+            u32 flush_counter = 0;
+            u32 num_appended_batches = 0;
+            u32 num_created_batches = 0;
+        };
+
         static constexpr size_t index_stride_ = sizeof(batch_index_t);
         static constexpr size_t max_vertex_count_ = 1u << 15;
         static constexpr size_t vertex_buffer_size_ = max_vertex_count_ * vertex_stride_;
@@ -173,6 +179,7 @@ namespace e2d
         template < typename VertexType >
         vertex_attribs_ptr create_vertex_attribs_();
 
+        void on_present_();
     private:
         debug& debug_;
         render& render_;
@@ -180,6 +187,8 @@ namespace e2d
         std::vector<buffer_> vertex_buffers_;
         std::vector<buffer_> index_buffers_;
         flat_map<std::type_index, vertex_attribs_ptr> va_cache_;
+        statistics curr_stats_;
+        statistics last_stats_;
         bool dirty_ = false;
     };
 }

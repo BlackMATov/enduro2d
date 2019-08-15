@@ -624,6 +624,8 @@ namespace e2d
         inside_render_pass_ = true;
         set_render_target_(rp.target());
 
+        set_scissor(true, rp.viewport());
+
         GLenum clear_bits = 0;
         const render_target_ptr& rt = render_target_;
         bool has_color = !rt || rt->state().color() || !rt->state().color_rb().empty();
@@ -631,10 +633,10 @@ namespace e2d
 
         if ( has_color && rp.color_load_op() == attachment_load_op::clear ) {
             GL_CHECK_CODE(debug_, glClearColor(
-                rp.color_clear_value().r,
-                rp.color_clear_value().g,
-                rp.color_clear_value().b,
-                rp.color_clear_value().a));
+                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().r)),
+                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().g)),
+                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().b)),
+                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().a))));
             clear_bits |= GL_COLOR_BUFFER_BIT;
         }
         if ( has_depth && rp.depth_load_op() == attachment_load_op::clear ) {
@@ -701,12 +703,7 @@ namespace e2d
             }
             else
             if ( device_caps_ext_.framebuffer_discard_supported ) {
-                GL_CHECK_CODE(debug_, glScissor(
-                    math::numeric_cast<GLint>(render_area_.position.x),
-                    math::numeric_cast<GLint>(render_area_.position.y),
-                    math::numeric_cast<GLsizei>(render_area_.size.x),
-                    math::numeric_cast<GLsizei>(render_area_.size.y)));
-                // TODO: enable scissor
+                set_scissor(true, render_area_);
                 GL_CHECK_CODE(debug_, glDiscardFramebufferEXT(
                     GL_FRAMEBUFFER,
                     count,

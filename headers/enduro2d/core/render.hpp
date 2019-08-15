@@ -55,6 +55,8 @@ namespace e2d
     class pixel_declaration final {
     public:
         enum class pixel_type : u8 {
+            unknown,
+
             depth16,
             depth16_stencil8,
             depth24,
@@ -99,7 +101,7 @@ namespace e2d
         std::size_t bits_per_pixel() const noexcept;
         v2u compressed_block_size() const noexcept;
     private:
-        pixel_type type_ = pixel_type::rgba8;
+        pixel_type type_ = pixel_type::unknown;
     };
 
     bool operator==(
@@ -958,6 +960,9 @@ namespace e2d
         struct device_caps {
             api_profile profile = api_profile::unknown;
 
+            pixel_declaration depth_rt_format;
+            pixel_declaration depth_stencil_rt_format;
+
             u32 max_texture_size = 0;
             u32 max_renderbuffer_size = 0;
             u32 max_cube_map_texture_size = 0;
@@ -1098,9 +1103,6 @@ namespace e2d
         bool is_pixel_supported(const pixel_declaration& decl) const noexcept;
         bool is_index_supported(const index_declaration& decl) const noexcept;
         bool is_vertex_supported(const vertex_declaration& decl) const noexcept;
-
-        bool get_suitable_depth_texture_pixel_type(pixel_declaration& decl) const noexcept;
-        bool get_suitable_depth_stencil_texture_pixel_type(pixel_declaration& decl) const noexcept;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;
