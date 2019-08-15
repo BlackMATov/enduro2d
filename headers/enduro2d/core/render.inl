@@ -22,6 +22,8 @@ namespace e2d
         public:
             vertex_iterator() = default;
             vertex_iterator(u8* data, size_t size);
+            template < typename V >
+            void operator = (const V& r) noexcept;
             void operator = (const T& r) noexcept;
             vertex_iterator<T>& operator ++() noexcept;
             [[nodiscard]] vertex_iterator<T> operator ++(int) noexcept;
@@ -213,6 +215,12 @@ namespace e2d
     }
     
     template < typename T >
+    template < typename V >
+    inline void render::batchr::vertex_iterator<T>::operator = (const V& r) noexcept {
+        operator[](0) = r;
+    }
+    
+    template < typename T >
     inline void render::batchr::vertex_iterator<T>::operator = (const T& r) noexcept {
         operator[](0) = r;
     }
@@ -358,6 +366,9 @@ namespace e2d
         topology topo,
         const material& mtr)
     {
+        E2D_ASSERT(topo != topology::triangles || (index_count >= 3 && index_count % 3 == 0));
+        E2D_ASSERT(topo != topology::triangles_strip || index_count >= 3);
+
         const size_t vert_stride = math::align_ceil(sizeof(VertexType), vertex_stride_);
         const size_t vb_size = vertex_count * vert_stride;
         const size_t ib_size = index_count * index_stride_;

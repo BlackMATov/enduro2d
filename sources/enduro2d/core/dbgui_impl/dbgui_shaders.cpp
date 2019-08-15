@@ -13,7 +13,14 @@ namespace
         attribute vec2 a_uv;
         attribute vec4 a_color;
 
-        uniform mat4 u_MVP;
+    #ifdef E2D_SUPPORTS_UBO
+        layout(std140) uniform cb_material {
+            mat4 u_MVP;
+        };
+    #else
+        uniform vec4 cb_material[4];
+        #define u_MVP mat4(cb_material[0], cb_material[1], cb_material[2], cb_material[3])
+    #endif
 
         varying vec4 v_color;
         varying vec2 v_uv;

@@ -487,7 +487,7 @@ namespace e2d
 
                 if ( the<window>().enabled() ) {
                     app->frame_render();
-                    //the<dbgui>().frame_render();  // TODO
+                    the<dbgui>().frame_render();
                     the<render>().present();  // TODO: remove?
                 }
 
