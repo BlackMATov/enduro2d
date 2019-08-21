@@ -60,6 +60,19 @@ namespace e2d
     inline const asset_cache& library::cache() const noexcept {
         return cache_;
     }
+    
+    inline void library::add_env_value(str_hash key, bool value) {
+        std::lock_guard<std::recursive_mutex> guard(mutex_);
+        env_values_.insert_or_assign(key, value);
+    }
+
+    inline bool library::get_env_value(str_hash key) const noexcept {
+        std::lock_guard<std::recursive_mutex> guard(mutex_);
+        auto iter = env_values_.find(key);
+        return iter != env_values_.end()
+            ? iter->second
+            : false;
+    }
 
     inline std::size_t library::unload_unused_assets() noexcept {
         return cache_.unload_unused_assets();

@@ -997,6 +997,8 @@ namespace e2d
             bool dxt_compression_supported = false;
             bool pvrtc_compression_supported = false;
             bool pvrtc2_compression_supported = false;
+            
+            bool uniform_buffer_supported = false;
         };
 
         struct statistics {

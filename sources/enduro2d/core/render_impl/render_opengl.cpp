@@ -280,7 +280,7 @@ namespace e2d
                 state_->dbg(),
                 std::move(ps),
                 source,
-                state_->device_capabilities_ext().uniform_buffer_supported));
+                state_->device_capabilities().uniform_buffer_supported));
     }
 
     texture_ptr render::create_texture(
@@ -616,7 +616,7 @@ namespace e2d
             return nullptr;
         }
 
-        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+        if ( state_->device_capabilities().uniform_buffer_supported ) {
             E2D_ASSERT(block_info.is_buffer); // TODO: exception
         } else {
             E2D_ASSERT(!block_info.is_buffer); // TODO: exception
@@ -635,7 +635,7 @@ namespace e2d
         gl_buffer_id buf_id(state_->dbg());
         const size_t block_size = templ->block_size();
 
-        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+        if ( state_->device_capabilities().uniform_buffer_supported ) {
             buf_id = gl_buffer_id::create(state_->dbg(), GL_UNIFORM_BUFFER);
             if ( buf_id.empty() ) {
                 state_->dbg().error("RENDER: Failed to create uniform buffer:\n"

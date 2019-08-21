@@ -14,6 +14,8 @@
 #include "render_system_impl/render_system_base.hpp"
 #include "render_system_impl/render_system_drawer.hpp"
 
+#include <enduro2d/high/library.hpp>
+
 namespace
 {
     using namespace e2d;
@@ -115,7 +117,13 @@ namespace e2d
     //
 
     render_system::render_system()
-    : state_(new internal_state()) {}
+    : state_(new internal_state())
+    {
+        // TODO: move somewhere
+        auto& caps = the<render>().device_capabilities();
+        the<library>().add_env_value("render.uniform_buffer", caps.uniform_buffer_supported);
+    }
+
     render_system::~render_system() noexcept = default;
 
     void render_system::process(ecs::registry& owner) {

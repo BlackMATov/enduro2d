@@ -79,7 +79,6 @@ namespace e2d::opengl
         bool framebuffer_discard_supported = false; // GLES2 only
         bool framebuffer_invalidate_supported = false; // GLES3 or GL4
 
-        bool uniform_buffer_supported = false;
         u32 max_uniform_buffer_bindings = 0;
 
         bool debug_output_supported = false;
@@ -269,7 +268,7 @@ namespace e2d::opengl
     void gl_trace_info(debug& debug) noexcept;
     void gl_trace_limits(debug& debug) noexcept;
     void gl_fill_device_caps(debug& debug, render::device_caps& caps, gl_device_caps& ext) noexcept;
-    void gl_build_shader_headers(render::device_caps& caps, gl_device_caps& ext, str& vs, str& fs) noexcept;
+    void gl_build_shader_headers(render::device_caps& caps, str& vs, str& fs) noexcept;
 
     void gl_depth_range(debug& debug, float near, float far) noexcept;
     void gl_clear_depth(debug& debug, float value) noexcept;

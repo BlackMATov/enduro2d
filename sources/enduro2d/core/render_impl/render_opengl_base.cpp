@@ -1448,13 +1448,13 @@ namespace e2d::opengl
             version >= gl_version::gl_430 ||
             version >= gl_version::gles_300;
 
-        caps_ext.uniform_buffer_supported = false; /*
+        caps.uniform_buffer_supported =
             version >= gl_version::gl_300 ||
             version >= gl_version::gles_300 ||
             gl_has_any_extension(debug,
-                "GL_ARB_uniform_buffer_object");*/
+                "GL_ARB_uniform_buffer_object");
 
-        if ( caps_ext.uniform_buffer_supported ) {
+        if ( caps.uniform_buffer_supported ) {
             GLint value;
             glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &value);
             caps_ext.max_uniform_buffer_bindings = math::numeric_cast<u32>(value);
@@ -1469,12 +1469,12 @@ namespace e2d::opengl
         gl_use_implementation_from_extensions(debug, version);
     }
     
-    void gl_build_shader_headers(render::device_caps& caps, gl_device_caps& ext, str& vs, str& fs) noexcept {
+    void gl_build_shader_headers(render::device_caps& caps, str& vs, str& fs) noexcept {
         vs = vertex_shader_header_cstr(caps.profile);
         fs = fragment_shader_header_cstr(caps.profile);
 
         // TODO: remove
-        if ( ext.uniform_buffer_supported ) {
+        if ( caps.uniform_buffer_supported ) {
             vs += "#define E2D_SUPPORTS_UBO 1\n";
             fs += "#define E2D_SUPPORTS_UBO 1\n";
         }

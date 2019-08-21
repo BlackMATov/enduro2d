@@ -253,7 +253,7 @@ namespace
                 if ( item.HasMember("requires") ) {
                     auto& requires = item["requires"];
                     for ( rapidjson::SizeType j = 0; j < requires.Size(); ++j ) {
-                        //supported |= library.environment(requires[j]);  // TODO
+                        supported |= library.get_env_value(make_hash(requires[j].GetString()));
                     }
                 } 
                 if ( supported ) {

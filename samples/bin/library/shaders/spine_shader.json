@@ -11,6 +11,11 @@
 	
 	"opengl" : [
         {
+            "vertex" : "gles3/spine_shader.vert",
+            "fragment" : "gles3/spine_shader.frag",
+            "requires" : [ "render.uniform_buffer" ]
+        },
+        {
             "vertex" : "gles2/spine_shader.vert",
             "fragment" : "gles2/spine_shader.frag",
             "requires" : []

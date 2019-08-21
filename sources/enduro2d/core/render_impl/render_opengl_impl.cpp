@@ -491,15 +491,16 @@ namespace e2d
         const u32 max_cb_index = math::max(cb_pass_index,
             math::max(cb_material_index, cb_command_index)) + 1;
 
-        if ( device_caps_ext_.uniform_buffer_supported &&
+        if ( device_caps_.uniform_buffer_supported &&
              device_caps_ext_.max_uniform_buffer_bindings < max_cb_index )
         {
-            device_caps_ext_.uniform_buffer_supported = false;
+            device_caps_.uniform_buffer_supported = false;
         }
 
         gl_build_shader_headers(
-            device_caps_, device_caps_ext_,
-            vertex_shader_header_, fragment_shader_header_);
+            device_caps_,
+            vertex_shader_header_,
+            fragment_shader_header_);
 
         GL_CHECK_CODE(debug_, glPixelStorei(GL_PACK_ALIGNMENT, 1));
         GL_CHECK_CODE(debug_, glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
@@ -942,7 +943,7 @@ namespace e2d
     }
 
     void render::internal_state::bind_cbuffers_() noexcept {
-        if ( device_caps_ext_.uniform_buffer_supported ) {
+        if ( device_caps_.uniform_buffer_supported ) {
             bind_cbuffer_(cb_pass_index, cbuffers_[cb_pass_index]);
             bind_cbuffer_(cb_material_index, cbuffers_[cb_material_index]);
             bind_cbuffer_(cb_command_index, cbuffers_[cb_command_index]);
