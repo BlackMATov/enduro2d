@@ -9,6 +9,7 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/scene.hpp>
+#include <enduro2d/high/components/render_technique.hpp>
 
 #include "render_system_impl/render_system_base.hpp"
 #include "render_system_impl/render_system_drawer.hpp"
@@ -78,8 +79,11 @@ namespace
         const auto comp = [](const camera& l, const camera& r) noexcept {
             return l.depth() < r.depth();
         };
-        const auto func = [&drawer, &owner](const ecs::const_entity&, const camera& cam) {
-            drawer.with(cam, [&owner](drawer::context& ctx){
+        const auto func = [&drawer, &owner](const ecs::const_entity& cam_e, const camera& cam) {
+            const actor* const cam_a = cam_e.find_component<actor>();
+            const const_node_iptr cam_n = cam_a ? cam_a->node() : nullptr;
+            const render_technique* const rt = cam_e.find_component<render_technique>();
+            drawer.with(cam, rt, cam_n, [&owner](drawer::context& ctx){
                 for_all_scenes(ctx, owner);
             });
         };
@@ -96,7 +100,7 @@ namespace e2d
     class render_system::internal_state final : private noncopyable {
     public:
         internal_state()
-        : drawer_(the<render>()) {}
+        : drawer_(the<engine>(), the<render>()) {}
         ~internal_state() noexcept = default;
 
         void process(ecs::registry& owner) {

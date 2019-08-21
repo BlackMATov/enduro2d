@@ -11,6 +11,7 @@
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/spine_renderer.hpp>
 #include <enduro2d/high/components/spine_player.hpp>
+#include <enduro2d/high/components/render_technique.hpp>
 
 #include <spine/AnimationState.h>
 #include <spine/Skeleton.h>
@@ -22,8 +23,12 @@
 namespace
 {
     using namespace e2d;
-
+    
     const str_hash matrix_m_property_hash = "u_matrix_m";
+    const str_hash matrix_v_property_hash = "u_matrix_v";
+    const str_hash matrix_p_property_hash = "u_matrix_p";
+    const str_hash matrix_vp_property_hash = "u_matrix_vp";
+    const str_hash game_time_property_hash = "u_game_time";
     const str_hash sprite_texture_sampler_hash = "u_texture";
 
     const render::blending_state blend_normal = render::blending_state().enable(true)
@@ -53,18 +58,57 @@ namespace e2d::render_system_impl
 
     drawer::context::context(
         const camera& cam,
+        const render_technique* rt,
+        const const_node_iptr& cam_n,
+        engine& engine,
         render& render)
     : render_(render)
     {
-        render_.begin_pass(
-            render::renderpass_desc()
-                .target(cam.target())
-                .color_clear(cam.background())
-                .color_store()
-                .depth_clear(1.0f)
-                .depth_discard()
-                .viewport(cam.viewport()),
-            cam.constants());
+        render::renderpass_desc rp;
+        const_buffer_ptr cbuf;
+
+        if ( rt && rt->passes().size() ) {
+            auto& pass = rt->passes().front();
+            rp = pass.desc;
+            
+            if ( pass.templ ) {
+                render::property_map props = pass.properties;
+
+                const m4f& cam_w = cam_n
+                    ? cam_n->world_matrix()
+                    : m4f::identity();
+                const std::pair<m4f,bool> cam_w_inv = math::inversed(cam_w);
+
+                const m4f& m_v = cam_w_inv.second
+                    ? cam_w_inv.first
+                    : m4f::identity();
+                const m4f& m_p = cam.projection();
+
+                props.assign(matrix_v_property_hash, m_v)
+                    .assign(matrix_p_property_hash, m_p)
+                    .assign(matrix_vp_property_hash, m_v * m_p)
+                    .assign(game_time_property_hash, engine.time());
+
+                if ( props.size() ) {
+                    cbuf = render_.create_const_buffer(
+                        pass.templ,
+                        const_buffer::scope::render_pass);
+                    render_.update_buffer(
+                        cbuf,
+                        pass.properties);
+                }
+            }
+        } else {
+            rp.color_clear(cam.background())
+              .color_store()
+              .depth_clear(1.0f)
+              .depth_discard();
+        }
+        
+        rp.target(cam.target())
+          .viewport(cam.viewport());
+        
+        render_.begin_pass(rp, cbuf);
     }
 
     drawer::context::~context() noexcept {
@@ -396,6 +440,7 @@ namespace e2d::render_system_impl
     // drawer
     //
 
-    drawer::drawer(render& r)
-    : render_(r) {}
+    drawer::drawer(engine& e, render& r)
+    : engine_(e)
+    , render_(r) {}
 }

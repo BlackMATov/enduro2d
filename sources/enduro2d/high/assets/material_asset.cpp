@@ -24,7 +24,7 @@ namespace
         "type" : "object",
         "additionalProperties" : false,
         "properties" : {
-            "properties" : {
+            "constants" : {
                 "type" : "array",
                 "items" : { "$ref" : "#/render_definitions/property" }
             },
@@ -298,8 +298,8 @@ namespace
             ? parse_shader_block(library, parent_address, root["shader"])
             : stdex::make_resolved_promise<shader_ptr>(nullptr);
 
-        auto constants_p = root.HasMember("properties")
-            ? create_const_buffer(root["properties"], shader_p)
+        auto constants_p = root.HasMember("constants")
+            ? create_const_buffer(root["constants"], shader_p)
             : stdex::make_resolved_promise<const_buffer_ptr>(nullptr);
 
         auto samplers_p = parse_sampler_block(library, parent_address, root);

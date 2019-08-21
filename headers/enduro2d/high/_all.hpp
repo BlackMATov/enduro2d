@@ -32,6 +32,7 @@
 #include "components/flipbook_source.hpp"
 #include "components/model_renderer.hpp"
 #include "components/renderer.hpp"
+#include "components/render_technique.hpp"
 #include "components/scene.hpp"
 #include "components/sprite_renderer.hpp"
 #include "components/spine_renderer.hpp"
