@@ -14,8 +14,16 @@ namespace
         attribute vec2 a_uv;
         attribute vec4 a_color;
 
-        uniform float u_time;
-        uniform mat4 u_MVP;
+    #ifdef E2D_SUPPORTS_UBO
+        layout(std140) uniform cb_pass {
+            mat4 u_MVP;
+            float u_time;
+        };
+    #else
+        uniform vec4 cb_pass[5];
+        #define u_MVP mat4(cb_pass[0], cb_pass[1], cb_pass[2], cb_pass[3])
+        #define u_time cb_pass[4].x
+    #endif
 
         varying vec4 v_color;
         varying vec2 v_uv;
@@ -30,7 +38,16 @@ namespace
     )glsl";
 
     const char* fs_source_cstr = R"glsl(
-        uniform float u_time;
+    #ifdef E2D_SUPPORTS_UBO
+        layout(std140) uniform cb_pass {
+            mat4 u_MVP;
+            float u_time;
+        };
+    #else
+        uniform vec4 cb_pass[5];
+        #define u_time cb_pass[4].x
+    #endif
+
         uniform sampler2D u_texture1;
         uniform sampler2D u_texture2;
         varying vec4 v_color;
@@ -89,6 +106,23 @@ namespace
     class game final : public engine::application {
     public:
         bool initialize() final {
+            auto per_pass_cb = std::make_shared<cbuffer_template>();
+            (*per_pass_cb)
+                .add_uniform("u_MVP", 0, cbuffer_template::value_type::m4f)
+                .add_uniform("u_time", 64, cbuffer_template::value_type::f32);
+            
+            shader_ = the<render>().create_shader(shader_source()
+                .vertex_shader(vs_source_cstr)
+                .fragment_shader(fs_source_cstr)
+                .add_attribute("a_position", 0, shader_source::value_type::v3f)
+                .add_attribute("a_uv", 1, shader_source::value_type::v2f)
+                .add_attribute("a_color", 2, shader_source::value_type::v4f)
+                .set_block(per_pass_cb, shader_source::scope_type::render_pass)
+                .add_sampler("u_texture1", 0, shader_source::sampler_type::_2d, shader_source::scope_type::material)
+                .add_sampler("u_texture2", 1, shader_source::sampler_type::_2d, shader_source::scope_type::material));
+
+            constants_ = the<render>().create_const_buffer(shader_, const_buffer::scope::render_pass);
+
             the<vfs>().register_scheme<archive_file_source>(
                 "piratepack",
                 the<vfs>().read(url("resources://bin/kenney_piratepack.zip")));
@@ -97,14 +131,12 @@ namespace
                 "ships",
                 url("piratepack://PNG/Retina/Ships"));
 
-            shader_ = the<render>().create_shader(
-                vs_source_cstr, fs_source_cstr);
             texture1_ = the<render>().create_texture(
                 the<vfs>().read(url("ships://ship (2).png")));
             texture2_ = the<render>().create_texture(
                 the<vfs>().read(url("ships://ship (19).png")));
 
-            if ( !shader_ || !texture1_ || !texture2_ ) {
+            if ( !shader_ || !texture1_ || !texture2_ || !constants_ ) {
                 return false;
             }
 
@@ -117,42 +149,23 @@ namespace
             const auto vertices1 = generate_quad_vertices(texture1_->size());
             vertex_buffer1_ = the<render>().create_vertex_buffer(
                 vertices1,
-                vertex1::decl(),
                 vertex_buffer::usage::static_draw);
 
             const auto vertices2 = generate_quad_colors();
             vertex_buffer2_ = the<render>().create_vertex_buffer(
                 vertices2,
-                vertex2::decl(),
                 vertex_buffer::usage::static_draw);
 
             if ( !index_buffer_ || !vertex_buffer1_ || !vertex_buffer2_ ) {
                 return false;
             }
+            
+            vertex_attribs1_ = the<render>().create_vertex_attribs(vertex1::decl());
+            vertex_attribs2_ = the<render>().create_vertex_attribs(vertex2::decl());
 
-            material_ = render::material()
-                .add_pass(render::pass_state()
-                    .states(render::state_block()
-                        .capabilities(render::capabilities_state()
-                            .blending(true))
-                        .blending(render::blending_state()
-                            .src_factor(render::blending_factor::src_alpha)
-                            .dst_factor(render::blending_factor::one_minus_src_alpha)))
-                    .shader(shader_)
-                    .properties(render::property_block()
-                        .sampler("u_texture1", render::sampler_state()
-                            .texture(texture1_)
-                            .min_filter(render::sampler_min_filter::linear)
-                            .mag_filter(render::sampler_mag_filter::linear))
-                        .sampler("u_texture2", render::sampler_state()
-                            .texture(texture2_)
-                            .min_filter(render::sampler_min_filter::linear)
-                            .mag_filter(render::sampler_mag_filter::linear))));
-
-            geometry_ = render::geometry()
-                .indices(index_buffer_)
-                .add_vertices(vertex_buffer1_)
-                .add_vertices(vertex_buffer2_);
+            if ( !vertex_attribs1_ || !vertex_attribs2_ ) {
+                return false;
+            }
 
             return true;
         }
@@ -180,16 +193,44 @@ namespace
             const auto projection = math::make_orthogonal_lh_matrix4(
                 framebuffer_size, 0.f, 1.f);
 
-            material_.properties()
-                .property("u_time", the<engine>().time())
-                .property("u_MVP", projection);
+            the<render>().update_buffer(
+                constants_,
+                render::property_map()
+                    .property("u_time", the<engine>().time())
+                    .property("u_MVP", projection));
 
-            the<render>().execute(render::command_block<64>()
-                .add_command(render::viewport_command(
-                    the<window>().real_size()))
-                .add_command(render::clear_command()
-                    .color_value({1.f, 0.4f, 0.f, 1.f}))
-                .add_command(render::draw_command(material_, geometry_)));
+            the<render>().begin_pass(
+                render::renderpass_desc()
+                    .viewport(the<window>().real_size())
+                    .color_clear({1.f, 0.4f, 0.f, 1.f})
+                    .color_store(),
+                constants_);
+
+            the<render>().set_material(render::material()
+                .shader(shader_)
+                .sampler("u_texture1", render::sampler_state()
+                    .texture(texture1_)
+                    .min_filter(render::sampler_min_filter::linear)
+                    .mag_filter(render::sampler_mag_filter::linear))
+                .sampler("u_texture2", render::sampler_state()
+                    .texture(texture2_)
+                    .min_filter(render::sampler_min_filter::linear)
+                    .mag_filter(render::sampler_mag_filter::linear))
+                .blending(render::blending_state()
+                    .enable(true)
+                    .src_factor(render::blending_factor::src_alpha)
+                    .dst_factor(render::blending_factor::one_minus_src_alpha))
+            );
+
+            the<render>().execute(render::bind_vertex_buffers_command()
+                .add(vertex_buffer1_, vertex_attribs1_)
+                .add(vertex_buffer2_, vertex_attribs2_));
+
+            the<render>().execute(render::draw_indexed_command()
+                .index_count(index_buffer_->index_count())
+                .indices(index_buffer_));
+
+            the<render>().end_pass();
         }
     private:
         shader_ptr shader_;
@@ -198,8 +239,9 @@ namespace
         index_buffer_ptr index_buffer_;
         vertex_buffer_ptr vertex_buffer1_;
         vertex_buffer_ptr vertex_buffer2_;
-        render::material material_;
-        render::geometry geometry_;
+        vertex_attribs_ptr vertex_attribs1_;
+        vertex_attribs_ptr vertex_attribs2_;
+        const_buffer_ptr constants_;
     };
 }
 

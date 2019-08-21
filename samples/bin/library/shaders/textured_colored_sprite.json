@@ -1,7 +1,8 @@
 {
 	"attributes" : [
 		{ "name": "a_position", "index": 0, "type": "v2f" },
-		{ "name": "a_uv",       "index": 1, "type": "v2f" }
+		{ "name": "a_uv",       "index": 1, "type": "v2f" },
+		{ "name": "a_color",    "index": 2, "type": "v4f" }
 	],
 	"samplers" : [
 		{ "name": "u_texture", "unit": 0, "scope": "material" }
@@ -10,12 +11,12 @@
 	
 	"opengl" : [
         {
-            "vertex" : "gles3/textured_sprite.vert",
+            "vertex" : "gles3/textured_colored_sprite.vert",
             "fragment" : "gles3/textured_sprite.frag",
             "requires" : [ "render.uniform_buffer" ]
         },
         {
-            "vertex" : "gles2/textured_sprite.vert",
+            "vertex" : "gles2/textured_colored_sprite.vert",
             "fragment" : "gles2/textured_sprite.frag",
             "requires" : []
         }

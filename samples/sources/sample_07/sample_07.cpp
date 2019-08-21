@@ -157,13 +157,6 @@ namespace
                 ? the<world>().instantiate(camera_prefab_res->content())
                 : nullptr;
             return !!camera_go;
-
-            /*auto camera_i = the<world>().instantiate();
-            camera_i->entity_filler()
-                .component<camera>(camera()
-                    .background({1.f, 0.4f, 0.f, 1.f}))
-                .component<actor>(node::create(camera_i));
-            return true;*/
         }
 
         bool create_systems() {
