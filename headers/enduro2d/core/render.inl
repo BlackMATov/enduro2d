@@ -342,7 +342,7 @@ namespace e2d
         vb.offset = math::align_ceil(vb.offset, vert_stride);
         
         batch_index_t idx_offset = math::numeric_cast<batch_index_t>((vb.offset + vert_stride-1) / vert_stride);
-        auto vert_iter = vertex_iterator<typename BatchType::vertex_type>(vb.content.data() + vb.offset, vb_size, vert_stride);
+        auto vert_iter = vertex_iterator<typename BatchType::vertex_type>(vb.content.data() + vb.offset, vb_size);
         auto idx_iter = index_iterator(ib.content.data() + ib.offset, ib_size, idx_offset);
         const bool first_strip = is_strip && !dst_batch.idx_count;
         const bool break_strip = is_strip && dst_batch.idx_count;

@@ -99,6 +99,35 @@ namespace
         }
         #undef DEFINE_CASE
     }
+    
+    template < typename T >
+    size_t hash_of(const T& x) noexcept {
+        return std::hash<T>()(x);
+    }
+    
+    size_t hash_of(str_hash x) noexcept {
+        return x.hash();
+    }
+
+    size_t hash_of(const vertex_declaration::attribute_info& x) noexcept {
+        size_t h = 0;
+        h = utils::hash_combine(h, hash_of(x.stride));
+        h = utils::hash_combine(h, hash_of(x.name));
+        h = utils::hash_combine(h, hash_of(x.rows));
+        h = utils::hash_combine(h, hash_of(x.columns));
+        h = utils::hash_combine(h, hash_of(x.type));
+        h = utils::hash_combine(h, hash_of(x.normalized));
+        return h;
+    }
+
+    size_t hash_of(const vertex_declaration& x) noexcept {
+        size_t h = hash_of(x.attribute_count());
+        for ( size_t i = 0; i < x.attribute_count(); ++i ) {
+            h = utils::hash_combine(h, hash_of(x.attribute(i)));
+        }
+        h = utils::hash_combine(h, hash_of(x.bytes_per_vertex()));
+        return h;
+    }
 
     class command_value_visitor final : private noncopyable {
     public:
@@ -249,6 +278,14 @@ namespace e2d
 
     std::size_t vertex_declaration::attribute_info::row_size() const noexcept {
         return attribute_element_size(type) * columns;
+    }
+    
+    //
+    // vertex_declaration::hash
+    //
+
+    std::size_t vertex_declaration::hash::operator()(const vertex_declaration& x) const noexcept {
+        return hash_of(x);
     }
 
     //

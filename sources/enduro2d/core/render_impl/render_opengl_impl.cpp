@@ -20,35 +20,6 @@ namespace
     constexpr u32 cb_command_index = u32(const_buffer::scope::draw_command);
     
     template < typename T >
-    size_t hash_of(const T& x) noexcept {
-        return std::hash<T>()(x);
-    }
-    
-    size_t hash_of(str_hash x) noexcept {
-        return x.hash();
-    }
-
-    size_t hash_of(const vertex_declaration::attribute_info& x) noexcept {
-        size_t h = 0;
-        h = utils::hash_combine(h, hash_of(x.stride));
-        h = utils::hash_combine(h, hash_of(x.name));
-        h = utils::hash_combine(h, hash_of(x.rows));
-        h = utils::hash_combine(h, hash_of(x.columns));
-        h = utils::hash_combine(h, hash_of(x.type));
-        h = utils::hash_combine(h, hash_of(x.normalized));
-        return h;
-    }
-
-    size_t hash_of(const vertex_declaration& x) noexcept {
-        size_t h = hash_of(x.attribute_count());
-        for ( size_t i = 0; i < x.attribute_count(); ++i ) {
-            h = utils::hash_combine(h, hash_of(x.attribute(i)));
-        }
-        h = utils::hash_combine(h, hash_of(x.bytes_per_vertex()));
-        return h;
-    }
-    
-    template < typename T >
     void set_flag_inplace(T& le, T re) noexcept {
         auto l = utils::enum_to_underlying(le);
         auto r = utils::enum_to_underlying(re);
@@ -357,7 +328,7 @@ namespace e2d
         debug& debug,
         const vertex_declaration& decl)
     : debug_(debug)
-    , hash_(hash_of(decl))
+    , hash_(vertex_declaration::hash()(decl))
     , decl_(decl) {}
 
     debug& vertex_attribs::internal_state::dbg() const noexcept {

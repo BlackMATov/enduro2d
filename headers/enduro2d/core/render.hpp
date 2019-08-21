@@ -183,6 +183,10 @@ namespace e2d
 
             std::size_t row_size() const noexcept;
         };
+
+        struct hash {
+            std::size_t operator()(const vertex_declaration& x) const noexcept;
+        };
     public:
         vertex_declaration() = default;
         ~vertex_declaration() noexcept = default;
