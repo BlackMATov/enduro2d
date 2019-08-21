@@ -337,6 +337,8 @@ namespace e2d
         void bind_cbuffer_(u32 index, const const_buffer_ptr& cb) noexcept;
         void bind_textures_() noexcept;
         void bind_sampler_block_(const sampler_block& block) noexcept;
+        void clear_before_renderpass_(const renderpass_desc& rp) noexcept;
+        void clear_after_renderpass_() noexcept;
         void create_debug_output_() noexcept;
         static void GLAPIENTRY debug_output_callback_(
             GLenum source,

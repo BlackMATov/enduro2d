@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 #include "render_opengl_impl.hpp"
+#include <random>
 
 #if defined(E2D_RENDER_MODE)
 #if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL || E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES
@@ -124,6 +125,32 @@ namespace
         }
         
         E2D_ASSERT(!templ);
+    }
+
+    color make_random_clear_color() noexcept {
+        color result;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<f32> dist(0.0f, 1.0f);
+        result.r = dist(gen);
+        result.g = dist(gen);
+        result.b = dist(gen);
+        result.a = dist(gen);
+        return result;
+    }
+
+    float make_random_clear_depth() noexcept {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<f32> dist(0.0f, 1.0f);
+        return dist(gen);
+    }
+
+    u8 make_random_clear_stencil() noexcept {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<u32> dist(0, 0xFF);
+        return u8(dist(gen));
     }
 }
 
@@ -625,31 +652,7 @@ namespace e2d
         set_render_target_(rp.target());
 
         set_scissor(true, rp.viewport());
-
-        GLenum clear_bits = 0;
-        const render_target_ptr& rt = render_target_;
-        bool has_color = !rt || rt->state().color() || !rt->state().color_rb().empty();
-        bool has_depth = !rt || rt->state().depth() || !rt->state().depth_rb().empty();
-
-        if ( has_color && rp.color_load_op() == attachment_load_op::clear ) {
-            GL_CHECK_CODE(debug_, glClearColor(
-                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().r)),
-                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().g)),
-                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().b)),
-                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().a))));
-            clear_bits |= GL_COLOR_BUFFER_BIT;
-        }
-        if ( has_depth && rp.depth_load_op() == attachment_load_op::clear ) {
-            gl_clear_depth(debug_, rp.depth_clear_value());
-            clear_bits |= GL_DEPTH_BUFFER_BIT;
-        }
-        if ( has_depth && rp.stencil_load_op() == attachment_load_op::clear ) {
-            GL_CHECK_CODE(debug_, glClearStencil(rp.stencil_clear_value()));
-            clear_bits |= GL_STENCIL_BUFFER_BIT;
-        }
-        if ( clear_bits ) {
-            GL_CHECK_CODE(debug_, glClear(clear_bits));
-        }
+        clear_before_renderpass_(rp);
         
         render_area_ = rp.viewport();
         color_store_op_ = rp.color_store_op();
@@ -675,19 +678,61 @@ namespace e2d
         batcher_.flush();
 
         inside_render_pass_ = false;
+        clear_after_renderpass_();
+        set_render_target_(nullptr);
         
+        // reset to default
+        color_store_op_ = attachment_store_op::store;
+        depth_store_op_ = attachment_store_op::discard;
+        stencil_store_op_ = attachment_store_op::discard;
+
+        // reset vertex attribs
+        for ( size_t i = 0; i < render_cfg::max_attribute_count; ++i ) {
+            GL_CHECK_CODE(debug_, glDisableVertexAttribArray(GLuint(i)));
+        }
+
+        index_buffer_ = nullptr;
+        vertex_buffers_ = {};
+        enabled_attribs_ = {};
+    }
+    
+    void render::internal_state::clear_before_renderpass_(const renderpass_desc& rp) noexcept {
         const bool is_default_fb = !render_target_;
+        const render_target_ptr& rt = render_target_;
+        bool has_color = is_default_fb || rt->state().color() || !rt->state().color_rb().empty();
+        bool has_depth = is_default_fb || rt->state().depth() || !rt->state().depth_rb().empty();
+        GLenum clear_bits = 0;
+
+    #if defined(E2D_BUILD_MODE) && E2D_BUILD_MODE == E2D_BUILD_MODE_DEBUG
+        // for debugging: clear with random values instead of invalidate
+        if ( has_color && rp.color_load_op() == attachment_load_op::invalidate ) {
+            const color col = make_random_clear_color();
+            GL_CHECK_CODE(debug_, glClearColor(
+                math::numeric_cast<GLclampf>(col.r),
+                math::numeric_cast<GLclampf>(col.g),
+                math::numeric_cast<GLclampf>(col.b),
+                math::numeric_cast<GLclampf>(col.a)));
+            clear_bits |= GL_COLOR_BUFFER_BIT;
+        }
+        if ( has_depth && rp.depth_load_op() == attachment_load_op::invalidate ) {
+            gl_clear_depth(debug_, make_random_clear_depth());
+            clear_bits |= GL_DEPTH_BUFFER_BIT;
+        }
+        if ( has_depth && rp.stencil_load_op() == attachment_load_op::invalidate ) {
+            GL_CHECK_CODE(debug_, glClearStencil(make_random_clear_stencil()));
+            clear_bits |= GL_STENCIL_BUFFER_BIT;
+        }
+    #else
         GLenum attachments[8];
         GLsizei count = 0;
-
-        if ( color_store_op_ == attachment_store_op::discard ) {
+        
+        if ( has_color && rp.color_load_op() == attachment_load_op::invalidate ) {
             attachments[count++] = is_default_fb ? GL_COLOR : GL_COLOR_ATTACHMENT0;
         }
-        // TOD: depth_stencil_attachment for depth_stencil texture
-        if ( depth_store_op_ == attachment_store_op::discard ) {
+        if ( has_depth && rp.depth_load_op() == attachment_load_op::invalidate ) {
             attachments[count++] = is_default_fb ? GL_DEPTH : GL_DEPTH_ATTACHMENT;
         }
-        if ( stencil_store_op_ == attachment_store_op::discard ) {
+        if ( has_depth && rp.stencil_load_op() == attachment_load_op::invalidate ) {
             attachments[count++] = is_default_fb ? GL_STENCIL : GL_STENCIL_ATTACHMENT;
         }
         if ( count ) {
@@ -710,24 +755,94 @@ namespace e2d
                     attachments));
             }
         }
-        
-        // reset to default
-        color_store_op_ = attachment_store_op::store;
-        depth_store_op_ = attachment_store_op::discard;
-        stencil_store_op_ = attachment_store_op::discard;
+    #endif
 
-        set_render_target_(nullptr);
-
-        // reset vertex attribs
-        for ( size_t i = 0; i < render_cfg::max_attribute_count; ++i ) {
-            GL_CHECK_CODE(debug_, glDisableVertexAttribArray(GLuint(i)));
+        if ( has_color && rp.color_load_op() == attachment_load_op::clear ) {
+            GL_CHECK_CODE(debug_, glClearColor(
+                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().r)),
+                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().g)),
+                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().b)),
+                math::numeric_cast<GLclampf>(math::saturate(rp.color_clear_value().a))));
+            clear_bits |= GL_COLOR_BUFFER_BIT;
         }
-
-        index_buffer_ = nullptr;
-        vertex_buffers_ = {};
-        enabled_attribs_ = {};
+        if ( has_depth && rp.depth_load_op() == attachment_load_op::clear ) {
+            gl_clear_depth(debug_, rp.depth_clear_value());
+            clear_bits |= GL_DEPTH_BUFFER_BIT;
+        }
+        if ( has_depth && rp.stencil_load_op() == attachment_load_op::clear ) {
+            GL_CHECK_CODE(debug_, glClearStencil(rp.stencil_clear_value()));
+            clear_bits |= GL_STENCIL_BUFFER_BIT;
+        }
+        if ( clear_bits ) {
+            GL_CHECK_CODE(debug_, glClear(clear_bits));
+        }
     }
-    
+
+    void render::internal_state::clear_after_renderpass_() noexcept {
+        const bool is_default_fb = !render_target_;
+        const render_target_ptr& rt = render_target_;
+        bool has_color = is_default_fb || rt->state().color() || !rt->state().color_rb().empty();
+        bool has_depth = is_default_fb || rt->state().depth() || !rt->state().depth_rb().empty();
+        GLenum clear_bits = 0;
+        
+    #if defined(E2D_BUILD_MODE) && E2D_BUILD_MODE == E2D_BUILD_MODE_DEBUG
+        // for debugging: clear with random values instead of invalidate
+        if ( has_color && color_store_op_ == attachment_store_op::discard ) {
+            const color col = make_random_clear_color();
+            GL_CHECK_CODE(debug_, glClearColor(
+                math::numeric_cast<GLclampf>(col.r),
+                math::numeric_cast<GLclampf>(col.g),
+                math::numeric_cast<GLclampf>(col.b),
+                math::numeric_cast<GLclampf>(col.a)));
+            clear_bits |= GL_COLOR_BUFFER_BIT;
+        }
+        if ( has_depth && depth_store_op_ == attachment_store_op::discard ) {
+            gl_clear_depth(debug_, make_random_clear_depth());
+            clear_bits |= GL_DEPTH_BUFFER_BIT;
+        }
+        if ( has_depth && stencil_store_op_ == attachment_store_op::discard ) {
+            GL_CHECK_CODE(debug_, glClearStencil(make_random_clear_stencil()));
+            clear_bits |= GL_STENCIL_BUFFER_BIT;
+        }
+        if ( clear_bits ) {
+            GL_CHECK_CODE(debug_, glClear(clear_bits));
+        }
+    #else
+        GLenum attachments[8];
+        GLsizei count = 0;
+
+        if ( has_color && color_store_op_ == attachment_store_op::discard ) {
+            attachments[count++] = is_default_fb ? GL_COLOR : GL_COLOR_ATTACHMENT0;
+        }
+        if ( has_depth && depth_store_op_ == attachment_store_op::discard ) {
+            attachments[count++] = is_default_fb ? GL_DEPTH : GL_DEPTH_ATTACHMENT;
+        }
+        if ( has_depth && stencil_store_op_ == attachment_store_op::discard ) {
+            attachments[count++] = is_default_fb ? GL_STENCIL : GL_STENCIL_ATTACHMENT;
+        }
+        if ( count ) {
+            if ( device_caps_ext_.framebuffer_invalidate_supported ) {
+                GL_CHECK_CODE(debug_, glInvalidateSubFramebuffer(
+                    GL_FRAMEBUFFER,
+                    count,
+                    attachments,
+                    math::numeric_cast<GLint>(render_area_.position.x),
+                    math::numeric_cast<GLint>(render_area_.position.y),
+                    math::numeric_cast<GLsizei>(render_area_.size.x),
+                    math::numeric_cast<GLsizei>(render_area_.size.y)));
+            }
+            else
+            if ( device_caps_ext_.framebuffer_discard_supported ) {
+                set_scissor(true, render_area_);
+                GL_CHECK_CODE(debug_, glDiscardFramebufferEXT(
+                    GL_FRAMEBUFFER,
+                    count,
+                    attachments));
+            }
+        }
+    #endif
+    }
+
     void render::internal_state::set_render_target_(const render_target_ptr& rt) noexcept {
         if ( rt == render_target_ ) {
             return;

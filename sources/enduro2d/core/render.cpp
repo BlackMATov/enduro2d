@@ -800,10 +800,10 @@ namespace e2d
         return *this;
     }
 
-    /*render::renderpass_desc& render::renderpass_desc::color_invalidate() noexcept {
+    render::renderpass_desc& render::renderpass_desc::color_invalidate() noexcept {
         color_.load_op = attachment_load_op::invalidate;
         return *this;
-    }*/
+    }
 
     render::renderpass_desc& render::renderpass_desc::color_store() noexcept {
         color_.store_op = attachment_store_op::store;
@@ -812,6 +812,16 @@ namespace e2d
 
     render::renderpass_desc& render::renderpass_desc::color_discard() noexcept {
         color_.store_op = attachment_store_op::discard;
+        return *this;
+    }
+
+    render::renderpass_desc& render::renderpass_desc::color_load_op(attachment_load_op value) noexcept {
+        color_.load_op = value;
+        return *this;
+    }
+
+    render::renderpass_desc& render::renderpass_desc::color_store_op(attachment_store_op value) noexcept {
+        color_.store_op = value;
         return *this;
     }
 
@@ -839,10 +849,10 @@ namespace e2d
         return *this;
     }
 
-    /*render::renderpass_desc& render::renderpass_desc::depth_invalidate() noexcept {
+    render::renderpass_desc& render::renderpass_desc::depth_invalidate() noexcept {
         depth_.load_op = attachment_load_op::invalidate;
         return *this;
-    }*/
+    }
 
     render::renderpass_desc& render::renderpass_desc::depth_store() noexcept {
         depth_.store_op = attachment_store_op::store;
@@ -851,6 +861,16 @@ namespace e2d
 
     render::renderpass_desc& render::renderpass_desc::depth_discard() noexcept {
         depth_.store_op = attachment_store_op::discard;
+        return *this;
+    }
+    
+    render::renderpass_desc& render::renderpass_desc::depth_load_op(attachment_load_op value) noexcept {
+        depth_.load_op = value;
+        return *this;
+    }
+
+    render::renderpass_desc& render::renderpass_desc::depth_store_op(attachment_store_op value) noexcept {
+        depth_.store_op = value;
         return *this;
     }
 
@@ -878,10 +898,10 @@ namespace e2d
         return *this;
     }
 
-    /*render::renderpass_desc& render::renderpass_desc::stencil_invalidate() noexcept {
+    render::renderpass_desc& render::renderpass_desc::stencil_invalidate() noexcept {
         stencil_.load_op = attachment_load_op::invalidate;
         return *this;
-    }*/
+    }
 
     render::renderpass_desc& render::renderpass_desc::stencil_store() noexcept {
         stencil_.store_op = attachment_store_op::store;
@@ -890,6 +910,16 @@ namespace e2d
 
     render::renderpass_desc& render::renderpass_desc::stencil_discard() noexcept {
         stencil_.store_op = attachment_store_op::discard;
+        return *this;
+    }
+    
+    render::renderpass_desc& render::renderpass_desc::stencil_load_op(attachment_load_op value) noexcept {
+        stencil_.load_op = value;
+        return *this;
+    }
+
+    render::renderpass_desc& render::renderpass_desc::stencil_store_op(attachment_store_op value) noexcept {
+        stencil_.store_op = value;
         return *this;
     }
 
@@ -1286,9 +1316,9 @@ namespace
     };
 
     const char* render_schema_definitions_source = R"json({
-        "render_pass" : {
+        "render_pass_description" : {
             "type" : "object",
-            "required" : [ "test" ],
+            "required" : [],
             "additionalProperties" : false,
             "properties" : {
                 "viewport" : { "$ref": "#/common_definitions/b2" },
@@ -1301,26 +1331,17 @@ namespace
                     }
                 },
                 "state_block" : { "$ref": "#/render_definitions/state_block" },
-                "color_load_op" : {
-                    "anyOf": [
-                        { "$ref" : "#/common_definitions/color" },
-                        { "$ref" : "#/render_definitions/attachment_load_op" }
-                    ]
-                },
+
+                "color_clear_value" : { "$ref" : "#/common_definitions/color" },
+                "color_load_op" : { "$ref" : "#/render_definitions/attachment_load_op" },
                 "color_store_op" : { "$ref" : "#/render_definitions/attachment_store_op" },
-                "depth_load_op" : {
-                    "anyOf": [
-                        { "type" : "number" },
-                        { "$ref" : "#/render_definitions/attachment_load_op" }
-                    ]
-                },
+
+                "depth_clear_value" : { "type" : "number" },
+                "depth_load_op" : { "$ref" : "#/render_definitions/attachment_load_op" },
                 "depth_store_op" : { "$ref" : "#/render_definitions/attachment_store_op" },
-                "stencil_load_op" : {
-                    "anyOf": [
-                        { "type" : "integer" },
-                        { "$ref" : "#/render_definitions/attachment_load_op" }
-                    ]
-                },
+
+                "stencil_clear_value" : { "type" : "integer", "minimum" : 0, "maximum": 255 },
+                "stencil_load_op" : { "$ref" : "#/render_definitions/attachment_load_op" },
                 "stencil_store_op" : { "$ref" : "#/render_definitions/attachment_store_op" }
             }
         },
@@ -1554,7 +1575,8 @@ namespace
             "type" : "string",
             "enum" : [
                 "load",
-                "clear"
+                "clear",
+                "invalidate"
             ]
         },
         "attachment_store_op" : {
@@ -1878,6 +1900,7 @@ namespace e2d::json_utils
     #define DEFINE_IF(x) if ( str == #x ) { v = render::attachment_load_op::x; return true; }
         DEFINE_IF(load);
         DEFINE_IF(clear);
+        DEFINE_IF(invalidate);
     #undef DEFINE_IF
         return false;
     }
@@ -2269,139 +2292,84 @@ namespace e2d::json_utils
         }
 
         if ( root.HasMember("color_load_op") ) {
-            const auto& root_color_load_op = root["color_load_op"];
-            if ( root_color_load_op.IsString() ) {
-                render::attachment_load_op op;
-                if ( !try_parse_value(root_color_load_op, op) ) {
-                    E2D_ASSERT_MSG(false, "unexpected color load operation");
-                    return false;
-                }
-                switch ( op ) {
-                    case render::attachment_load_op::load:
-                        pass.color_load();
-                        break;
-                    case render::attachment_load_op::clear:
-                        pass.color_clear(color::clear());
-                        break;
-                    default:
-                        E2D_ASSERT_MSG(false, "unexpected color load operation");
-                        break;
-                }
-            } else {
-                color col;
-                if ( !try_parse_value(root_color_load_op, col) ) {
-                    E2D_ASSERT_MSG(false, "unexpected color load operation");
-                    return false;
-                }
-                pass.color_clear(col);
+            render::attachment_load_op op = pass.color_load_op();
+            if ( !try_parse_value(root["color_load_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected color load operation");
+                return false;
             }
+            pass.color_load_op(op);
+        }
+
+        if ( pass.color_load_op() == render::attachment_load_op::clear
+            &&root.HasMember("color_clear_value") )
+        {
+            color col;
+            if ( !try_parse_value(root["color_clear_value"], col) ) {
+                E2D_ASSERT_MSG(false, "unexpected color clear value");
+                return false;
+            }
+            pass.color_clear(col);
         }
 
         if ( root.HasMember("color_store_op") ) {
-            render::attachment_store_op op;
+            render::attachment_store_op op = pass.color_store_op();
             if ( !try_parse_value(root["color_store_op"], op) ) {
                 E2D_ASSERT_MSG(false, "unexpected color store operation");
                 return false;
             }
-            switch ( op ) {
-                case render::attachment_store_op::store:
-                    pass.color_store();
-                    break;
-                case render::attachment_store_op::discard:
-                    pass.color_discard();
-                    break;
-                default:
-                    E2D_ASSERT_MSG(false, "unexpected color store operation");
-                    break;
-            }
+            pass.color_store_op(op);
         }
 
         if ( root.HasMember("depth_load_op") ) {
-            const auto& root_depth_load_op = root["depth_load_op"];
-            if ( root_depth_load_op.IsString() ) {
-                render::attachment_load_op op;
-                if ( !try_parse_value(root_depth_load_op, op) ) {
-                    E2D_ASSERT_MSG(false, "unexpected depth load operation");
-                    return false;
-                }
-                switch ( op ) {
-                    case render::attachment_load_op::load:
-                        pass.depth_load();
-                        break;
-                    case render::attachment_load_op::clear:
-                        pass.depth_clear(1.0f);
-                        break;
-                    default:
-                        E2D_ASSERT_MSG(false, "unexpected depth load operation");
-                        break;
-                }
-            } else {
-                E2D_ASSERT(root_depth_load_op.IsNumber());
-                pass.depth_clear(root_depth_load_op.GetFloat());
+            render::attachment_load_op op = pass.depth_load_op();
+            if ( !try_parse_value(root["depth_load_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected depth load operation");
+                return false;
             }
+            pass.depth_load_op(op);
+        }
+
+        if ( pass.depth_load_op() == render::attachment_load_op::clear
+            && root.HasMember("depth_clear_value") )
+        {
+            const auto& root_d = root["depth_clear_value"];
+            E2D_ASSERT(root_d.IsNumber());
+            pass.depth_clear(root_d.GetFloat());
         }
 
         if ( root.HasMember("depth_store_op") ) {
-            render::attachment_store_op op;
+            render::attachment_store_op op = pass.depth_store_op();
             if ( !try_parse_value(root["depth_store_op"], op) ) {
                 E2D_ASSERT_MSG(false, "unexpected depth store operation");
                 return false;
             }
-            switch ( op ) {
-                case render::attachment_store_op::store:
-                    pass.depth_store();
-                    break;
-                case render::attachment_store_op::discard:
-                    pass.depth_discard();
-                    break;
-                default:
-                    E2D_ASSERT_MSG(false, "unexpected depth store operation");
-                    break;
-            }
+            pass.depth_store_op(op);
         }
 
         if ( root.HasMember("stencil_load_op") ) {
-            const auto& root_stencil_load_op = root["stencil_load_op"];
-            if ( root_stencil_load_op.IsString() ) {
-                render::attachment_load_op op;
-                if ( !try_parse_value(root_stencil_load_op, op) ) {
-                    E2D_ASSERT_MSG(false, "unexpected stencil load operation");
-                    return false;
-                }
-                switch ( op ) {
-                    case render::attachment_load_op::load:
-                        pass.stencil_load();
-                        break;
-                    case render::attachment_load_op::clear:
-                        pass.stencil_clear(0);
-                        break;
-                    default:
-                        E2D_ASSERT_MSG(false, "unexpected stencil load operation");
-                        break;
-                }
-            } else {
-                E2D_ASSERT(root_stencil_load_op.IsInt());
-                pass.stencil_clear(root_stencil_load_op.GetInt());
+            render::attachment_load_op op = pass.stencil_load_op();
+            if ( !try_parse_value(root["stencil_load_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected stencil load operation");
+                return false;
             }
+            pass.stencil_load_op(op);
+        }
+
+        if ( pass.stencil_load_op() == render::attachment_load_op::clear
+            && root.HasMember("stencil_clear_value") )
+        {
+            const auto& root_s = root["stencil_clear_value"];
+            E2D_ASSERT(root_s.IsInt());
+            pass.stencil_clear(math::numeric_cast<u8>(root_s.GetInt()));
         }
 
         if ( root.HasMember("stencil_store_op") ) {
-            render::attachment_store_op op;
+            render::attachment_store_op op = pass.stencil_store_op();
             if ( !try_parse_value(root["stencil_store_op"], op) ) {
                 E2D_ASSERT_MSG(false, "unexpected stencil store operation");
                 return false;
             }
-            switch ( op ) {
-                case render::attachment_store_op::store:
-                    pass.stencil_store();
-                    break;
-                case render::attachment_store_op::discard:
-                    pass.stencil_discard();
-                    break;
-                default:
-                    E2D_ASSERT_MSG(false, "unexpected stencil store operation");
-                    break;
-            }
+            pass.stencil_store_op(op);
         }
 
         return true;

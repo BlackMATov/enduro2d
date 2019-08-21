@@ -487,6 +487,7 @@ namespace e2d
         enum class attachment_load_op : u8 {
             load,
             clear,
+            invalidate,
         };
 
         enum class attachment_store_op : u8 {
@@ -726,27 +727,33 @@ namespace e2d
             
             renderpass_desc& color_clear(const color& value) noexcept;
             renderpass_desc& color_load() noexcept;
-            //renderpass_desc& color_invalidate() noexcept;
+            renderpass_desc& color_invalidate() noexcept;
             renderpass_desc& color_store() noexcept;
             renderpass_desc& color_discard() noexcept;
+            renderpass_desc& color_load_op(attachment_load_op value) noexcept;
+            renderpass_desc& color_store_op(attachment_store_op value) noexcept;
             [[nodiscard]] const color& color_clear_value() const noexcept;
             [[nodiscard]] attachment_load_op color_load_op() const noexcept;
             [[nodiscard]] attachment_store_op color_store_op() const noexcept;
 
             renderpass_desc& depth_clear(float value) noexcept;
             renderpass_desc& depth_load() noexcept;
-            //renderpass_desc& depth_invalidate() noexcept;
+            renderpass_desc& depth_invalidate() noexcept;
             renderpass_desc& depth_store() noexcept;
             renderpass_desc& depth_discard() noexcept;
+            renderpass_desc& depth_load_op(attachment_load_op value) noexcept;
+            renderpass_desc& depth_store_op(attachment_store_op value) noexcept;
             [[nodiscard]] float depth_clear_value() const noexcept;
             [[nodiscard]] attachment_load_op depth_load_op() const noexcept;
             [[nodiscard]] attachment_store_op depth_store_op() const noexcept;
             
             renderpass_desc& stencil_clear(u8 value) noexcept;
             renderpass_desc& stencil_load() noexcept;
-            //renderpass_desc& stencil_invalidate() noexcept;
+            renderpass_desc& stencil_invalidate() noexcept;
             renderpass_desc& stencil_store() noexcept;
             renderpass_desc& stencil_discard() noexcept;
+            renderpass_desc& stencil_load_op(attachment_load_op value) noexcept;
+            renderpass_desc& stencil_store_op(attachment_store_op value) noexcept;
             [[nodiscard]] u8 stencil_clear_value() const noexcept;
             [[nodiscard]] attachment_load_op stencil_load_op() const noexcept;
             [[nodiscard]] attachment_store_op stencil_store_op() const noexcept;
