@@ -1653,6 +1653,12 @@ namespace e2d
              ? math::align_ceil(content.size() - off, align)
              : 0;
     }
+    
+    buffer_view render::batchr::buffer_::actual_data() const noexcept {
+        static_assert(vertex_buffer_size_ % gpu_buffer_alignment == 0, "");
+        static_assert(index_buffer_size_ % gpu_buffer_alignment == 0, "");
+        return buffer_view(content.data(), math::align_ceil(offset, gpu_buffer_alignment));
+    }
 
     render::batchr::batchr(debug& d, render& r)
     : debug_(d)
@@ -1665,18 +1671,30 @@ namespace e2d
         topology topo,
         vertex_attribs_ptr attribs,
         size_t vert_stride,
-        size_t min_vb_size,
+        size_t vertex_count,
         size_t min_ib_size)
     {
+        const size_t min_vb_size = vertex_count * vert_stride;
+        constexpr size_t max_vertex_count = std::numeric_limits<batch_index_t>::max();
+        
+        if ( vertex_count > max_vertex_count ||
+             min_vb_size > vertex_buffer_size_ ||
+             min_ib_size > index_buffer_size_ )
+        {
+            throw;
+        }
+
         // try to reuse last batch
         if ( batches_.size() ) {
             auto& last = batches_.back();
             auto& vb = vertex_buffers_[last.vb_index];
             auto& ib = index_buffers_[last.ib_index];
+            size_t vert_offset = (vb.offset + vert_stride-1) / vert_stride;
 
             if ( last.mtr == mtr &&
                  last.attribs == attribs &&
                  last.topo == topo &&
+                 vert_offset + vertex_count < max_vertex_count &&
                  vb.available(vert_stride) >= min_vb_size &&
                  ib.available(index_stride_) >= min_ib_size )
             {
@@ -1690,7 +1708,8 @@ namespace e2d
         batch_& result = batches_.emplace_back(mtr);
 
         if ( vertex_buffers_.empty() ||
-             vertex_buffers_.back().available(vert_stride) < min_vb_size )
+             vertex_buffers_.back().available(vert_stride) < min_vb_size ||
+             ((vertex_buffers_.back().offset + vert_stride-1) / vert_stride) + vertex_count >= max_vertex_count )
         {
             auto& vb = vertex_buffers_.emplace_back();
             vb.content.resize(vertex_buffer_size_);
@@ -1725,20 +1744,19 @@ namespace e2d
         std::vector<vertex_buffer_ptr> vert_buffers(vertex_buffers_.size());
         for ( std::size_t i = 0; i  < vertex_buffers_.size(); ++i ) {
             vert_buffers[i] = render_.create_vertex_buffer(
-                vertex_buffers_[i].content,
+                vertex_buffers_[i].actual_data(),
                 vertex_buffer::usage::static_draw);
         }
 
         std::vector<index_buffer_ptr> index_buffers(index_buffers_.size());
         for ( std::size_t i = 0; i < index_buffers_.size(); ++i ) {
             index_buffers[i] = render_.create_index_buffer(
-                index_buffers_[i].content,
+                index_buffers_[i].actual_data(),
                 index_declaration::index_type::unsigned_short,
                 index_buffer::usage::static_draw);
         }
 
         for ( auto& batch : batches_ ) {
-
             if ( curr_vb_index != batch.vb_index ||
                  curr_attribs != batch.attribs ||
                  curr_shader != batch.mtr.shader() )

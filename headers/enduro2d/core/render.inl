@@ -45,6 +45,8 @@ namespace e2d
             index_iterator& operator ++() noexcept;
             [[nodiscard]] index_iterator operator ++(int) noexcept;
             [[nodiscard]] size_t size() const noexcept;
+            [[nodiscard]] batch_index_t offset() const noexcept;
+            [[nodiscard]] batch_index_t* raw() const noexcept;
         private:
             batch_index_t* indices_ = nullptr;
             size_t size_ = 0;
@@ -119,7 +121,8 @@ namespace e2d
 
         class buffer_ final {
         public:
-            size_t available(size_t align) const noexcept;
+            [[nodiscard]] size_t available(size_t align) const noexcept;
+            [[nodiscard]] buffer_view actual_data() const noexcept;
         public:
             buffer content;
             size_t offset;
@@ -135,6 +138,7 @@ namespace e2d
         static constexpr size_t max_vertex_count_ = 1u << 15;
         static constexpr size_t vertex_buffer_size_ = max_vertex_count_ * vertex_stride_;
         static constexpr size_t index_buffer_size_ = max_vertex_count_ * 3 * index_stride_;
+        static constexpr size_t gpu_buffer_alignment = 1 << 10;
 
     public:
         batchr(debug& d, render& r);
@@ -175,7 +179,7 @@ namespace e2d
             topology topo,
             vertex_attribs_ptr attribs,
             size_t vert_stride,
-            size_t min_vb_size,
+            size_t vertex_count,
             size_t min_ib_size);
 
         template < typename VertexType >
@@ -277,6 +281,14 @@ namespace e2d
     inline size_t render::batchr::index_iterator::size() const noexcept {
         return size_;
     }
+    
+    inline render::batchr::batch_index_t render::batchr::index_iterator::offset() const noexcept {
+        return offset_;
+    }
+   
+    inline render::batchr::batch_index_t* render::batchr::index_iterator::raw() const noexcept {
+        return indices_;
+    }
 
     //
     // batchr::rectangle_batch
@@ -335,7 +347,7 @@ namespace e2d
         const size_t vb_size = src_batch.vertex_count() * vert_stride;
         const size_t ib_size = (src_batch.index_count() + (is_strip ? 2 : 0)) * index_stride_;
         vertex_attribs_ptr attribs = create_vertex_attribs_<typename BatchType::vertex_type>();
-        batch_& dst_batch = append_batch_(mtr, src_batch.topology(), attribs, vert_stride, vb_size, ib_size);
+        batch_& dst_batch = append_batch_(mtr, src_batch.topology(), attribs, vert_stride, src_batch.vertex_count(), ib_size);
 
         auto& vb = vertex_buffers_[dst_batch.vb_index];
         auto& ib = index_buffers_[dst_batch.ib_index];
@@ -373,7 +385,7 @@ namespace e2d
         const size_t vb_size = vertex_count * vert_stride;
         const size_t ib_size = index_count * index_stride_;
         vertex_attribs_ptr attribs = create_vertex_attribs_<VertexType>();
-        batch_& dst_batch = append_batch_(mtr, topo, attribs, vert_stride, vb_size, ib_size);
+        batch_& dst_batch = append_batch_(mtr, topo, attribs, vert_stride, vertex_count, ib_size);
         
         auto& vb = vertex_buffers_[dst_batch.vb_index];
         auto& ib = index_buffers_[dst_batch.ib_index];
