@@ -1112,7 +1112,6 @@ namespace e2d
     }
 
     const b2u& render::scissor_command::scissor_rect() const noexcept {
-        E2D_ASSERT(scissoring_);
         return scissor_rect_;
     }
 
@@ -1672,7 +1671,8 @@ namespace e2d
         vertex_attribs_ptr attribs,
         size_t vert_stride,
         size_t vertex_count,
-        size_t min_ib_size)
+        size_t min_ib_size,
+        const std::optional<b2u>& scissor)
     {
         const size_t min_vb_size = vertex_count * vert_stride;
         constexpr size_t max_vertex_count = std::numeric_limits<batch_index_t>::max();
@@ -1681,7 +1681,7 @@ namespace e2d
              min_vb_size > vertex_buffer_size_ ||
              min_ib_size > index_buffer_size_ )
         {
-            throw;
+            throw std::runtime_error("too big for batching");
         }
 
         // try to reuse last batch
@@ -1696,7 +1696,9 @@ namespace e2d
                  last.topo == topo &&
                  vert_offset + vertex_count < max_vertex_count &&
                  vb.available(vert_stride) >= min_vb_size &&
-                 ib.available(index_stride_) >= min_ib_size )
+                 ib.available(index_stride_) >= min_ib_size &&
+                 last.scissor_test == scissor.has_value() &&
+                 (!last.scissor_test || last.scissor_rect == scissor.value()) )
             {
                 ++curr_stats_.num_appended_batches;
                 return last;
@@ -1722,6 +1724,11 @@ namespace e2d
             ib.content.resize(index_buffer_size_);
         }
         
+        if ( scissor.has_value() ) {
+            result.scissor_test = true;
+            result.scissor_rect = scissor.value();
+        }
+
         result.attribs = attribs;
         result.topo = topo;
         result.vb_index = u32(vertex_buffers_.size()-1);
@@ -1770,6 +1777,10 @@ namespace e2d
             }
             
             render_.set_material(batch.mtr);
+
+            render_.execute(render::scissor_command()
+                .scissor_rect(batch.scissor_rect)
+                .scissoring(batch.scissor_test));
 
             render_.execute(render::draw_indexed_command()
                 .index_count(batch.idx_count)

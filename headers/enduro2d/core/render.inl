@@ -116,7 +116,8 @@ namespace e2d
             u32 idx_count = 0;
             u8 vb_index = 0xFF;
             u8 ib_index = 0xFF;
-            // TODO: add scissor
+            bool scissor_test = false;
+            b2u scissor_rect;
         };
 
         class buffer_ final {
@@ -145,7 +146,10 @@ namespace e2d
         ~batchr() noexcept;
 
         template < typename BatchType >
-        void add_batch(const material& mtr, const BatchType& batch);
+        void add_batch(
+            const material& mtr,
+            const BatchType& batch,
+            const std::optional<b2u>& scissor = {});
         
         template < typename VertexType >
         struct allocated_batch {
@@ -157,7 +161,8 @@ namespace e2d
             size_t vertex_count,
             size_t index_count,
             topology topo,
-            const material& mtr);
+            const material& mtr,
+            const std::optional<b2u>& scissor = {});
 
         void flush();
 
@@ -180,7 +185,8 @@ namespace e2d
             vertex_attribs_ptr attribs,
             size_t vert_stride,
             size_t vertex_count,
-            size_t min_ib_size);
+            size_t min_ib_size,
+            const std::optional<b2u>& scissor);
 
         template < typename VertexType >
         vertex_attribs_ptr create_vertex_attribs_();
@@ -341,13 +347,19 @@ namespace e2d
     //
 
     template < typename BatchType >
-    void render::batchr::add_batch(const material& mtr, const BatchType& src_batch) {
+    void render::batchr::add_batch(
+        const material& mtr,
+        const BatchType& src_batch,
+        const std::optional<b2u>& scissor)
+    {
         const bool is_strip = src_batch.topology() != topology::triangles;
         const size_t vert_stride = math::align_ceil(sizeof(typename BatchType::vertex_type), vertex_stride_);
         const size_t vb_size = src_batch.vertex_count() * vert_stride;
         const size_t ib_size = (src_batch.index_count() + (is_strip ? 2 : 0)) * index_stride_;
         vertex_attribs_ptr attribs = create_vertex_attribs_<typename BatchType::vertex_type>();
-        batch_& dst_batch = append_batch_(mtr, src_batch.topology(), attribs, vert_stride, src_batch.vertex_count(), ib_size);
+        batch_& dst_batch = append_batch_(
+            mtr, src_batch.topology(), attribs, vert_stride,
+            src_batch.vertex_count(), ib_size, scissor);
 
         auto& vb = vertex_buffers_[dst_batch.vb_index];
         auto& ib = index_buffers_[dst_batch.ib_index];
@@ -376,7 +388,8 @@ namespace e2d
         size_t vertex_count,
         size_t index_count,
         topology topo,
-        const material& mtr)
+        const material& mtr,
+        const std::optional<b2u>& scissor)
     {
         E2D_ASSERT(topo != topology::triangles || (index_count >= 3 && index_count % 3 == 0));
         E2D_ASSERT(topo != topology::triangles_strip || index_count >= 3);
@@ -385,7 +398,7 @@ namespace e2d
         const size_t vb_size = vertex_count * vert_stride;
         const size_t ib_size = index_count * index_stride_;
         vertex_attribs_ptr attribs = create_vertex_attribs_<VertexType>();
-        batch_& dst_batch = append_batch_(mtr, topo, attribs, vert_stride, vertex_count, ib_size);
+        batch_& dst_batch = append_batch_(mtr, topo, attribs, vert_stride, vertex_count, ib_size, scissor);
         
         auto& vb = vertex_buffers_[dst_batch.vb_index];
         auto& ib = index_buffers_[dst_batch.ib_index];
