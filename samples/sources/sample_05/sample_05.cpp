@@ -48,7 +48,7 @@ namespace
                 return false;
             }
 
-            if ( k.is_key_just_pressed(keyboard_key::f12) ) {
+            if ( k.is_key_just_pressed(keyboard_key::f1) ) {
                 the<dbgui>().toggle_visible(!the<dbgui>().visible());
             }
 

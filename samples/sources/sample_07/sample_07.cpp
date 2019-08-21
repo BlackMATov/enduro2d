@@ -20,7 +20,7 @@ namespace
             E2D_UNUSED(owner);
             const keyboard& k = the<input>().keyboard();
 
-            if ( k.is_key_just_released(keyboard_key::f12) ) {
+            if ( k.is_key_just_released(keyboard_key::f1) ) {
                 the<dbgui>().toggle_visible(!the<dbgui>().visible());
             }
 
@@ -65,35 +65,16 @@ namespace
     class camera_system final : public ecs::system {
     public:
         void process(ecs::registry& owner) override {
-            owner.for_joined_components<camera, actor>(
-            [this](const ecs::const_entity&, camera& cam, const actor& cam_a){
+            owner.for_each_component<camera>(
+            [this](const ecs::const_entity&, camera& cam){
                 if ( !cam.target() ) {
                     cam.viewport(
                         the<window>().real_size());
                     cam.projection(math::make_orthogonal_lh_matrix4(
                         the<window>().real_size().cast_to<f32>(), 0.f, 1000.f));
                 }
-                if ( cam.constants() ) {
-                    const auto& cam_n = cam_a.node();
-                    const m4f& cam_w = cam_n
-                        ? cam_n->world_matrix()
-                        : m4f::identity();
-                    const std::pair<m4f,bool> cam_w_inv = math::inversed(cam_w);
-
-                    const m4f& m_v = cam_w_inv.second
-                        ? cam_w_inv.first
-                        : m4f::identity();
-                    const m4f& m_p = cam.projection();
-
-                    the<render>().update_buffer(
-                        cam.constants(),
-                        render::property_map()
-                            .assign(matrix_vp_property_hash_, m_v * m_p));
-                }
             });
         }
-    private:
-        const str_hash matrix_vp_property_hash_ = "u_matrix_vp";
     };
 
     class game final : public starter::application {
@@ -121,6 +102,7 @@ namespace
 
             node_iptr scene_r = scene_i->get_component<actor>().get().node();
             
+        #if 1
             auto coin_i = the<world>().instantiate();
             coin_i->entity_filler()
                 .component<actor>(node::create(coin_i, scene_r))
@@ -146,20 +128,42 @@ namespace
             node_iptr raptor_n = raptor_gobj_->get_component<actor>().get().node();
             raptor_n->scale(v3f(0.25f));
             raptor_n->translation(v3f{-80.f, -100.f, 0.0f});
-
+            
+        #else
+            // performace test
+            for ( std::size_t i = 0; i < 20; ++i )
+            for ( std::size_t j = 0; j < 40; ++j ) {
+                auto spine_i = the<world>().instantiate();
+                spine_i->entity_filler()
+                    .component<actor>(node::create(spine_i, scene_r))
+                    .component<renderer>(renderer()
+                        .materials({spine_mat}))
+                    .component<spine_renderer>(spine_renderer(spine_raptor))
+                    .component<spine_player>(spine_player(spine_raptor)
+                        .set_animation(0, "walk", true)
+                        .add_animation(1, "gun-grab", false, secf(2.0f)));
+            
+                node_iptr spine_n = spine_i->get_component<actor>().get().node();
+                spine_n->scale(v3f(0.05f));
+                spine_n->translation(v3f{-400.f, -300.f, 0.0f} + v3f{j * 30.f, i * 30.f, 0});
+            }
+        #endif
             return true;
         }
 
         bool create_camera() {
-            auto cb_templ = the<library>().load_asset<cbuffer_template_asset>("shaders/block/pass_1.json");
-            auto cbuffer = the<render>().create_const_buffer(cb_templ->content(), const_buffer::scope::render_pass);
-            auto camera_i = the<world>().instantiate();
+            auto camera_prefab_res = the<library>().load_asset<prefab_asset>("camera_prefab.json");
+            auto camera_go = camera_prefab_res
+                ? the<world>().instantiate(camera_prefab_res->content())
+                : nullptr;
+            return !!camera_go;
+
+            /*auto camera_i = the<world>().instantiate();
             camera_i->entity_filler()
                 .component<camera>(camera()
-                    .background({1.f, 0.4f, 0.f, 1.f})
-                    .constants(cbuffer))
+                    .background({1.f, 0.4f, 0.f, 1.f}))
                 .component<actor>(node::create(camera_i));
-            return true;
+            return true;*/
         }
 
         bool create_systems() {

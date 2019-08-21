@@ -187,9 +187,9 @@ namespace
                 return false;
             }
 
-            /*if ( k.is_key_just_pressed(keyboard_key::f12) ) {
+            if ( k.is_key_just_pressed(keyboard_key::f1) ) {
                 the<dbgui>().toggle_visible(!the<dbgui>().visible());
-            }*/
+            }
 
             if ( k.is_key_pressed(keyboard_key::lsuper) && k.is_key_just_released(keyboard_key::enter) ) {
                 the<window>().toggle_fullscreen(!the<window>().fullscreen());
@@ -245,15 +245,17 @@ namespace
                     .min_filter(render::sampler_min_filter::linear)
                     .mag_filter(render::sampler_mag_filter::linear));
 
-            auto batch = the<render>().batcher().alloc_batch<vertex2>(4, 6,
-                render::topology::triangles,
-                render::material().shader(shader2_));
-            batch.vertices[0] = vertex2(v3f(- 90.0f,  170.0f, 0.0f), color32::red());
-            batch.vertices[1] = vertex2(v3f(-120.0f, -210.0f, 0.0f), color32::green());
-            batch.vertices[2] = vertex2(v3f( 120.0f,  230.0f, 0.0f), color32::blue());
-            batch.vertices[3] = vertex2(v3f(  80.0f, -130.0f, 0.0f), color32::yellow());
-            batch.indices++ = 0;  batch.indices++ = 1;  batch.indices++ = 2;
-            batch.indices++ = 1;  batch.indices++ = 2;  batch.indices++ = 3;
+            {
+                auto batch = the<render>().batcher().alloc_batch<vertex2>(4, 6,
+                    render::topology::triangles,
+                    render::material().shader(shader2_));
+                batch.vertices[0] = vertex2(v3f(- 90.0f,  170.0f, 0.0f), color32::red());
+                batch.vertices[1] = vertex2(v3f(-120.0f, -210.0f, 0.0f), color32::green());
+                batch.vertices[2] = vertex2(v3f( 120.0f,  230.0f, 0.0f), color32::blue());
+                batch.vertices[3] = vertex2(v3f(  80.0f, -130.0f, 0.0f), color32::yellow());
+                batch.indices++ = 0;  batch.indices++ = 1;  batch.indices++ = 2;
+                batch.indices++ = 1;  batch.indices++ = 2;  batch.indices++ = 3;
+            }
 
             the<render>().batcher().add_batch(
                 mtr1,

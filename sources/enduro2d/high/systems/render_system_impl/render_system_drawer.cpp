@@ -70,6 +70,10 @@ namespace e2d::render_system_impl
         if ( rt && rt->passes().size() ) {
             auto& pass = rt->passes().front();
             rp = pass.desc;
+
+            if ( rp.color_load_op() == render::attachment_load_op::clear ) {
+                rp.color_clear(cam.background());
+            }
             
             if ( pass.templ ) {
                 render::property_map props = pass.properties;
@@ -89,14 +93,10 @@ namespace e2d::render_system_impl
                     .assign(matrix_vp_property_hash, m_v * m_p)
                     .assign(game_time_property_hash, engine.time());
 
-                if ( props.size() ) {
-                    cbuf = render_.create_const_buffer(
-                        pass.templ,
-                        const_buffer::scope::render_pass);
-                    render_.update_buffer(
-                        cbuf,
-                        pass.properties);
-                }
+                cbuf = render_.create_const_buffer(
+                    pass.templ,
+                    const_buffer::scope::render_pass);
+                render_.update_buffer(cbuf, props);
             }
         } else {
             rp.color_clear(cam.background())

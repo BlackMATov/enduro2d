@@ -1448,11 +1448,11 @@ namespace e2d::opengl
             version >= gl_version::gl_430 ||
             version >= gl_version::gles_300;
 
-        caps_ext.uniform_buffer_supported =
+        caps_ext.uniform_buffer_supported = false; /*
             version >= gl_version::gl_300 ||
             version >= gl_version::gles_300 ||
             gl_has_any_extension(debug,
-                "GL_ARB_uniform_buffer_object");
+                "GL_ARB_uniform_buffer_object");*/
 
         if ( caps_ext.uniform_buffer_supported ) {
             GLint value;

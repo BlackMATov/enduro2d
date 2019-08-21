@@ -38,9 +38,14 @@ namespace
                 return false;
             }
 
-            address = path::combine(parent_address, address);
-            auto templ_a = dependencies.find_asset<cbuffer_template_asset>(address);
+            auto templ_a = dependencies.find_asset<cbuffer_template_asset>(
+                path::combine(parent_address, address));
             if ( !templ_a ) {
+                the<debug>().error("RENDER_TECHNIQUE: Dependency 'block' is not found:\n"
+                    "--> Parent address: %0\n"
+                    "--> Dependency address: %1",
+                    parent_address,
+                    address);
                 return false;
             }
 
@@ -54,10 +59,13 @@ namespace e2d
 {
     const char* factory_loader<render_technique>::schema_source = R"json({
         "type" : "object",
-        "required" : [ "model" ],
+        "required" : [],
         "additionalProperties" : false,
         "properties" : {
-            "constants" : { $ref : "#/render_definitions/property_map" },
+            "constants" : {
+                "type" : "array",
+                "items" : { "$ref" : "#/render_definitions/property" }
+            },
             "passes" : {
                 "type" : "array",
                 "items" : { "$ref": "#/definitions/render_pass" }
@@ -70,7 +78,10 @@ namespace e2d
                 "additionalProperties" : false,
                 "properties" : {
                     "block" : { "$ref": "#/common_definitions/address" },
-                    "constants" : { $ref : "#/render_definitions/property_map" },
+                    "constants" : {
+                        "type" : "array",
+                        "items" : { "$ref" : "#/render_definitions/property" }
+                    },
 
                     "depth_range" : {
                         "type" : "object",
@@ -97,7 +108,7 @@ namespace e2d
             }
         }
     })json";
-
+    
     bool factory_loader<render_technique>::operator()(
         render_technique& component,
         const fill_context& ctx) const
@@ -131,7 +142,24 @@ namespace e2d
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
-        E2D_UNUSED(dependencies, ctx);
+        if ( ctx.root.HasMember("passes") ) {
+            E2D_ASSERT(ctx.root["passes"].IsArray());
+            const auto& passes_json = ctx.root["passes"];
+            
+            for ( rapidjson::SizeType i = 0; i < passes_json.Size(); ++i ) {
+                E2D_ASSERT(passes_json[i].IsObject());
+                const auto& pass_json = passes_json[i];
+                
+                if ( pass_json.HasMember("block") ) {
+                    str address;
+                    if ( !json_utils::try_parse_value(pass_json["block"], address) ) {
+                        return false;
+                    }
+                    dependencies.add_dependency<cbuffer_template_asset>(
+                        path::combine(ctx.parent_address, address));
+                }
+            }
+        }
         return true;
     }
 }
