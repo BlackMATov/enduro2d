@@ -171,7 +171,7 @@ namespace e2d
             render_.update_buffer(
                 const_buffer_,
                 render::property_map()
-                    .assign("u_MVP", projection));
+                    .property("u_MVP", projection));
             
             std::size_t idx_offset = 0;
             std::size_t vtx_offset = 0;

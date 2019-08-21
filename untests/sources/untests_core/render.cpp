@@ -43,7 +43,7 @@ TEST_CASE("render"){
             REQUIRE(ss.mag_filter() == render::sampler_mag_filter::nearest);
         }
     }
-    SECTION("property_map"){
+    /*SECTION("property_map"){
         {
             const auto pb1 = render::property_map()
                 .assign("f", 1.f)
@@ -104,7 +104,7 @@ TEST_CASE("render"){
             REQUIRE(*pb2.find<i32>("ii") == 20);
             REQUIRE(*pb2.find<f32>("f") == 1.f);
         }
-    }
+    }*/
     SECTION("index_declaration"){
         index_declaration id;
         REQUIRE(id.type() == index_declaration::index_type::unsigned_short);

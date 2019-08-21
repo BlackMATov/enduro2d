@@ -554,12 +554,12 @@ namespace e2d
             : nullptr;
     }
 
-    inline render::property_map& render::property_map::assign(str_hash key, property_value&& value) {
+    inline render::property_map& render::property_map::property(str_hash key, property_value&& value) {
         values_[key] = std::move(value);
         return *this;
     }
 
-    inline render::property_map& render::property_map::assign(str_hash key, const property_value& value) {
+    inline render::property_map& render::property_map::property(str_hash key, const property_value& value) {
         values_[key] = value;
         return *this;
     }
@@ -582,7 +582,7 @@ namespace e2d
     inline render::property_map& render::property_map::merge(const property_map& other) {
         if ( this != &other ) {
             other.foreach([this](str_hash name, const property_value& value){
-                assign(name, value);
+                property(name, value);
             });
         }
         return *this;

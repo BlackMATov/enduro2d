@@ -2297,7 +2297,7 @@ namespace e2d::json_utils
                         return false;\
                     }\
                 }\
-                props.assign(property_json["name"].GetString(), value);\
+                props.property(property_json["name"].GetString(), value);\
                 continue;\
             }
 

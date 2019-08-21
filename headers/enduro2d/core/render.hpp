@@ -698,8 +698,8 @@ namespace e2d
             template< typename T >
             const T* find(str_hash key) const noexcept;
 
-            property_map& assign(str_hash key, property_value&& value);
-            property_map& assign(str_hash key, const property_value& value);
+            property_map& property(str_hash key, property_value&& value);
+            property_map& property(str_hash key, const property_value& value);
 
             void clear() noexcept;
             std::size_t size() const noexcept;

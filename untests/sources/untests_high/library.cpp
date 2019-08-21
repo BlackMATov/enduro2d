@@ -253,7 +253,7 @@ TEST_CASE("library"){
         if ( modules::is_initialized<render>() ) {
             auto material_res = l.load_asset<material_asset>("material.json");
             REQUIRE(material_res);
-            {
+            /*{
                 auto texture_res = l.load_asset<texture_asset>("image.png");
                 REQUIRE(texture_res);
                 REQUIRE(texture_res->content());
@@ -361,7 +361,7 @@ TEST_CASE("library"){
 
                 REQUIRE(pass.states().blending().rgb_equation() == render::blending_equation::subtract);
                 REQUIRE(pass.states().blending().alpha_equation() == render::blending_equation::reverse_subtract);
-            }
+            }*/
         }
     }
 }

@@ -88,10 +88,10 @@ namespace e2d::render_system_impl
                     : m4f::identity();
                 const m4f& m_p = cam.projection();
 
-                props.assign(matrix_v_property_hash, m_v)
-                    .assign(matrix_p_property_hash, m_p)
-                    .assign(matrix_vp_property_hash, m_v * m_p)
-                    .assign(game_time_property_hash, engine.time());
+                props.property(matrix_v_property_hash, m_v)
+                    .property(matrix_p_property_hash, m_p)
+                    .property(matrix_vp_property_hash, m_v * m_p)
+                    .property(game_time_property_hash, engine.time());
 
                 cbuf = render_.create_const_buffer(
                     pass.templ,
@@ -174,7 +174,7 @@ namespace e2d::render_system_impl
             render_.update_buffer(
                 mdl_r.constants(),
                 render::property_map()
-                    .assign(matrix_m_property_hash, node->world_matrix()));
+                    .property(matrix_m_property_hash, node->world_matrix()));
         }
 
         render::bind_vertex_buffers_command vb_cmd;
