@@ -14,6 +14,9 @@ namespace e2d
 {
     class camera final {
     public:
+        class input_handler_tag final {
+        };
+    public:
         camera() = default;
 
         camera& depth(i32 value) noexcept;

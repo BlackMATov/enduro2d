@@ -1,0 +1,49 @@
+/*******************************************************************************
+ * This file is part of the "Enduro2D"
+ * For conditions of distribution and use, see copyright notice in LICENSE.md
+ * Copyright (C) 2018-2019, by Matvey Cherevko (blackmatov@gmail.com)
+ ******************************************************************************/
+
+#pragma once
+
+#include "../_high.hpp"
+
+namespace e2d
+{
+    class input_event final {
+    public:
+        enum event_type : u32 {
+            mouse_move = 1 << 0,
+            touch_down = 1 << 1,
+            touch_up = 1 << 2,
+            touch_move = 1 << 3,
+        };
+
+        class event_data final {
+        public:
+            m4f view_proj;
+            b2f viewport;
+            v2f center;
+            v2f delta;
+            f32 radius;
+            event_type type;
+        };
+        using data_ptr = std::shared_ptr<const event_data>;
+    public:
+        input_event(const data_ptr&);
+
+        const data_ptr& data() const noexcept;
+    private:
+        data_ptr data_;
+    };
+}
+
+namespace e2d
+{
+    inline input_event::input_event(const data_ptr& d)
+    : data_(d) {}
+
+    inline const input_event::data_ptr& input_event::data() const noexcept {
+        return data_;
+    }
+}

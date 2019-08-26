@@ -47,10 +47,14 @@ namespace e2d
     class renderer;
     class scene;
     class sprite_renderer;
+    class touchable;
+    class input_event;
 
     class flipbook_system;
     class label_system;
     class render_system;
+    class input_event_system_per_update;
+    class input_event_system_post_update;
 
     template < typename Asset, typename Content >
     class content_asset;
