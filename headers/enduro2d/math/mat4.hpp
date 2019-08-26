@@ -733,4 +733,53 @@ namespace e2d::math
             mm[2], mm[6], mm[10], mm[14],
             mm[3], mm[7], mm[11], mm[15]};
     }
+    
+    //
+    // project
+    //
+
+    template < typename T >
+    std::enable_if_t<std::is_floating_point_v<T>,vec3<T>>
+    project(const vec3<T>& world_space, const mat4<T>& proj, const rect<T>& viewport) noexcept {
+        vec4<T> v = vec4<T>(world_space, T(1));
+        v = v * proj;
+        E2D_ASSERT(!math::is_near_zero(v.w, math::default_precision<T>()));
+        v /= v.w;
+        v.x = (v.x * T(0.5) + T(0.5)) * viewport.size.x + viewport.position.x;
+        v.y = (v.y * T(0.5) + T(0.5)) * viewport.size.y + viewport.position.y;
+        return vec3<T>(v);
+    }
+
+    //
+    // unproject
+    //
+    
+    template < typename T >
+    std::enable_if_t<std::is_floating_point_v<T>,vec3<T>>
+    unproject(const vec3<T>& window_space, const mat4<T>& inv_proj, const rect<T>& viewport) noexcept {
+        vec4<T> v = vec4<T>(window_space, T(1));
+        v.x = ((v.x - viewport.position.x) / viewport.size.x) * T(2) - T(1);
+        v.y = ((v.y - viewport.position.y) / viewport.size.y) * T(2) - T(1);
+        vec4<T> world_v = v * inv_proj;
+        E2D_ASSERT(!math::is_near_zero(world_v.w, math::default_precision<T>()));
+        world_v /= world_v.w;
+        return vec3<T>(world_v);
+    }
+
+    //
+    // approximately
+    //
+
+    template < typename T >
+    bool approximately(
+        const mat4<T>& l,
+        const mat4<T>& r,
+        T precision = math::default_precision<T>()) noexcept
+    {
+        return
+            math::approximately(l.rows[0], r.rows[0], precision) &&
+            math::approximately(l.rows[1], r.rows[1], precision) &&
+            math::approximately(l.rows[2], r.rows[2], precision) &&
+            math::approximately(l.rows[3], r.rows[3], precision);
+    }
 }

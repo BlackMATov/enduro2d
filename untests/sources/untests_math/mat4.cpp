@@ -165,4 +165,24 @@ TEST_CASE("mat4") {
         REQUIRE(m4i::identity() == m4i::identity());
         REQUIRE_FALSE(m4i::identity() != m4i::identity());
     }
+    {
+        // z-axis: positive form zero to one
+        b2f viewport(100.0f, 150.0f, 600.0f, 400.0f);
+        m4f proj = math::make_perspective_lh_matrix4(deg<f32>(60.0f), viewport.size.x / viewport.size.y, 1.0f, 100.0f);
+        m4f view = m4f::identity();
+        m4f vp = view * proj;
+        auto vp_inv_opt = math::inversed(vp);
+        m4f vp_inv = vp_inv_opt.first;
+        REQUIRE(vp_inv_opt.second);
+
+        v3f world_p1 = v3f(0.0f, 0.0f, 10.0f);
+        v3f wnd_p1 = math::project(world_p1, vp, viewport);
+        v3f world_u1 = math::unproject(wnd_p1, vp_inv, viewport);
+        REQUIRE(math::approximately(world_p1, world_u1, 0.01f));
+        
+        v3f world_p2 = v3f(-10.0f, 40.0f, 90.0f);
+        v3f wnd_p2 = math::project(world_p2, vp, viewport);
+        v3f world_u2 = math::unproject(wnd_p2, vp_inv, viewport);
+        REQUIRE(math::approximately(world_p2, world_u2, 0.01f));
+    }
 }
