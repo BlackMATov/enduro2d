@@ -23,6 +23,7 @@
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
 #include <enduro2d/high/systems/render_system.hpp>
+#include <enduro2d/high/systems/convex_hull_screenspace_raycast_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
 
 namespace
@@ -45,7 +46,8 @@ namespace
             ecs::registry_filler(the<world>().registry())
                 .system<flipbook_system>(world::priority_update)
                 .system<label_system>(world::priority_update)
-                .system<render_system>(world::priority_render);
+                .system<render_system>(world::priority_render)
+                .system<convex_hull_screenspace_raycast_system>(world::priority_update)
                 .system<input_event_system_per_update>(world::priority_pre_update)
                 .system<input_event_system_post_update>(world::priority_post_update);
             return !application_ || application_->initialize();
