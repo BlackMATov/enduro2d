@@ -24,14 +24,14 @@ namespace
     public:
         button() = default;
 
-        button& checked(bool value) noexcept { checked_ = value; return *this; }
-        button& checkable(bool value) noexcept { checkable_ = value; return *this; }
+        button& selected(bool value) noexcept { selected_ = value; return *this; }
+        button& selectable(bool value) noexcept { selectable_ = value; return *this; }
 
-        bool checked() const noexcept { return checked_; }
-        bool checkable() const noexcept { return checkable_; }
+        bool selected() const noexcept { return selected_; }
+        bool selectable() const noexcept { return selectable_; }
     private:
-        bool checked_ = false;
-        bool checkable_ = false;
+        bool selected_ = false;
+        bool selectable_ = false;
     };
 
     class draggable final {
@@ -46,57 +46,42 @@ namespace
                 has_touch_down |= (input.data()->type == input_event_type::touch_down);
             });
 
-            // reset checked state
+            // reset selected state
             if ( has_touch_down ) {
-                owner.for_each_component<button>(
-                [&owner](ecs::entity_id id, button& btn) {
-                    ecs::entity e(owner, id);
-                    if ( btn.checkable() && btn.checked() && !e.find_component<touch_down_event>() ) {
-                        btn.checked(false);
-                        if ( auto* spr = e.find_component<sprite_renderer>() ) {
-                            spr->tint(color32::white());
-                        }
+                owner.for_joined_components<button, sprite_renderer>(
+                [](const ecs::const_entity& e, button& btn, sprite_renderer& spr) {
+                    if ( btn.selectable() && btn.selected() && !e.find_component<touch_down_event>() ) {
+                        btn.selected(false);
+                        spr.tint(color32::white());
                     }
                 });
             }
 
             // process touch down event
-            owner.for_joined_components<touch_down_event, button>(
-            [&owner](ecs::entity_id id, const touch_down_event&, button& btn) {
-                ecs::entity e(owner, id);
-                if ( btn.checkable() ) {
-                    btn.checked(!btn.checked());
+            owner.for_joined_components<touch_down_event, button, sprite_renderer>(
+            [](ecs::entity_id id, const touch_down_event&, button& btn, sprite_renderer& spr) {
+                if ( btn.selectable() ) {
+                    btn.selected(!btn.selected());
                 }
-                if ( auto* spr = e.find_component<sprite_renderer>() ) {
-                    spr->tint(btn.checked() ? color32::blue() : color32::red());
-                }
+                spr.tint(btn.selected() ? color32::blue() : color32::red());
             });
             
             // process touch up event
-            owner.for_joined_components<touch_up_event, button>(
-            [&owner](ecs::entity_id id, const touch_up_event&, button& btn) {
-                ecs::entity e(owner, id);
-                if ( auto* spr = e.find_component<sprite_renderer>() ) {
-                    spr->tint(btn.checked() ? color32::blue() : color32::white());
-                }
+            owner.for_joined_components<touch_up_event, button, sprite_renderer>(
+            [](ecs::entity_id, const touch_up_event&, const button& btn, sprite_renderer& spr) {
+                spr.tint(btn.selected() ? color32::blue() : color32::white());
             });
 
             // process mouse enter event
-            owner.for_joined_components<mouse_enter_event, button>(
-            [&owner](ecs::entity_id id, const mouse_enter_event&, button& btn) {
-                ecs::entity e(owner, id);
-                if ( auto* spr = e.find_component<sprite_renderer>() ) {
-                    spr->tint(color32::magenta());
-                }
+            owner.for_joined_components<mouse_enter_event, button, sprite_renderer>(
+            [](ecs::entity_id, const mouse_enter_event&, const button& btn, sprite_renderer& spr) {
+                spr.tint(color32::magenta());
             });
 
             // process mouse leave event
-            owner.for_joined_components<mouse_leave_event, button>(
-            [&owner](ecs::entity_id id, const mouse_leave_event&, button& btn) {
-                ecs::entity e(owner, id);
-                if ( auto* spr = e.find_component<sprite_renderer>() ) {
-                    spr->tint(btn.checked() ? color32::blue() : color32::white());
-                }
+            owner.for_joined_components<mouse_leave_event, button, sprite_renderer>(
+            [](ecs::entity_id, const mouse_leave_event&, const button& btn, sprite_renderer& spr) {
+                spr.tint(btn.selected() ? color32::blue() : color32::white());
             });
         }
     };
@@ -104,34 +89,25 @@ namespace
     class draggable_system final : public ecs::system {
     public:
         void process(ecs::registry& owner) override {
-            owner.for_joined_components<touch_down_event, draggable>(
-            [&owner](ecs::entity_id id, const touch_down_event&, draggable& dgb) {
-                ecs::entity e(owner, id);
-                if ( auto* spr = e.find_component<sprite_renderer>() ) {
-                    spr->tint(color32::red());
-                }
+            owner.for_joined_components<touch_down_event, draggable, sprite_renderer>(
+            [](const ecs::const_entity& e, const touch_down_event&, const draggable&, sprite_renderer& spr) {
+                spr.tint(color32::red());
             });
             
-            owner.for_joined_components<touch_up_event, draggable>(
-            [&owner](ecs::entity_id id, const touch_up_event&, draggable& dgb) {
-                ecs::entity e(owner, id);
-                if ( auto* spr = e.find_component<sprite_renderer>() ) {
-                    spr->tint(color32::green());
-                }
+            owner.for_joined_components<touch_up_event, draggable, sprite_renderer>(
+            [](const ecs::const_entity& e, const touch_up_event&, const draggable&, sprite_renderer& spr) {
+                spr.tint(color32::green());
             });
             
-            owner.for_joined_components<touch_move_event, draggable>(
-            [&owner](ecs::entity_id id, const touch_move_event& ev, draggable& dgb) {
-                ecs::entity e(owner, id);
-                if ( auto* act = e.find_component<actor>(); act && act->node() ) {
-                    auto m_model = act->node()->world_matrix();
-                    auto mvp_inv = math::inversed(m_model * ev.data->view_proj, 0.0f).first;
-                    const f32 z = 0.0f;
-                    v3f new_point = math::unproject(v3f(ev.data->center, z), mvp_inv, ev.data->viewport);
-                    v3f old_point = math::unproject(v3f(ev.data->center + ev.data->delta, z), mvp_inv, ev.data->viewport);
-                    v3f delta = (old_point - new_point) * act->node()->scale();
-                    act->node()->translation(act->node()->translation() + delta);
-                }
+            owner.for_joined_components<touch_move_event, draggable, sprite_renderer, actor>(
+            [](const ecs::const_entity& e, const touch_move_event& ev, const draggable&, sprite_renderer& spr, actor& act) {
+                auto m_model = act.node()->world_matrix();
+                auto mvp_inv = math::inversed(m_model * ev.data->view_proj, 0.0f).first;
+                const f32 z = 0.0f;
+                v3f new_point = math::unproject(v3f(ev.data->center, z), mvp_inv, ev.data->viewport);
+                v3f old_point = math::unproject(v3f(ev.data->center + ev.data->delta, z), mvp_inv, ev.data->viewport);
+                v3f delta = (old_point - new_point) * act.node()->scale();
+                act.node()->translation(act.node()->translation() + delta);
             });
         }
     };
@@ -215,7 +191,6 @@ namespace
 
             background_i->entity_filler()
                 .component<actor>(node::create(background_i, scene_r))
-                //.component<rotator>(rotator{v3f::unit_y(), 0.0f})
                 .component<renderer>(renderer()
                     .materials({sprite_mat}))
                 .component<sprite_renderer>(sprite1_res)
@@ -260,7 +235,7 @@ namespace
                         .component<rectangle_shape>(b2f(
                             sprite1_res->content().texrect().position - sprite1_res->content().pivot(),
                             sprite1_res->content().texrect().size))
-                        .component<button>(button().checkable(true));
+                        .component<button>(button().selectable(true));
 
                     node_iptr sprite_n = sprite_i->get_component<actor>().get().node();
                     sprite_n->scale(v3f(0.2f, 0.2f, 1.f));
