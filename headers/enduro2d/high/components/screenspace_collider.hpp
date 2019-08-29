@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "circle_shape.hpp"
+#include "shape2d.hpp"
 
 #include "../factory.hpp"
 
@@ -19,9 +19,6 @@ namespace e2d
             v2f norm;
             f32 dist;
         };
-    public:
-        convex_hull_screenspace_collider_base() = default;
-    public:
         std::array<plane2d, N> planes;
     };
 
@@ -32,4 +29,16 @@ namespace e2d
     class circle_screenspace_collider final :
         public convex_hull_screenspace_collider_base<circle_shape::detail_level>
     {};
+
+    class polygon_screenspace_collider final {
+    public:
+        struct plane2d {
+            v2f norm;
+            f32 dist;
+        };
+        struct triangle {
+            std::array<plane2d, 3> planes;
+        };
+        std::vector<triangle> triangles;
+    };
 }

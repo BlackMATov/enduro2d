@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 #include <enduro2d/high/systems/shape_projection_system.hpp>
-#include <enduro2d/high/components/convex_hull_screenspace_collider.hpp>
-#include <enduro2d/high/components/rectangle_shape.hpp>
+#include <enduro2d/high/components/screenspace_collider.hpp>
+#include <enduro2d/high/components/shape2d.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/input_event.hpp>
@@ -17,7 +17,7 @@ namespace
     
     const v3f forward = v3f(0.0f, 0.0f, 1.0f);
     
-    void project_rectangle_shape(
+    void project_rectangle(
         rectangle_screenspace_collider& screenspace_shape,
         const rectangle_shape& shape,
         const actor& act,
@@ -59,7 +59,7 @@ namespace
         }};
     }
     
-    void project_circle_shape(
+    void project_circle(
         circle_screenspace_collider& screenspace_shape,
         const circle_shape& shape,
         const actor& act,
@@ -97,12 +97,57 @@ namespace
         }
     }
 
+    void project_polygon(
+        polygon_screenspace_collider& screenspace_shape,
+        const polygon_shape& shape,
+        const actor& act,
+        const input_event& input_ev)
+    {
+        using plane2d = polygon_screenspace_collider::plane2d;
+        
+        const b2f& viewport = input_ev.data()->viewport;
+        const m4f& view_proj = input_ev.data()->view_proj;
+        const m4f m = act.node()
+            ? act.node()->world_matrix()
+            : m4f::identity();
+        const m4f mvp = m * view_proj;
+
+        screenspace_shape.triangles.resize(shape.triangles.size());
+
+        for ( size_t i = 0; i < shape.triangles.size(); ++i ) {
+            const auto& src = shape.triangles[i];
+            auto& dst = screenspace_shape.triangles[i];
+
+            const std::array<v3f, 3> projected = {{
+                math::project(src.p0, mvp, viewport),
+                math::project(src.p1, mvp, viewport),
+                math::project(src.p2, mvp, viewport)
+            }};
+            const v3f face = math::cross(
+                projected[1] - projected[0],
+                projected[2] - projected[0]);
+            const f32 sign = math::dot(face, forward) > 0.0f ? 1.0f : -1.0f;
+
+            const auto make_plane = [sign](const v3f& a, const v3f& b) {
+                v3f e2 = v3f(b.x, b.y, 0.0f) - v3f(a.x, a.y, 0.0f);
+                v2f n = math::normalized(v2f(math::cross(forward, e2)));
+                return plane2d{n, sign * -math::dot(n, v2f(a))};
+            };
+            
+            dst.planes = std::array<plane2d,3>{{
+                make_plane(projected[0], projected[1]),
+                make_plane(projected[1], projected[2]),
+                make_plane(projected[2], projected[0]),
+            }};
+        }
+    }
+
     void create_rectangle_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<rectangle_shape, actor>(
         [&owner, &input_ev](ecs::entity_id id, const rectangle_shape& shape, const actor& act) {
             ecs::entity e(owner, id);
             if ( !e.find_component<rectangle_screenspace_collider>() ) {
-                project_rectangle_shape(
+                project_rectangle(
                     e.assign_component<rectangle_screenspace_collider>(),
                     shape,
                     act,
@@ -116,8 +161,22 @@ namespace
         [&owner, &input_ev](ecs::entity_id id, const circle_shape& shape, const actor& act) {
             ecs::entity e(owner, id);
             if ( !e.find_component<circle_screenspace_collider>() ) {
-                project_circle_shape(
+                project_circle(
                     e.assign_component<circle_screenspace_collider>(),
+                    shape,
+                    act,
+                    input_ev);
+            }
+        });
+    }
+    
+    void create_polygon_shapes(ecs::registry& owner, const input_event& input_ev) {
+        owner.for_joined_components<polygon_shape, actor>(
+        [&owner, &input_ev](ecs::entity_id id, const polygon_shape& shape, const actor& act) {
+            ecs::entity e(owner, id);
+            if ( !e.find_component<polygon_screenspace_collider>() ) {
+                project_polygon(
+                    e.assign_component<polygon_screenspace_collider>(),
                     shape,
                     act,
                     input_ev);
@@ -133,7 +192,7 @@ namespace
             rectangle_screenspace_collider& screenspace_shape,
             const actor& act)
         {
-            project_rectangle_shape(screenspace_shape, shape, act, input_ev);
+            project_rectangle(screenspace_shape, shape, act, input_ev);
         });
     }
 
@@ -145,7 +204,19 @@ namespace
             circle_screenspace_collider& screenspace_shape,
             const actor& act)
         {
-            project_circle_shape(screenspace_shape, shape, act, input_ev);
+            project_circle(screenspace_shape, shape, act, input_ev);
+        });
+    }
+
+    void project_polygon_shapes(ecs::registry& owner, const input_event& input_ev) {
+        owner.for_joined_components<polygon_shape, polygon_screenspace_collider, actor>(
+        [&input_ev](
+            const ecs::const_entity& e,
+            const polygon_shape& shape,
+            polygon_screenspace_collider& screenspace_shape,
+            const actor& act)
+        {
+            project_polygon(screenspace_shape, shape, act, input_ev);
         });
     }
 }
@@ -169,10 +240,12 @@ namespace e2d
 
                 project_rectangle_shapes(owner, input_ev);
                 project_circle_shapes(owner, input_ev);
+                project_polygon_shapes(owner, input_ev);
             }
 
             create_rectangle_shapes(owner, input_ev);
             create_circle_shapes(owner, input_ev);
+            create_polygon_shapes(owner, input_ev);
         });
     }
 }

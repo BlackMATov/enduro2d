@@ -4,8 +4,8 @@
  * Copyright (C) 2018-2019, by Matvey Cherevko (blackmatov@gmail.com)
  ******************************************************************************/
 
-#include <enduro2d/high/systems/convex_hull_screenspace_raycast_system.hpp>
-#include <enduro2d/high/components/convex_hull_screenspace_collider.hpp>
+#include <enduro2d/high/systems/screenspace_raycast_system.hpp>
+#include <enduro2d/high/components/screenspace_collider.hpp>
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/touchable.hpp>
@@ -35,7 +35,7 @@ namespace
     }
 
     template < typename Collider >
-    void raycast_on_onvex_hull(
+    void raycast_on_convex_hull(
         ecs::registry& owner,
         const m4f& view_proj,
         const b2f& viewport,
@@ -61,6 +61,41 @@ namespace
             }
         });
     }
+
+    void raycast_on_polygon(
+        ecs::registry& owner,
+        const m4f& view_proj,
+        const b2f& viewport,
+        const input_event::data_ptr& ev_data)
+    {
+        owner.for_joined_components<polygon_screenspace_collider, touchable, actor>(
+        [&owner, &view_proj, &viewport, &ev_data]
+        (const ecs::entity& e, const polygon_screenspace_collider& shape, const touchable& t, const actor& act) {
+            const m4f m = act.node()
+                ? act.node()->world_matrix()
+                : m4f::identity();
+            const m4f mvp = m * view_proj;
+            const v2f touch_center = ev_data->center;
+            const f32 touch_radius = ev_data->radius;
+            
+            bool intersects = false;
+            for ( auto& tri : shape.triangles ) {
+                bool inside = true;
+                for ( auto& p : tri.planes ) {
+                    const f32 d = math::dot(p.norm, touch_center) + p.dist;
+                    inside &= (d > -touch_radius);
+                }
+                if ( inside ) {
+                    intersects = true;
+                    break;
+                }
+            }
+                    
+            if ( intersects ) {
+                owner.assign_component<touchable::capture>(e, t.depth(), t.stop_propagation(), ev_data);
+            }
+        });
+    }
 }
 
 namespace e2d
@@ -74,9 +109,9 @@ namespace e2d
         [&owner](const ecs::const_entity& e, const input_event& input_ev, camera::input_handler_tag, const camera& cam) {
             auto&[view_proj, viewport] = get_vp_and_viewport(e, cam);
 
-            //raycast_on_onvex_hull<3>(owner, view_proj, viewport, input_ev.data());
-            raycast_on_onvex_hull<rectangle_screenspace_collider>(owner, view_proj, viewport, input_ev.data());
-            raycast_on_onvex_hull<circle_screenspace_collider>(owner, view_proj, viewport, input_ev.data());
+            raycast_on_convex_hull<rectangle_screenspace_collider>(owner, view_proj, viewport, input_ev.data());
+            raycast_on_convex_hull<circle_screenspace_collider>(owner, view_proj, viewport, input_ev.data());
+            raycast_on_polygon(owner, view_proj, viewport, input_ev.data());
         });
     }
 }
