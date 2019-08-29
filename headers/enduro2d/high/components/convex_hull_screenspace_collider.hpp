@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../_high.hpp"
+#include "circle_shape.hpp"
 
 #include "../factory.hpp"
 
@@ -25,7 +25,11 @@ namespace e2d
         std::array<plane2d, N> planes;
     };
 
-    class convex_hull_screenspace_collider4 final :
+    class rectangle_screenspace_collider final :
         public convex_hull_screenspace_collider_base<4>
+    {};
+    
+    class circle_screenspace_collider final :
+        public convex_hull_screenspace_collider_base<circle_shape::detail_level>
     {};
 }

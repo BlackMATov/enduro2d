@@ -41,8 +41,6 @@ namespace
         const b2f& viewport,
         const input_event::data_ptr& ev_data)
     {
-        const auto id = ecs::detail::type_family<Collider>::id();
-
         owner.for_joined_components<Collider, touchable, actor>(
         [&owner, &view_proj, &viewport, &ev_data]
         (const ecs::entity& e, const Collider& shape, const touchable& t, const actor& act) {
@@ -77,8 +75,8 @@ namespace e2d
             auto&[view_proj, viewport] = get_vp_and_viewport(e, cam);
 
             //raycast_on_onvex_hull<3>(owner, view_proj, viewport, input_ev.data());
-            raycast_on_onvex_hull<convex_hull_screenspace_collider4>(owner, view_proj, viewport, input_ev.data());
-            //raycast_on_onvex_hull<8>(owner, view_proj, viewport, input_ev.data()); // TODO
+            raycast_on_onvex_hull<rectangle_screenspace_collider>(owner, view_proj, viewport, input_ev.data());
+            raycast_on_onvex_hull<circle_screenspace_collider>(owner, view_proj, viewport, input_ev.data());
         });
     }
 }

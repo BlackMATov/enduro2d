@@ -18,7 +18,7 @@ namespace
     const v3f forward = v3f(0.0f, 0.0f, 1.0f);
 
     void project_rectangle_shape(ecs::registry& owner, const input_event& input_ev) {
-        using collider = convex_hull_screenspace_collider4;
+        using collider = rectangle_screenspace_collider;
 
         // add projected shapes
         owner.for_each_component<rectangle_shape>(
@@ -71,11 +71,23 @@ namespace
     }
 
     void project_circle_shape(ecs::registry& owner, const input_event& input_ev) {
-        /*owner.for_joined_components<circle_bounding_shape, touchable, actor>(
-        [&owner, view_proj = std::get<0>(vp_and_viewport), viewport = std::get<1>(vp_and_viewport), &touch]
-        (const ecs::entity& e, const circle_bounding_shape& shape, const touchable& t, const actor& act) {
+        using collider = circle_screenspace_collider;
+        
+        // add projected shapes
+        owner.for_each_component<circle_shape>(
+        [&owner](ecs::entity_id id, const circle_shape&) {
+            ecs::entity e(owner, id);
+            if ( !e.find_component<collider>() ) {
+                e.assign_component<collider>();
+            }
+        });
+        
+        // update projected shapes
+        owner.for_joined_components<circle_shape, collider, actor>(
+        [&input_ev]
+        (const ecs::const_entity& e, const circle_shape& shape, collider& hull, const actor& act) {
             using plane2d = collider::plane2d;
-
+            
             const b2f viewport = input_ev.data()->viewport;
             const m4f view_proj = input_ev.data()->view_proj;
             const m4f m = act.node()
@@ -83,7 +95,7 @@ namespace
                 : m4f::identity();
             const m4f mvp = m * view_proj;
 
-            constexpr u32 cnt = 8;
+            constexpr u32 cnt = circle_shape::detail_level;
             std::array<v3f, cnt> projected;
             for ( size_t i = 0; i < cnt; ++i ) {
                 rad<f32> a = 2.0f * math::pi<f32>() * f32(i) / f32(cnt);
@@ -91,31 +103,20 @@ namespace
                 projected[i] = math::project(v3f(p, 0.0f), mvp, viewport);
             }
 
-            const v3f forward = v3f(0.0f, 0.0f, 1.0f);
-            const auto make_plane = [forward](const v3f& a, const v3f& b) {
-                v3f e2 = v3f(b.x, b.y, 0.0f) - v3f(a.x, a.y, 0.0f);
-                v2f n = math::normalized(v2f(math::cross(forward, e2)));
-                return plane2d(n, -math::dot(n, v2f(a)));
-            };
-            std::array<plane2d, cnt> planes;
-            for ( size_t i = 0; i < projected.size(); ++i ) {
-                planes[i] = make_plane(projected[i], projected[(i+1) % cnt]);
-            }
-
             const v3f face = math::cross(
                 projected[cnt/2] - projected[0],
                 projected[cnt/2+1] - projected[0]);
             const f32 sign = math::dot(face, forward) > 0.0f ? 1.0f : -1.0f;
 
-            bool inside = true;
-            for ( auto& p : planes ) {
-                const f32 d = p.distance(touch_center) * sign;
-                inside &= (d > -touch_radius);
+            const auto make_plane = [sign](const v3f& a, const v3f& b) {
+                v3f e2 = v3f(b.x, b.y, 0.0f) - v3f(a.x, a.y, 0.0f);
+                v2f n = math::normalized(v2f(math::cross(forward, e2)));
+                return plane2d{n, sign * -math::dot(n, v2f(a))};
+            };
+            for ( size_t i = 0; i < projected.size(); ++i ) {
+                hull.planes[i] = make_plane(projected[i], projected[(i+1) % cnt]);
             }
-            if ( inside ) {
-                owner.assign_component<touch_capture>(e, t.depth(), t.stop_propagation(), touch.data());
-            }
-        });*/
+        });
     }
 }
 

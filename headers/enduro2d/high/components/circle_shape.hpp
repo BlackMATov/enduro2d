@@ -10,22 +10,16 @@
 
 namespace e2d
 {
-    class rectangle_shape final {
+    class circle_shape final {
     public:
-        rectangle_shape(const b2f& r);
+        circle_shape(const v2f& c, f32 r) : center_(c), radius_(r) {}
+        
+        v2f center() const noexcept { return center_; }
+        f32 radius() const noexcept { return radius_; }
 
-        const b2f& rectangle() const noexcept;
+        static constexpr u32 detail_level = 16; // segments per circle
     private:
-        b2f rect_;
+        v2f center_;
+        f32 radius_ = 0.0f;
     };
-}
-
-namespace e2d
-{
-    inline rectangle_shape::rectangle_shape(const b2f& r)
-    : rect_(r) {}
-
-    inline const b2f& rectangle_shape::rectangle() const noexcept {
-        return rect_;
-    }
 }
