@@ -12,12 +12,6 @@ namespace e2d
 {
     class touchable final {
     public:
-        class input_focus_tag final {};
-        class touched_tag final {};
-        class untouched_tag final {};
-        class mouse_over_tag final {};
-        class touch_move_tag final {};
-
         class capture final {
         public:
             capture(u32 depth, bool stop, const input_event::data_ptr& ev_data);

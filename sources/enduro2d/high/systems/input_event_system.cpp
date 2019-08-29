@@ -32,37 +32,44 @@ namespace
             m_v *  m_p,
             cam.viewport().cast_to<f32>());
     }
+    
+    using input_event_type = input_event::event_type;
 }
 
 namespace e2d
 {
-    using input_event_type = input_event::event_type;
-
-    void input_event_system_per_update::process(ecs::registry& owner) {
+    void input_event_system_pre_update::process(ecs::registry& owner) {
         owner.remove_all_components<input_event>();
-
+        owner.remove_all_components<touch_down_event>();
+        owner.remove_all_components<touch_up_event>();
+        owner.remove_all_components<touch_move_event>();
+        owner.remove_all_components<mouse_enter_event>();
+        owner.remove_all_components<mouse_leave_event>();
+        owner.remove_all_components<mouse_move_event>();
+        
         const mouse& m = the<input>().mouse();
             
-        u32 ev_type = 0;
+        input_event_type ev_type = input_event_type(0);
         mouse_delta_ = v2f();
 
         if ( m.is_button_just_pressed(mouse_button::left) ) {
-            math::set_flags_inplace(ev_type, input_event_type::touch_down);
-        }
-        if ( m.is_button_just_released(mouse_button::left) ) {
-            math::set_flags_inplace(ev_type, input_event_type::touch_up);
-            math::set_flags_inplace(ev_type, input_event_type::mouse_move);
-        }
-        if ( !math::approximately(last_cursor_pos_, m.cursor_pos(), 0.1f) ) {
+            ev_type = input_event_type::touch_down;
+            mouse_delta_ = v2f();
+            last_cursor_pos_ = m.cursor_pos();
+
+        } else if ( m.is_button_just_released(mouse_button::left) ) {
+            ev_type = input_event_type::touch_up;
+
+        } else if ( !math::approximately(last_cursor_pos_, m.cursor_pos(), 0.1f) ) {
             if ( m.is_button_pressed(mouse_button::left) ) {
-                math::set_flags_inplace(ev_type, input_event_type::touch_move);
+                ev_type = input_event_type::touch_move;
+            } else {
+                ev_type = input_event_type::mouse_move;
             }
             mouse_delta_ = m.cursor_pos() - last_cursor_pos_;
             last_cursor_pos_ = m.cursor_pos();
-            math::set_flags_inplace(ev_type, input_event_type::mouse_move);
-        }
 
-        if ( !ev_type ) {
+        } else {
             return;
         }
 
@@ -71,7 +78,8 @@ namespace e2d
         m4f vp;
 
         owner.for_joined_components<camera::input_handler_tag, camera>(
-        [&cam_e, &viewport, &vp, pos = m.cursor_pos()](const ecs::const_entity& e, camera::input_handler_tag, const camera& cam) {
+        [&cam_e, &viewport, &vp, pos = m.cursor_pos()]
+        (const ecs::const_entity& e, camera::input_handler_tag, const camera& cam) {
             if ( cam.target() ) {
                 return;
             }
@@ -91,71 +99,53 @@ namespace e2d
                 v2f(m.cursor_pos().x, viewport.size.y - m.cursor_pos().y),
                 v2f(mouse_delta_.x, -mouse_delta_.y),
                 4.0f,
-                input_event_type(ev_type)});
-                
-            // TODO: for input focus - save camera entity to allow event processing outside of the viewport
-            bool has_focus = false;
-            owner.for_joined_components<touchable::input_focus_tag, touchable>(
-            [&owner, &has_focus, ev_data](ecs::entity_id e, touchable::input_focus_tag, const touchable& t) {
-                has_focus |= true;
-                ecs::entity(owner, e)
-                    .assign_component<touchable::capture>(t.depth(), t.stop_propagation(), ev_data);
-            });
+                ev_type});
 
-            if ( !has_focus ) {
-                ecs::entity(owner, cam_e.id())
-                    .assign_component<input_event>(ev_data);
+            switch ( ev_type ) {
+                case input_event_type::mouse_move:
+                    ecs::entity(owner, cam_e.id()).assign_component<input_event>(ev_data);
+                    break;
+
+                case input_event_type::touch_down:
+                    ecs::entity(owner, cam_e.id()).assign_component<input_event>(ev_data);
+                    break;
+
+                case input_event_type::touch_up:
+                    owner.for_each_component<touched_tag>(
+                    [&owner, ev_data](ecs::entity_id id, touched_tag) {
+                        ecs::entity(owner, id).assign_component<touch_up_event>(touch_up_event{ev_data});
+                    });
+                    owner.remove_all_components<touch_focus_tag>();
+                    owner.remove_all_components<touched_tag>();
+                    break;
+
+                case input_event_type::touch_move:
+                    owner.for_joined_components<touch_focus_tag>(
+                    [&owner, ev_data](ecs::entity_id id, touch_focus_tag) {
+                        ecs::entity(owner, id).assign_component<touch_move_event>(touch_move_event{ev_data});
+                    });
+                    break;
             }
         }
-
-        // reset previous state
-                
-        if ( math::check_any_flags(ev_type, input_event_type::mouse_move) ) {
-            /*owner.for_joined_components<touchable::mouse_over_tag, input_callback>(
-            [&owner](ecs::entity_id e, const mouse_over_tag&, input_callback& cb) {
-                ecs::entity ent(owner, e);
-                input_event_data ev_data;
-                ev_data.type = input_event_type::mouse_over;
-                cb.call(ent, false, ev_data);
-            });*/
-            owner.remove_all_components<touchable::mouse_over_tag>();
-        }
-
-        if ( math::check_any_flags(ev_type, input_event_type::touch_down) ) {
-            /*owner.for_joined_components<touched_tag, input_callback>(
-            [&owner](ecs::entity_id e, const touched_tag&, input_callback& cb) {
-                ecs::entity ent(owner, e);
-                input_event_data ev_data;
-                ev_data.type = input_event_type::touch_down;
-                cb.call(ent, false, ev_data);
-            });*/
-            owner.remove_all_components<touchable::touched_tag>();
-        }
-
-        if ( !math::check_any_flags(ev_type, input_event_type::touch_up) ) {
-            /*owner.for_joined_components<untouched_tag, input_callback>(
-            [&owner](ecs::entity_id e, const untouched_tag&, input_callback& cb) {
-                ecs::entity ent(owner, e);
-                input_event_data ev_data;
-                ev_data.type = input_event_type::touch_up;
-                cb.call(ent, false, ev_data);
-            });*/
-            owner.remove_all_components<touchable::untouched_tag>();
-        }
-           
-        if ( math::check_any_flags(ev_type, input_event_type::touch_up) ) {
-            /*owner.for_joined_components<touch_move_tag, input_callback>(
-            [&owner](ecs::entity_id e, const touch_move_tag&, input_callback& cb) {
-                ecs::entity ent(owner, e);
-                input_event_data ev_data;
-                ev_data.type = input_event_type::touch_move;
-                cb.call(ent, false, ev_data);
-            });*/
-            owner.remove_all_components<touchable::touch_move_tag>();
-        }
     }
-    
+
     void input_event_system_post_update::process(ecs::registry& owner) {
+        const auto add_mouse_leave_events = [this, &owner](const input_event::data_ptr& ev_data) {
+            owner.for_each_component<mouse_over_tag>(
+            [&owner, ev_data, fid = frame_id_](ecs::entity_id id, const mouse_over_tag& tag) {
+                ecs::entity e(owner, id);
+                if ( tag.frame_id != fid ) {
+                    e.assign_component<mouse_leave_event>(mouse_leave_event{ev_data});
+                }
+            });
+            owner.for_each_component<mouse_leave_event>(
+            [&owner](ecs::entity_id id, const mouse_leave_event&) {
+                ecs::entity(owner, id).remove_component<mouse_over_tag>();
+            });
+        };
+
+        ++frame_id_;
+
         ecs::entity_id capture_id;
         input_event::data_ptr ev_data;
         u32 depth = 0;
@@ -173,29 +163,45 @@ namespace e2d
         owner.remove_all_components<touchable::capture>();
 
         if ( !ev_data ) {
+            // for move_move only
+            owner.for_each_component<input_event>(
+            [&ev_data](const ecs::entity&, const input_event& input) {
+                if ( input.data()->type == input_event_type::mouse_move ) {
+                    ev_data = input.data();
+                }
+            });
+            if ( ev_data ) {
+                add_mouse_leave_events(ev_data);
+            }
             return;
         }
 
-        auto add_tag = [ev_type = u32(ev_data->type)](ecs::entity& e) {
-            if ( math::check_any_flags(ev_type, input_event_type::mouse_move) ) {
-                e.assign_component<touchable::mouse_over_tag>();
+        E2D_ASSERT(ev_data->type == input_event_type::mouse_move
+            || ev_data->type == input_event_type::touch_down);
+
+        auto add_tag = [&ev_data, fid = frame_id_](ecs::entity& e) {
+            if ( ev_data->type == input_event_type::touch_down ) {
+                e.assign_component<touched_tag>();
+                e.assign_component<touch_down_event>(touch_down_event{ev_data});
             }
-            if ( math::check_any_flags(ev_type, input_event_type::touch_down) ) {
-                e.assign_component<touchable::touched_tag>();
-            }
-            if ( math::check_any_flags(ev_type, input_event_type::touch_up) ) {
-                e.assign_component<touchable::untouched_tag>();
-            }
-            if ( math::check_any_flags(ev_type, input_event_type::touch_move) ) {
-                e.assign_component<touchable::touch_move_tag>();
+            if ( ev_data->type == input_event_type::mouse_move ) {
+                if ( auto* tag = e.find_component<mouse_over_tag>() ) {
+                    tag->frame_id = fid;
+                    e.assign_component<mouse_move_event>(mouse_move_event{ev_data});
+                } else {
+                    e.assign_component<mouse_over_tag>(mouse_over_tag{fid});
+                    e.assign_component<mouse_enter_event>(mouse_enter_event{ev_data});
+                }
             }
         };
 
-        ecs::entity e(owner, capture_id);
-        add_tag(e);
+        ecs::entity_id last_touched = capture_id;
+        ecs::entity top_e(owner, capture_id);
+
+        add_tag(top_e);
            
         if ( !stop_prop ) {
-            auto* act = e.find_component<actor>();
+            auto* act = top_e.find_component<actor>();
             if ( act && act->node() ) {
                 for ( auto n = act->node()->parent(); n; n = n->parent() ) {
                     if ( !n->owner() ) {
@@ -203,6 +209,7 @@ namespace e2d
                     }
                     auto* t_comp = n->owner()->entity().find_component<touchable>();
                     if ( t_comp ) {
+                        last_touched = n->owner()->entity().id();
                         add_tag(n->owner()->entity());
                         if ( t_comp->stop_propagation() ) {
                             break;
@@ -212,41 +219,13 @@ namespace e2d
             }
         }
             
-        if ( !!(ev_data->type & input_event_type::mouse_move) ) {
-            /*owner.for_joined_components<mouse_over_tag, input_callback>(
-            [&owner, &ev_data](ecs::entity_id e, const mouse_over_tag&, input_callback& cb) {
-                ecs::entity ent(owner, e);
-                auto data = *ev_data;
-                data.type = input_event_type::mouse_over;
-                cb.call(ent, true, data);
-            });*/
+        if ( ev_data->type == input_event_type::touch_down ) {
+            ecs::entity(owner, last_touched)
+                .assign_component<touch_focus_tag>();
         }
-        if ( !!(ev_data->type & input_event_type::touch_down) ) {
-            /*owner.for_joined_components<touched_tag, input_callback>(
-            [&owner, &ev_data](ecs::entity_id e, const touched_tag&, input_callback& cb) {
-                ecs::entity ent(owner, e);
-                auto data = *ev_data;
-                data.type = input_event_type::touch_down;
-                cb.call(ent, true, data);
-            });*/
-        }
-        if ( !!(ev_data->type & input_event_type::touch_move) ) {
-            /*owner.for_joined_components<touch_move_tag, input_callback>(
-            [&owner, &ev_data](ecs::entity_id e, const touch_move_tag&, input_callback& cb) {
-                ecs::entity ent(owner, e);
-                auto data = *ev_data;
-                data.type = input_event_type::touch_move;
-                cb.call(ent, true, data);
-            });*/
-        }
-        if ( !!(ev_data->type & input_event_type::touch_up) ) {
-            /*owner.for_joined_components<untouched_tag, input_callback>(
-            [&owner, &ev_data](ecs::entity_id e, const untouched_tag&, input_callback& cb) {
-                ecs::entity ent(owner, e);
-                auto data = *ev_data;
-                data.type = input_event_type::touch_up;
-                cb.call(ent, true, data);
-            });*/
+            
+        if ( ev_data->type == input_event_type::mouse_move ) {
+            add_mouse_leave_events(ev_data);
         }
     }
 }

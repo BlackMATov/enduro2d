@@ -36,6 +36,49 @@ namespace e2d
     private:
         data_ptr data_;
     };
+    
+
+    class touch_down_event {
+    public:
+        input_event::data_ptr data;
+    };
+
+    class touch_up_event {
+    public:
+        input_event::data_ptr data;
+    };
+
+    class touch_move_event {
+    public:
+        input_event::data_ptr data;
+    };
+
+    class touched_tag {
+    };
+
+    class touch_focus_tag {
+    };
+
+    
+    class mouse_enter_event {
+    public:
+        input_event::data_ptr data;
+    };
+
+    class mouse_leave_event {
+    public:
+        input_event::data_ptr data;
+    };
+
+    class mouse_move_event {
+    public:
+        input_event::data_ptr data;
+    };
+    
+    class mouse_over_tag {
+    public:
+        u32 frame_id = 0;
+    };
 }
 
 namespace e2d

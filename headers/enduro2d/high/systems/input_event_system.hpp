@@ -10,7 +10,7 @@
 
 namespace e2d
 {
-    class input_event_system_per_update final : public ecs::system {
+    class input_event_system_pre_update final : public ecs::system {
     public:
         void process(ecs::registry& owner) override;
     private:
@@ -21,5 +21,7 @@ namespace e2d
     class input_event_system_post_update final : public ecs::system {
     public:
         void process(ecs::registry& owner) override;
+    private:
+        u32 frame_id_ = 0;
     };
 }

@@ -35,6 +35,10 @@
 #include "components/renderer.hpp"
 #include "components/scene.hpp"
 #include "components/sprite_renderer.hpp"
+#include "components/input_event.hpp"
+#include "components/rectangle_shape.hpp"
+#include "components/convex_hull_screenspace_collider.hpp"
+#include "components/touchable.hpp"
 
 #include "systems/flipbook_system.hpp"
 #include "systems/label_system.hpp"

@@ -8,24 +8,10 @@
 
 #include "../_high.hpp"
 
-#include "../factory.hpp"
-
 namespace e2d
 {
-    template < u32 N >
-    class convex_hull_screenspace_collider_base {
+    class shape_projection_system final : public ecs::system {
     public:
-        struct plane2d {
-            v2f norm;
-            f32 dist;
-        };
-    public:
-        convex_hull_screenspace_collider_base() = default;
-    public:
-        std::array<plane2d, N> planes;
+        void process(ecs::registry& owner) override;
     };
-
-    class convex_hull_screenspace_collider4 final :
-        public convex_hull_screenspace_collider_base<4>
-    {};
 }

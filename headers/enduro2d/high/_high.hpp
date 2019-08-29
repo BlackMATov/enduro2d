@@ -48,7 +48,6 @@ namespace e2d
     class scene;
     class sprite_renderer;
     class touchable;
-    class convex_hull_screenspace_collider;
     class input_event;
 
     class flipbook_system;

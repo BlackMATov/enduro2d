@@ -19,11 +19,13 @@
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/scene.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
+#include <enduro2d/high/components/rectangle_shape.hpp>
 
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
 #include <enduro2d/high/systems/render_system.hpp>
 #include <enduro2d/high/systems/convex_hull_screenspace_raycast_system.hpp>
+#include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
 
 namespace
@@ -47,9 +49,10 @@ namespace
                 .system<flipbook_system>(world::priority_update)
                 .system<label_system>(world::priority_update)
                 .system<render_system>(world::priority_render)
-                .system<convex_hull_screenspace_raycast_system>(world::priority_update)
-                .system<input_event_system_per_update>(world::priority_pre_update)
-                .system<input_event_system_post_update>(world::priority_post_update);
+                .system<input_event_system_pre_update>(world::priority_pre_update)
+                .system<shape_projection_system>(world::priority_pre_update + 1)
+                .system<convex_hull_screenspace_raycast_system>(world::priority_pre_update + 2)
+                .system<input_event_system_post_update>(world::priority_pre_update + 3);
             return !application_ || application_->initialize();
         }
 
@@ -143,7 +146,8 @@ namespace e2d
             .register_component<model_renderer>("model_renderer")
             .register_component<renderer>("renderer")
             .register_component<scene>("scene")
-            .register_component<sprite_renderer>("sprite_renderer");
+            .register_component<sprite_renderer>("sprite_renderer")/*
+            .register_component<rectangle_shape>("rectangle_shape")*/;
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }

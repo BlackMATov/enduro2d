@@ -12,20 +12,22 @@
 
 namespace e2d
 {
-    template < u32 N >
-    class convex_hull_screenspace_collider_base {
+    class rectangle_shape final {
     public:
-        struct plane2d {
-            v2f norm;
-            f32 dist;
-        };
-    public:
-        convex_hull_screenspace_collider_base() = default;
-    public:
-        std::array<plane2d, N> planes;
-    };
+        rectangle_shape(const b2f& r);
 
-    class convex_hull_screenspace_collider4 final :
-        public convex_hull_screenspace_collider_base<4>
-    {};
+        const b2f& rectangle() const noexcept;
+    private:
+        b2f rect_;
+    };
+}
+
+namespace e2d
+{
+    inline rectangle_shape::rectangle_shape(const b2f& r)
+    : rect_(r) {}
+
+    inline const b2f& rectangle_shape::rectangle() const noexcept {
+        return rect_;
+    }
 }
