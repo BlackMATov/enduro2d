@@ -130,6 +130,8 @@ namespace e2d
 
         template < typename Iter >
         std::size_t extract_all_nodes(Iter iter) const;
+
+        u32 render_order() const noexcept;
     protected:
         node() = default;
         node(const gobject_iptr& owner);

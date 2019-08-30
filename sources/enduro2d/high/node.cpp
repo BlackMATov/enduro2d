@@ -387,6 +387,32 @@ namespace e2d
         }
         return const_node_iptr(&*iter);
     }
+
+    u32 node::render_order() const noexcept {
+        u32 count = 1;
+        if ( parent_ ) {
+            for ( auto& child : parent_->children_ ) {
+                count += 1u;
+                if ( &child == this ) {
+                    break;
+                }
+                count += u32(child.child_count_recursive());
+            }
+            for ( auto curr = parent_->parent_, prev = parent_;
+                  curr;
+                  prev = curr, curr = curr->parent_ )
+            {
+                for ( auto& child : curr->children_ ) {
+                    count += 1u;
+                    if ( &child == prev ) {
+                        break;
+                    }
+                    count += u32(child.child_count_recursive());
+                }
+            }
+        }
+        return count;
+    }
 }
 
 namespace e2d
