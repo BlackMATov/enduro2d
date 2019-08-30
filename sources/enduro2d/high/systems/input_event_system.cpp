@@ -100,14 +100,12 @@ namespace e2d
                 v2f(mouse_delta_.x, -mouse_delta_.y),
                 4.0f,
                 ev_type});
+            
+            ecs::entity(owner, cam_e.id()).assign_component<input_event>(ev_data);
 
             switch ( ev_type ) {
                 case input_event_type::mouse_move:
-                    ecs::entity(owner, cam_e.id()).assign_component<input_event>(ev_data);
-                    break;
-
                 case input_event_type::touch_down:
-                    ecs::entity(owner, cam_e.id()).assign_component<input_event>(ev_data);
                     break;
 
                 case input_event_type::touch_up:
@@ -144,8 +142,6 @@ namespace e2d
             });
         };
 
-        ++frame_id_;
-
         ecs::entity_id capture_id;
         input_event::data_ptr ev_data;
         u32 depth = 0;
@@ -170,11 +166,16 @@ namespace e2d
                     ev_data = input.data();
                 }
             });
-            if ( ev_data ) {
-                add_mouse_leave_events(ev_data);
+            if ( !ev_data ) {
+                return;
             }
+
+            ++frame_id_;
+            add_mouse_leave_events(ev_data);
             return;
         }
+
+        ++frame_id_;
 
         E2D_ASSERT(ev_data->type == input_event_type::mouse_move
             || ev_data->type == input_event_type::touch_down);

@@ -12,11 +12,11 @@ namespace e2d
 {
     class input_event final {
     public:
-        enum event_type : u32 {
-            mouse_move = 1 << 0,
-            touch_down = 1 << 1,
-            touch_up = 1 << 2,
-            touch_move = 1 << 3,
+        enum class event_type {
+            mouse_move,
+            touch_down,
+            touch_up,
+            touch_move,
         };
 
         class event_data final {

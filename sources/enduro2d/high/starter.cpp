@@ -19,12 +19,12 @@
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/scene.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
-#include <enduro2d/high/components/rectangle_shape.hpp>
+#include <enduro2d/high/components/shape2d.hpp>
 
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
 #include <enduro2d/high/systems/render_system.hpp>
-#include <enduro2d/high/systems/convex_hull_screenspace_raycast_system.hpp>
+#include <enduro2d/high/systems/screenspace_raycast_system.hpp>
 #include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
 

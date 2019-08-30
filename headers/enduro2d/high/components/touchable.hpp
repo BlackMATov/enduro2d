@@ -28,12 +28,8 @@ namespace e2d
         touchable() = default;
         touchable(bool stop);
 
-        void depth(u32 value) noexcept;
-
-        u32 depth() const noexcept;
         bool stop_propagation() const noexcept;
     private:
-        u32 depth_ = 0;
         bool stop_propagation_ = false;
     };
 }
@@ -42,14 +38,6 @@ namespace e2d
 {
     inline touchable::touchable(bool stop)
     : stop_propagation_(stop) {}
-
-    inline void touchable::depth(u32 value) noexcept {
-        depth_ = value;
-    }
-
-    inline u32 touchable::depth() const noexcept {
-        return depth_;
-    }
 
     inline bool touchable::stop_propagation() const noexcept {
         return stop_propagation_;

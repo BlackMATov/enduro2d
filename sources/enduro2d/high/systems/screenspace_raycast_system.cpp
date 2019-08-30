@@ -15,39 +15,11 @@ namespace
 {
     using namespace e2d;
 
-    std::tuple<m4f,b2f> get_vp_and_viewport(
-        const ecs::const_entity& e,
-        const camera& cam) noexcept
-    {
-        const actor* cam_a = e.find_component<actor>();
-        const m4f& cam_w = cam_a && cam_a->node()
-            ? cam_a->node()->world_matrix()
-            : m4f::identity();
-        const auto cam_w_inv = math::inversed(cam_w);
-        const m4f& m_v = cam_w_inv.second
-            ? cam_w_inv.first
-            : m4f::identity();
-        const m4f& m_p = cam.projection();
-
-        return std::make_tuple(
-            m_v *  m_p,
-            cam.viewport().cast_to<f32>());
-    }
-
     template < typename Collider >
-    void raycast_on_convex_hull(
-        ecs::registry& owner,
-        const m4f& view_proj,
-        const b2f& viewport,
-        const input_event::data_ptr& ev_data)
-    {
+    void raycast_on_convex_hull(ecs::registry& owner, const input_event::data_ptr& ev_data) {
         owner.for_joined_components<Collider, touchable, actor>(
-        [&owner, &view_proj, &viewport, &ev_data]
+        [&owner, &ev_data]
         (const ecs::entity& e, const Collider& shape, const touchable& t, const actor& act) {
-            const m4f m = act.node()
-                ? act.node()->world_matrix()
-                : m4f::identity();
-            const m4f mvp = m * view_proj;
             const v2f touch_center = ev_data->center;
             const f32 touch_radius = ev_data->radius;
 
@@ -57,24 +29,16 @@ namespace
                 inside &= (d > -touch_radius);
             }
             if ( inside ) {
-                owner.assign_component<touchable::capture>(e, t.depth(), t.stop_propagation(), ev_data);
+                u32 d = act.node()->render_order();
+                owner.assign_component<touchable::capture>(e, d, t.stop_propagation(), ev_data);
             }
         });
     }
 
-    void raycast_on_polygon(
-        ecs::registry& owner,
-        const m4f& view_proj,
-        const b2f& viewport,
-        const input_event::data_ptr& ev_data)
-    {
+    void raycast_on_polygon(ecs::registry& owner, const input_event::data_ptr& ev_data) {
         owner.for_joined_components<polygon_screenspace_collider, touchable, actor>(
-        [&owner, &view_proj, &viewport, &ev_data]
+        [&owner, &ev_data]
         (const ecs::entity& e, const polygon_screenspace_collider& shape, const touchable& t, const actor& act) {
-            const m4f m = act.node()
-                ? act.node()->world_matrix()
-                : m4f::identity();
-            const m4f mvp = m * view_proj;
             const v2f touch_center = ev_data->center;
             const f32 touch_radius = ev_data->radius;
             
@@ -90,9 +54,9 @@ namespace
                     break;
                 }
             }
-                    
             if ( intersects ) {
-                owner.assign_component<touchable::capture>(e, t.depth(), t.stop_propagation(), ev_data);
+                u32 d = act.node()->render_order();
+                owner.assign_component<touchable::capture>(e, d, t.stop_propagation(), ev_data);
             }
         });
     }
@@ -107,11 +71,15 @@ namespace e2d
     void convex_hull_screenspace_raycast_system::process(ecs::registry& owner) {
         owner.for_joined_components<input_event, camera::input_handler_tag, camera>(
         [&owner](const ecs::const_entity& e, const input_event& input_ev, camera::input_handler_tag, const camera& cam) {
-            auto&[view_proj, viewport] = get_vp_and_viewport(e, cam);
+            if ( input_ev.data()->type != input_event::event_type::mouse_move &&
+                 input_ev.data()->type != input_event::event_type::touch_down )
+            {
+                return;
+            }
 
-            raycast_on_convex_hull<rectangle_screenspace_collider>(owner, view_proj, viewport, input_ev.data());
-            raycast_on_convex_hull<circle_screenspace_collider>(owner, view_proj, viewport, input_ev.data());
-            raycast_on_polygon(owner, view_proj, viewport, input_ev.data());
+            raycast_on_convex_hull<rectangle_screenspace_collider>(owner, input_ev.data());
+            raycast_on_convex_hull<circle_screenspace_collider>(owner, input_ev.data());
+            raycast_on_polygon(owner, input_ev.data());
         });
     }
 }
