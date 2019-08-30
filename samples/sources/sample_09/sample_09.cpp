@@ -9,15 +9,6 @@ using namespace e2d;
 
 namespace
 {
-    class rotator final {
-    public:
-        rotator(const v3f& axis, f32 delay)
-        : axis(axis), delay(delay) {}
-    public:
-        v3f axis;
-        f32 delay;
-    };
-
     class button final {
     public:
         button() = default;
@@ -36,10 +27,10 @@ namespace
     public:
         color32 disabled = color32(125, 125, 125, 255);
         color32 idle = color32::white();
-        color32 mouse_over;
-        color32 touched;
-        color32 selected;
-        color32 dragging;
+        color32 mouse_over = color32::white();
+        color32 touched = color32::white();
+        color32 selected = color32::white();
+        color32 dragging = color32::white();
     };
     using button_color_style_ptr = std::shared_ptr<const button_color_style>;
 
@@ -50,10 +41,8 @@ namespace
         button_color_style_ref(const button_color_style_ptr& p) : ref(p) {}
     };
 
-    class ui_style final {
+    class ui_style_state final {
     public:
-        class style_changed_tag {};
-
         enum type {
             disabled,
             mouse_over,
@@ -62,16 +51,68 @@ namespace
             dragging,
             count_
         };
+        using bits = std::bitset<u32(count_)>;
+        
     public:
-        void set(type flag, bool value) {
-            bits_[u32(flag)] = value;
+        ui_style_state& set(type flag, bool value = true) noexcept {
+            flags.set(u32(flag), value);
+            return *this;
         }
 
-        bool operator[](type flag) const {
-            return bits_[u32(flag)];
+        ui_style_state& set_all() noexcept {
+            flags = bits(~0ull);
+            return *this;
+        }
+
+        bool get(type flag) const noexcept {
+            return flags[u32(flag)];
+        }
+
+        bits flags;
+    };
+
+    class ui_style final {
+    public:
+        class style_changed_tag {};
+        using type = ui_style_state::type;
+        using bits = ui_style_state::bits;
+    public:
+        ui_style() = default;
+        ui_style(const ui_style&) = default;
+
+        ui_style& propagate(type flag, bool value) noexcept {
+            propagate_bits_.set(flag, value);
+            return *this;
+        }
+
+        ui_style& propagate_all() noexcept {
+            propagate_bits_.set_all();
+            return *this;
+        }
+
+        bool propagate(type flag) const noexcept {
+            return propagate_bits_.get(flag);
+        }
+
+        void set(type flag, bool value) noexcept {
+            bits_.set(flag, value);
+        }
+
+        bool operator[](type flag) const noexcept {
+            return bits_.get(flag);
+        }
+
+        void copy_to(ui_style_state& changed, ui_style& dst) const noexcept {
+            changed.flags = bits(changed.flags.to_ulong() & propagate_bits_.flags.to_ulong());
+            for ( size_t i = 0; i < changed.flags.size(); ++i ) {
+                if ( changed.flags[i] ) {
+                    dst.bits_.flags[i] = bits_.flags[i];
+                }
+            }
         }
     private:
-        std::bitset<u32(count_)> bits_;
+        ui_style_state bits_;
+        ui_style_state propagate_bits_;
     };
     
     class button_system final : public ecs::system {
@@ -79,41 +120,28 @@ namespace
         void process(ecs::registry& owner) override {
             owner.remove_all_components<ui_style::style_changed_tag>();
 
-            flat_set<ecs::entity_id> changed;
-            bool has_touch_down = false;
-
-            owner.for_each_component<input_event>(
-            [&has_touch_down](const ecs::const_entity&, const input_event& input) {
-                has_touch_down |= (input.data()->type == input_event::event_type::touch_down);
-            });
-
-            // reset selected state
-            if ( has_touch_down ) {
-                owner.for_joined_components<button, ui_style>(
-                [&changed](const ecs::const_entity& e, const button& btn, ui_style& style) {
-                    if ( btn.selectable() && style[ui_style::selected] && !e.find_component<touch_down_event>() ) {
-                        style.set(ui_style::selected, false);
-                        changed.insert(e.id());
-                    }
-                });
-            }
+            flat_map<ecs::entity_id, ui_style_state> changed;
 
             // process touch down event
             owner.for_joined_components<touch_down_event, button, ui_style>(
             [&changed](ecs::entity_id id, const touch_down_event&, const button&, ui_style& style) {
-                style.set(ui_style::touched, true);
-                changed.insert(id);
+                style.set(ui_style_state::touched, true);
+                changed[id].set(ui_style_state::touched);
             });
             
             // process touch up event
             owner.for_joined_components<touch_up_event, button, ui_style>(
             [&changed](ecs::entity_id id, const touch_up_event&, const button& btn, ui_style& style) {
-                style.set(ui_style::dragging, false);
-                style.set(ui_style::touched, false);
+                auto& flags = changed[id]
+                    .set(ui_style_state::dragging)
+                    .set(ui_style_state::touched);
+
+                style.set(ui_style_state::dragging, false);
+                style.set(ui_style_state::touched, false);
                 if ( btn.selectable() ) {
-                    style.set(ui_style::selected, !style[ui_style::selected]);
+                    style.set(ui_style_state::selected, !style[ui_style_state::selected]);
+                    flags.set(ui_style_state::selected);
                 }
-                changed.insert(id);
             });
 
             // process touch move events
@@ -122,9 +150,9 @@ namespace
                 if ( !btn.draggable() ) {
                     return;
                 }
-                if ( !style[ui_style::dragging] ) {
-                    style.set(ui_style::dragging, true);
-                    changed.insert(id);
+                if ( !style[ui_style_state::dragging] ) {
+                    style.set(ui_style_state::dragging, true);
+                    changed[id].set(ui_style_state::dragging);
                 }
                 auto m_model = act.node()->world_matrix();
                 auto mvp_inv = math::inversed(m_model * ev.data->view_proj, 0.0f).first;
@@ -138,37 +166,42 @@ namespace
             // process mouse enter event
             owner.for_joined_components<mouse_enter_event, button, ui_style>(
             [&changed](ecs::entity_id id, const mouse_enter_event&, const button&, ui_style& style) {
-                style.set(ui_style::mouse_over, true);
-                changed.insert(id);
+                style.set(ui_style_state::mouse_over, true);
+                changed[id].set(ui_style_state::mouse_over);
             });
 
             // process mouse leave event
             owner.for_joined_components<mouse_leave_event, button, ui_style>(
             [&changed](ecs::entity_id id, const mouse_leave_event&, const button&, ui_style& style) {
-                style.set(ui_style::mouse_over, false);
-                changed.insert(id);
+                style.set(ui_style_state::mouse_over, false);
+                changed[id].set(ui_style_state::mouse_over);
             });
 
-            // 
-            for ( auto id : changed ) {
-                struct child_visitor {
-                    void operator()(const node_iptr& n) const {
-                        n->for_each_child(*this);
+            // propagate style flags to childs
+            struct child_visitor {
+                void operator()(const node_iptr& n) const {
+                    if ( auto* st = n->owner()->entity().find_component<ui_style>() ) {
                         n->owner()->entity_filler().component<ui_style::style_changed_tag>();
-                        if ( auto* st = n->owner()->entity().find_component<ui_style>() ) {
-                            st->set(ui_style::dragging, style[ui_style::dragging]);
-                            st->set(ui_style::selected, style[ui_style::selected]);
-                        }
+                        ui_style_state flags = changed;
+                        style.copy_to(flags, *st);
+                        child_visitor visitor{*st, flags};
+                        n->for_each_child(visitor);
+                    } else {
+                        child_visitor visitor{style, changed};
+                        n->for_each_child(visitor);
                     }
-                    ui_style const& style;
-                };
+                }
+                ui_style const& style;
+                ui_style_state changed;
+            };
 
+            for ( auto&[id, flags] : changed ) {
                 ecs::entity e(owner, id);
                 e.assign_component<ui_style::style_changed_tag>();
 
                 auto[style, act] = e.find_components<ui_style, actor>();
                 if ( style && act ) {
-                    child_visitor visitor{*style};
+                    child_visitor visitor{*style, flags};
                     act->node()->for_each_child(visitor);
                 }
             }
@@ -178,64 +211,49 @@ namespace
     class ui_style_system final : public ecs::system {
     public:
         void process(ecs::registry& owner) override {
-            owner.for_joined_components<ui_style::style_changed_tag, ui_style, button_color_style_ref, sprite_renderer>(
+            owner.for_joined_components</*ui_style::style_changed_tag,*/ ui_style, button_color_style_ref, sprite_renderer>(
             [](const ecs::const_entity&,
-               ui_style::style_changed_tag,
+               //ui_style::style_changed_tag,
                const ui_style& state,
                const button_color_style_ref& color_style,
                sprite_renderer& spr)
             {
-                if ( state[ui_style::selected] ) {
+                if ( state[ui_style_state::selected] ) {
                     spr.tint(color_style.ref->selected);
-                } else if ( state[ui_style::dragging] ) {
+                } else if ( state[ui_style_state::dragging] ) {
                     spr.tint(color_style.ref->dragging);
-                } else if ( state[ui_style::touched] ) {
+                } else if ( state[ui_style_state::touched] ) {
                     spr.tint(color_style.ref->touched);
-                } else if ( state[ui_style::mouse_over] ) {
+                } else if ( state[ui_style_state::mouse_over] ) {
                     spr.tint(color_style.ref->mouse_over);
-                } else if ( state[ui_style::disabled] ) {
+                } else if ( state[ui_style_state::disabled] ) {
                     spr.tint(color_style.ref->disabled);
                 } else {
                     spr.tint(color_style.ref->idle);
                 }
             });
-            owner.for_joined_components<ui_style::style_changed_tag, ui_style, button_color_style_ref, label>(
+            owner.for_joined_components</*ui_style::style_changed_tag,*/ ui_style, button_color_style_ref, label>(
             [&owner](ecs::entity_id id,
-               ui_style::style_changed_tag,
+               //ui_style::style_changed_tag,
                const ui_style& state,
                const button_color_style_ref& color_style,
                label& lbl)
             {
-                if ( state[ui_style::selected] ) {
+                if ( state[ui_style_state::selected] ) {
                     lbl.tint(color_style.ref->selected);
-                } else if ( state[ui_style::dragging] ) {
+                } else if ( state[ui_style_state::dragging] ) {
                     lbl.tint(color_style.ref->dragging);
-                } else if ( state[ui_style::touched] ) {
+                } else if ( state[ui_style_state::touched] ) {
                     lbl.tint(color_style.ref->touched);
-                } else if ( state[ui_style::mouse_over] ) {
+                } else if ( state[ui_style_state::mouse_over] ) {
                     lbl.tint(color_style.ref->mouse_over);
-                } else if ( state[ui_style::disabled] ) {
+                } else if ( state[ui_style_state::disabled] ) {
                     lbl.tint(color_style.ref->disabled);
                 } else {
                     lbl.tint(color_style.ref->idle);
                 }
                 ecs::entity(owner, id).assign_component<label::dirty>();
             });
-        }
-    };
-
-    class rotator_system final : public ecs::system {
-    public:
-        void process(ecs::registry& owner) override {
-            const f32 time = the<engine>().time();
-            owner.for_joined_components<rotator, actor>(
-                [&time](const ecs::const_entity&, const rotator& rot, actor& act){
-                    const node_iptr node = act.node();
-                    if ( node ) {
-                        const q4f q = math::make_quat_from_axis_angle(make_rad(time + rot.delay), rot.axis);
-                        node->rotation(q);
-                    }
-                });
         }
     };
 
@@ -351,7 +369,8 @@ namespace
                 .component<touchable>(true)
                 .component<button>(button()
                     .draggable(true))
-                .component<ui_style>()
+                .component<ui_style>(ui_style()
+                    .propagate(ui_style_state::dragging, true))
                 .component<button_color_style_ref>(window_style);
             
             node_iptr window_n = window_i->get_component<actor>().get().node();
@@ -369,7 +388,8 @@ namespace
                     .component<rectangle_shape>(b2f(
                         button_res->content().texrect().position - button_res->content().pivot(),
                         button_res->content().texrect().size))
-                    .component<ui_style>()
+                    .component<ui_style>(ui_style()
+                        .propagate_all())
                     .component<button>()
                     .component<button_color_style_ref>(title_style);
                 
@@ -453,7 +473,6 @@ namespace
         bool create_systems() {
             ecs::registry_filler(the<world>().registry())
                 .system<game_system>(world::priority_update)
-                .system<rotator_system>(world::priority_update)
                 .system<button_system>(world::priority_update)
                 .system<ui_style_system>(world::priority_update + 100)
                 .system<camera_system>(world::priority_pre_render);
