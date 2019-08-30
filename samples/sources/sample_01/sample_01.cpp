@@ -56,7 +56,7 @@ namespace
         }
     };
 
-    std::array<u8,36> generate_cube_indices() noexcept {
+    std::array<u16,36> generate_cube_indices() noexcept {
         return {
             0,  1,  2,
             2,  3,  0,
@@ -170,7 +170,7 @@ namespace
             const auto indices = generate_cube_indices();
             index_buffer_ = the<render>().create_index_buffer(
                 indices,
-                index_declaration::index_type::unsigned_byte,
+                index_declaration::index_type::unsigned_short,
                 index_buffer::usage::static_draw);
 
             const auto vertices1 = generate_cube_vertices(make_vec3(1.f));

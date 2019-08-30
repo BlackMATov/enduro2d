@@ -190,6 +190,15 @@ namespace e2d
         void set_culling_state_(const culling_state& cs) noexcept;
         void set_blending_state_(const blending_state& bs) noexcept;
         void set_capabilities_state_(const capabilities_state& cs) noexcept;
+        void create_debug_output_() noexcept;
+        static void GLAPIENTRY debug_output_callback_(
+            GLenum source,
+            GLenum type,
+            GLuint id,
+            GLenum severity,
+            GLsizei length,
+            const GLchar* message,
+            const void* userParam);
     private:
         debug& debug_;
         window& window_;

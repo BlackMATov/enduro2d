@@ -295,6 +295,7 @@ namespace e2d::opengl
     void gl_trace_info(debug& debug) noexcept;
     void gl_trace_limits(debug& debug) noexcept;
     void gl_fill_device_caps(debug& debug, render::device_caps& caps) noexcept;
+    bool gl_has_extension(debug& debug, str_view name) noexcept;
 
     gl_shader_id gl_compile_shader(
         debug& debug,

@@ -10,13 +10,6 @@
 
 namespace e2d::render_system_impl
 {
-    struct index_u8 {
-        using type = u8;
-        static index_declaration decl() noexcept {
-            return index_declaration::index_type::unsigned_byte;
-        }
-    };
-
     struct index_u16 {
         using type = u16;
         static index_declaration decl() noexcept {

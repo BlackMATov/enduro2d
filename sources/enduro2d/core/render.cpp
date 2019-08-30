@@ -68,7 +68,6 @@ namespace
     const char* index_element_cstr(index_declaration::index_type it) noexcept {
         #define DEFINE_CASE(x) case index_declaration::index_type::x: return #x;
         switch ( it ) {
-            DEFINE_CASE(unsigned_byte);
             DEFINE_CASE(unsigned_short);
             DEFINE_CASE(unsigned_int);
             default:
@@ -81,7 +80,6 @@ namespace
     std::size_t index_element_size(index_declaration::index_type it) noexcept {
         #define DEFINE_CASE(x,y) case index_declaration::index_type::x: return y;
         switch ( it ) {
-            DEFINE_CASE(unsigned_byte, sizeof(u8));
             DEFINE_CASE(unsigned_short, sizeof(u16));
             DEFINE_CASE(unsigned_int, sizeof(u32));
             default:

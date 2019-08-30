@@ -64,7 +64,7 @@ namespace
         }
     };
 
-    std::array<u8,6> generate_quad_indices() noexcept {
+    std::array<u16,6> generate_quad_indices() noexcept {
         return {0, 1, 2, 2, 1, 3};
     }
 
@@ -111,7 +111,7 @@ namespace
             const auto indices = generate_quad_indices();
             index_buffer_ = the<render>().create_index_buffer(
                 indices,
-                index_declaration::index_type::unsigned_byte,
+                index_declaration::index_type::unsigned_short,
                 index_buffer::usage::static_draw);
 
             const auto vertices1 = generate_quad_vertices(texture1_->size());

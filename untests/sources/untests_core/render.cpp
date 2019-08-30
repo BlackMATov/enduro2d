@@ -114,21 +114,11 @@ TEST_CASE("render"){
         REQUIRE(id2.type() == index_declaration::index_type::unsigned_short);
         REQUIRE(id2.bytes_per_index() == 2);
 
-        index_declaration id3(index_declaration::index_type::unsigned_byte);
-        REQUIRE(id3.type() == index_declaration::index_type::unsigned_byte);
-        REQUIRE(id3.bytes_per_index() == 1);
-
         REQUIRE(id == id2);
-        REQUIRE_FALSE(id == id3);
-
         REQUIRE_FALSE(id != id2);
-        REQUIRE(id != id3);
 
         index_declaration id4 = id;
         REQUIRE(id4 == id2);
-        id4 = id3;
-        REQUIRE(id4 != id2);
-        REQUIRE(id4 == id3);
     }
     SECTION("vertex_declaration"){
         vertex_declaration vd;
