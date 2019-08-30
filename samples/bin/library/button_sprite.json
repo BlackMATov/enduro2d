@@ -1,0 +1,5 @@
+{
+    "texture" : "button.png",
+    "pivot" : { "x" : 128, "y" : 128 },
+    "texrect" : { "x" : 0, "y" : 0, "w" : 256, "h" : 256 }
+}

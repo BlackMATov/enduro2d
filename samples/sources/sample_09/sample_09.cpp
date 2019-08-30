@@ -171,11 +171,10 @@ namespace
         }
     private:
         bool create_scene() {
-            auto sprite1_res = the<library>().load_asset<sprite_asset>("cube_0_sprite.json");
-            auto sprite2_res = the<library>().load_asset<sprite_asset>("cube_1_sprite.json");
+            auto button_res = the<library>().load_asset<sprite_asset>("button_sprite.json");
             auto sprite_mat = the<library>().load_asset<material_asset>("sprite_material.json");
 
-            if ( !sprite1_res || !sprite2_res || !sprite_mat ) {
+            if ( !button_res || !sprite_mat ) {
                 return false;
             }
 
@@ -193,11 +192,11 @@ namespace
                 .component<actor>(node::create(background_i, scene_r))
                 .component<renderer>(renderer()
                     .materials({sprite_mat}))
-                .component<sprite_renderer>(sprite1_res)
+                .component<sprite_renderer>(button_res)
                 .component<touchable>(true);
 
             node_iptr background_n = background_i->get_component<actor>().get().node();
-            background_n->scale(v3f(20.0f, 20.0f, 1.0f));
+            background_n->scale(v3f(2.0f, 2.0f, 1.0f));
             background_n->translation(v3f{0.0f, 0.f, 0.0f});
             
             {
@@ -206,16 +205,16 @@ namespace
                     .component<actor>(node::create(sprite_i, scene_r))
                     .component<renderer>(renderer()
                         .materials({sprite_mat}))
-                    .component<sprite_renderer>(sprite_renderer(sprite1_res)
+                    .component<sprite_renderer>(sprite_renderer(button_res)
                         .tint(color32::green()))
                     .component<touchable>(true)
                     .component<rectangle_shape>(b2f(
-                        sprite1_res->content().texrect().position - sprite1_res->content().pivot(),
-                        sprite1_res->content().texrect().size))
+                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().size))
                     .component<draggable>();
 
                 node_iptr sprite_n = sprite_i->get_component<actor>().get().node();
-                sprite_n->scale(v3f(4.0f, 4.0f, 1.f));
+                sprite_n->scale(v3f(0.4f, 0.4f, 1.f));
                 sprite_n->translation(v3f{80.f, 80.f, 0});
             }
 
@@ -230,15 +229,15 @@ namespace
                         .component<rotator>(rotator{v3f::unit_z(), i*10.0f+j})
                         .component<renderer>(renderer()
                             .materials({sprite_mat}))
-                        .component<sprite_renderer>(sprite1_res)
+                        .component<sprite_renderer>(button_res)
                         .component<touchable>(stop_prop)
                         .component<rectangle_shape>(b2f(
-                            sprite1_res->content().texrect().position - sprite1_res->content().pivot(),
-                            sprite1_res->content().texrect().size))
+                            button_res->content().texrect().position - button_res->content().pivot(),
+                            button_res->content().texrect().size))
                         .component<button>(button().selectable(true));
 
                     node_iptr sprite_n = sprite_i->get_component<actor>().get().node();
-                    sprite_n->scale(v3f(0.2f, 0.2f, 1.f));
+                    sprite_n->scale(v3f(0.02f, 0.02f, 1.f));
                     sprite_n->translation(v3f{j * 3.f, i * 3.f, 0} - v3f(10.0f, 6.0f, 0.0f));
                 }
             }
