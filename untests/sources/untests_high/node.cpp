@@ -766,4 +766,27 @@ TEST_CASE("node") {
             REQUIRE(fake_node::s_dtor_count == 2);
         }
     }
+    SECTION("render_order") {
+        {
+            auto n0 = node::create();
+            auto n1 = node::create(); n0->add_child(n1);
+            auto n2 = node::create(); n0->add_child(n2);
+            auto n3 = node::create(); n2->add_child(n3);
+            auto n4 = node::create(); n2->add_child(n4);
+            auto n5 = node::create(); n0->add_child(n5);
+            auto n6 = node::create(); n5->add_child(n6);
+            auto n7 = node::create(); n6->add_child(n7);
+            auto n8 = node::create(); n0->add_child(n8);
+            
+            vector<const_node_iptr> temp_nodes;
+            n0->extract_all_nodes(std::back_inserter(temp_nodes));
+
+            u32 draw_order = 1;
+            for ( auto& n : temp_nodes ) {
+                auto d = n->render_order();
+                REQUIRE(d == draw_order);
+                ++draw_order;
+            }
+        }
+    }
 }
