@@ -9,8 +9,6 @@ using namespace e2d;
 
 namespace
 {
-    using input_event_type = input_event::event_type;
-    
     class rotator final {
     public:
         rotator(const v3f& axis, f32 delay)
@@ -24,83 +22,110 @@ namespace
     public:
         button() = default;
 
-        button& selected(bool value) noexcept { selected_ = value; return *this; }
         button& selectable(bool value) noexcept { selectable_ = value; return *this; }
-
-        bool selected() const noexcept { return selected_; }
         bool selectable() const noexcept { return selectable_; }
+
+        button& draggable(bool value) noexcept { draggable_ = value; return *this; }
+        bool draggable() const noexcept { return draggable_; }
     private:
-        bool selected_ = false;
         bool selectable_ = false;
+        bool draggable_ = false;
     };
 
-    class draggable final {
+    class button_color_style final {
+    public:
+        color32 disabled = color32(125, 125, 125, 255);
+        color32 idle = color32::white();
+        color32 mouse_over;
+        color32 touched;
+        color32 selected;
+        color32 dragging;
+    };
+    using button_color_style_ptr = std::shared_ptr<const button_color_style>;
+
+    class button_color_style_ref final {
+    public:
+        button_color_style_ptr ref;
+
+        button_color_style_ref(const button_color_style_ptr& p) : ref(p) {}
     };
 
+    class ui_style final {
+    public:
+        class style_changed_tag {};
+
+        enum type {
+            disabled,
+            mouse_over,
+            touched,
+            selected,
+            dragging,
+            count_
+        };
+    public:
+        void set(type flag, bool value) {
+            bits_[u32(flag)] = value;
+        }
+
+        bool operator[](type flag) const {
+            return bits_[u32(flag)];
+        }
+    private:
+        std::bitset<u32(count_)> bits_;
+    };
+    
     class button_system final : public ecs::system {
     public:
         void process(ecs::registry& owner) override {
+            owner.remove_all_components<ui_style::style_changed_tag>();
+
+            flat_set<ecs::entity_id> changed;
             bool has_touch_down = false;
+
             owner.for_each_component<input_event>(
             [&has_touch_down](const ecs::const_entity&, const input_event& input) {
-                has_touch_down |= (input.data()->type == input_event_type::touch_down);
+                has_touch_down |= (input.data()->type == input_event::event_type::touch_down);
             });
 
             // reset selected state
             if ( has_touch_down ) {
-                owner.for_joined_components<button, sprite_renderer>(
-                [](const ecs::const_entity& e, button& btn, sprite_renderer& spr) {
-                    if ( btn.selectable() && btn.selected() && !e.find_component<touch_down_event>() ) {
-                        btn.selected(false);
-                        spr.tint(color32::white());
+                owner.for_joined_components<button, ui_style>(
+                [&changed](const ecs::const_entity& e, const button& btn, ui_style& style) {
+                    if ( btn.selectable() && style[ui_style::selected] && !e.find_component<touch_down_event>() ) {
+                        style.set(ui_style::selected, false);
+                        changed.insert(e.id());
                     }
                 });
             }
 
             // process touch down event
-            owner.for_joined_components<touch_down_event, button, sprite_renderer>(
-            [](ecs::entity_id id, const touch_down_event&, button& btn, sprite_renderer& spr) {
-                if ( btn.selectable() ) {
-                    btn.selected(!btn.selected());
-                }
-                spr.tint(btn.selected() ? color32::blue() : color32::red());
+            owner.for_joined_components<touch_down_event, button, ui_style>(
+            [&changed](ecs::entity_id id, const touch_down_event&, const button&, ui_style& style) {
+                style.set(ui_style::touched, true);
+                changed.insert(id);
             });
             
             // process touch up event
-            owner.for_joined_components<touch_up_event, button, sprite_renderer>(
-            [](ecs::entity_id, const touch_up_event&, const button& btn, sprite_renderer& spr) {
-                spr.tint(btn.selected() ? color32::blue() : color32::white());
+            owner.for_joined_components<touch_up_event, button, ui_style>(
+            [&changed](ecs::entity_id id, const touch_up_event&, const button& btn, ui_style& style) {
+                style.set(ui_style::dragging, false);
+                style.set(ui_style::touched, false);
+                if ( btn.selectable() ) {
+                    style.set(ui_style::selected, !style[ui_style::selected]);
+                }
+                changed.insert(id);
             });
 
-            // process mouse enter event
-            owner.for_joined_components<mouse_enter_event, button, sprite_renderer>(
-            [](ecs::entity_id, const mouse_enter_event&, const button& btn, sprite_renderer& spr) {
-                spr.tint(color32::magenta());
-            });
-
-            // process mouse leave event
-            owner.for_joined_components<mouse_leave_event, button, sprite_renderer>(
-            [](ecs::entity_id, const mouse_leave_event&, const button& btn, sprite_renderer& spr) {
-                spr.tint(btn.selected() ? color32::blue() : color32::white());
-            });
-        }
-    };
-
-    class draggable_system final : public ecs::system {
-    public:
-        void process(ecs::registry& owner) override {
-            owner.for_joined_components<touch_down_event, draggable, sprite_renderer>(
-            [](const ecs::const_entity& e, const touch_down_event&, const draggable&, sprite_renderer& spr) {
-                spr.tint(color32::red());
-            });
-            
-            owner.for_joined_components<touch_up_event, draggable, sprite_renderer>(
-            [](const ecs::const_entity& e, const touch_up_event&, const draggable&, sprite_renderer& spr) {
-                spr.tint(color32::green());
-            });
-            
-            owner.for_joined_components<touch_move_event, draggable, sprite_renderer, actor>(
-            [](const ecs::const_entity& e, const touch_move_event& ev, const draggable&, sprite_renderer& spr, actor& act) {
+            // process touch move events
+            owner.for_joined_components<touch_move_event, button, ui_style, actor>(
+            [&changed](ecs::entity_id id, const touch_move_event& ev, const button& btn, ui_style& style, actor& act) {
+                if ( !btn.draggable() ) {
+                    return;
+                }
+                if ( !style[ui_style::dragging] ) {
+                    style.set(ui_style::dragging, true);
+                    changed.insert(id);
+                }
                 auto m_model = act.node()->world_matrix();
                 auto mvp_inv = math::inversed(m_model * ev.data->view_proj, 0.0f).first;
                 const f32 z = 0.0f;
@@ -108,6 +133,93 @@ namespace
                 v3f old_point = math::unproject(v3f(ev.data->center + ev.data->delta, z), mvp_inv, ev.data->viewport);
                 v3f delta = (old_point - new_point) * act.node()->scale();
                 act.node()->translation(act.node()->translation() + delta);
+            });
+            
+            // process mouse enter event
+            owner.for_joined_components<mouse_enter_event, button, ui_style>(
+            [&changed](ecs::entity_id id, const mouse_enter_event&, const button&, ui_style& style) {
+                style.set(ui_style::mouse_over, true);
+                changed.insert(id);
+            });
+
+            // process mouse leave event
+            owner.for_joined_components<mouse_leave_event, button, ui_style>(
+            [&changed](ecs::entity_id id, const mouse_leave_event&, const button&, ui_style& style) {
+                style.set(ui_style::mouse_over, false);
+                changed.insert(id);
+            });
+
+            // 
+            for ( auto id : changed ) {
+                struct child_visitor {
+                    void operator()(const node_iptr& n) const {
+                        n->for_each_child(*this);
+                        n->owner()->entity_filler().component<ui_style::style_changed_tag>();
+                        if ( auto* st = n->owner()->entity().find_component<ui_style>() ) {
+                            st->set(ui_style::dragging, style[ui_style::dragging]);
+                            st->set(ui_style::selected, style[ui_style::selected]);
+                        }
+                    }
+                    ui_style const& style;
+                };
+
+                ecs::entity e(owner, id);
+                e.assign_component<ui_style::style_changed_tag>();
+
+                auto[style, act] = e.find_components<ui_style, actor>();
+                if ( style && act ) {
+                    child_visitor visitor{*style};
+                    act->node()->for_each_child(visitor);
+                }
+            }
+        }
+    };
+
+    class ui_style_system final : public ecs::system {
+    public:
+        void process(ecs::registry& owner) override {
+            owner.for_joined_components<ui_style::style_changed_tag, ui_style, button_color_style_ref, sprite_renderer>(
+            [](const ecs::const_entity&,
+               ui_style::style_changed_tag,
+               const ui_style& state,
+               const button_color_style_ref& color_style,
+               sprite_renderer& spr)
+            {
+                if ( state[ui_style::selected] ) {
+                    spr.tint(color_style.ref->selected);
+                } else if ( state[ui_style::dragging] ) {
+                    spr.tint(color_style.ref->dragging);
+                } else if ( state[ui_style::touched] ) {
+                    spr.tint(color_style.ref->touched);
+                } else if ( state[ui_style::mouse_over] ) {
+                    spr.tint(color_style.ref->mouse_over);
+                } else if ( state[ui_style::disabled] ) {
+                    spr.tint(color_style.ref->disabled);
+                } else {
+                    spr.tint(color_style.ref->idle);
+                }
+            });
+            owner.for_joined_components<ui_style::style_changed_tag, ui_style, button_color_style_ref, label>(
+            [&owner](ecs::entity_id id,
+               ui_style::style_changed_tag,
+               const ui_style& state,
+               const button_color_style_ref& color_style,
+               label& lbl)
+            {
+                if ( state[ui_style::selected] ) {
+                    lbl.tint(color_style.ref->selected);
+                } else if ( state[ui_style::dragging] ) {
+                    lbl.tint(color_style.ref->dragging);
+                } else if ( state[ui_style::touched] ) {
+                    lbl.tint(color_style.ref->touched);
+                } else if ( state[ui_style::mouse_over] ) {
+                    lbl.tint(color_style.ref->mouse_over);
+                } else if ( state[ui_style::disabled] ) {
+                    lbl.tint(color_style.ref->disabled);
+                } else {
+                    lbl.tint(color_style.ref->idle);
+                }
+                ecs::entity(owner, id).assign_component<label::dirty>();
             });
         }
     };
@@ -173,9 +285,52 @@ namespace
         bool create_scene() {
             auto button_res = the<library>().load_asset<sprite_asset>("button_sprite.json");
             auto sprite_mat = the<library>().load_asset<material_asset>("sprite_material.json");
+            auto font_mat = the<library>().load_asset<material_asset>("font_sdf_material.json");
+            auto font = the<library>().load_asset<font_asset>("arial_sdf.fnt");
 
-            if ( !button_res || !sprite_mat ) {
+            if ( !button_res || !sprite_mat || !font_mat || !font ) {
                 return false;
+            }
+
+            button_color_style_ptr window_style;
+            button_color_style_ptr title_style;
+            button_color_style_ptr title_label_style;
+            button_color_style_ptr button_style;
+            {
+                button_color_style style;
+                style.idle = color32(0, 0, 140, 255);
+                style.mouse_over = style.idle;
+                style.touched = style.idle;
+                style.dragging = color32(0, 0, 255, 255);
+                style.selected = style.idle;
+                window_style = std::make_shared<const button_color_style>(style);
+            }
+            {
+                button_color_style style;
+                style.idle = color32(0, 100, 140, 255);
+                style.mouse_over = color32(0, 150, 140, 255);
+                style.touched = style.mouse_over;
+                style.dragging = color32(0, 100, 255, 255);
+                style.selected = style.idle;
+                title_style = std::make_shared<const button_color_style>(style);
+            }
+            {
+                button_color_style style;
+                style.idle = color32(100, 200, 255, 255);
+                style.mouse_over = color32(200, 0, 220, 255);
+                style.touched = style.mouse_over;
+                style.dragging = color32(255, 100, 255, 255);
+                style.selected = style.idle;
+                title_label_style = std::make_shared<const button_color_style>(style);
+            }
+            {
+                button_color_style style;
+                style.idle = color32(200, 200, 200, 255);
+                style.mouse_over = color32(255, 200, 200, 255);
+                style.touched = color32(200, 255, 200, 255);
+                style.selected = color32(200, 255, 100, 255);
+                style.dragging = style.idle;
+                button_style = std::make_shared<const button_color_style>(style);
             }
 
             auto scene_i = the<world>().instantiate();
@@ -186,60 +341,101 @@ namespace
 
             node_iptr scene_r = scene_i->get_component<actor>().get().node();
 
-            auto background_i = the<world>().instantiate();
+            auto window_i = the<world>().instantiate();
 
-            background_i->entity_filler()
-                .component<actor>(node::create(background_i, scene_r))
+            window_i->entity_filler()
+                .component<actor>(node::create(window_i, scene_r))
                 .component<renderer>(renderer()
                     .materials({sprite_mat}))
                 .component<sprite_renderer>(button_res)
-                .component<touchable>(true);
-
-            node_iptr background_n = background_i->get_component<actor>().get().node();
-            background_n->scale(v3f(2.0f, 2.0f, 1.0f));
-            background_n->translation(v3f{0.0f, 0.f, 0.0f});
+                .component<touchable>(true)
+                .component<button>(button()
+                    .draggable(true))
+                .component<ui_style>()
+                .component<button_color_style_ref>(window_style);
+            
+            node_iptr window_n = window_i->get_component<actor>().get().node();
+            window_n->scale(v3f(2.0f, 2.0f, 1.f));
+            window_n->translation(v3f{0.f, 0.f, 0.f});
             
             {
-                auto sprite_i = the<world>().instantiate();
-                sprite_i->entity_filler()
-                    .component<actor>(node::create(sprite_i, scene_r))
+                auto title_i = the<world>().instantiate();
+                title_i->entity_filler()
+                    .component<actor>(node::create(title_i, window_n))
                     .component<renderer>(renderer()
                         .materials({sprite_mat}))
-                    .component<sprite_renderer>(sprite_renderer(button_res)
-                        .tint(color32::green()))
+                    .component<sprite_renderer>(button_res)
+                    .component<touchable>(false)
+                    .component<rectangle_shape>(b2f(
+                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().size))
+                    .component<ui_style>()
+                    .component<button>()
+                    .component<button_color_style_ref>(title_style);
+                
+                node_iptr title_n = title_i->get_component<actor>().get().node();
+                title_n->scale(v3f(1.0f, 0.1f, 1.f));
+                title_n->translation(v3f{0.f, 110.f, 0.f});
+            
+                auto title_label_i = the<world>().instantiate();
+                title_label_i->entity_filler()
+                    .component<actor>(node::create(title_label_i, title_n))
+                    .component<renderer>(renderer()
+                        .materials({font_mat}))
+                    .component<model_renderer>()
+                    .component<label>(label()
+                        .font(font)
+                        .text("title")
+                        .haligh(label::haligns::center)
+                        .valigh(label::valigns::center))
+                    .component<label::dirty>()
+                    .component<ui_style>()
+                    .component<button>()
+                    .component<button_color_style_ref>(title_label_style);
+                
+                node_iptr title_label_n = title_label_i->get_component<actor>().get().node();
+                title_label_n->scale(v3f(0.5f, 5.f, 1.f));
+                title_label_n->translation(v3f{0.f, 0.f, 0.f});
+            }
+            {
+                auto button_i = the<world>().instantiate();
+                button_i->entity_filler()
+                    .component<actor>(node::create(button_i, window_n))
+                    .component<renderer>(renderer()
+                        .materials({sprite_mat}))
+                    .component<sprite_renderer>(button_res)
                     .component<touchable>(true)
                     .component<rectangle_shape>(b2f(
                         button_res->content().texrect().position - button_res->content().pivot(),
                         button_res->content().texrect().size))
-                    .component<draggable>();
-
-                node_iptr sprite_n = sprite_i->get_component<actor>().get().node();
-                sprite_n->scale(v3f(0.4f, 0.4f, 1.f));
-                sprite_n->translation(v3f{80.f, 80.f, 0});
+                    .component<ui_style>()
+                    .component<button>(button()
+                        .selectable(true))
+                    .component<button_color_style_ref>(button_style);
+                
+                node_iptr button_n = button_i->get_component<actor>().get().node();
+                button_n->scale(v3f(0.2f, 0.2f, 1.f));
+                button_n->translation(v3f{-40.f, -50.f, 0.f});
+                button_n->rotation(math::make_quat_from_axis_angle(make_deg(45.f), v3f::unit_z()));
             }
-
             {
-                for ( std::size_t i = 0; i < 3; ++i )
-                for ( std::size_t j = 0; j < 3; ++j ) {
-                    auto sprite_i = the<world>().instantiate();
-                    bool stop_prop = !((i|j)&1);
-
-                    sprite_i->entity_filler()
-                        .component<actor>(node::create(sprite_i, background_n))
-                        .component<rotator>(rotator{v3f::unit_z(), i*10.0f+j})
-                        .component<renderer>(renderer()
-                            .materials({sprite_mat}))
-                        .component<sprite_renderer>(button_res)
-                        .component<touchable>(stop_prop)
-                        .component<rectangle_shape>(b2f(
-                            button_res->content().texrect().position - button_res->content().pivot(),
-                            button_res->content().texrect().size))
-                        .component<button>(button().selectable(true));
-
-                    node_iptr sprite_n = sprite_i->get_component<actor>().get().node();
-                    sprite_n->scale(v3f(0.02f, 0.02f, 1.f));
-                    sprite_n->translation(v3f{j * 3.f, i * 3.f, 0} - v3f(10.0f, 6.0f, 0.0f));
-                }
+                auto button_i = the<world>().instantiate();
+                button_i->entity_filler()
+                    .component<actor>(node::create(button_i, window_n))
+                    .component<renderer>(renderer()
+                        .materials({sprite_mat}))
+                    .component<sprite_renderer>(button_res)
+                    .component<touchable>(true)
+                    .component<rectangle_shape>(b2f(
+                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().size))
+                    .component<ui_style>()
+                    .component<button>(button())
+                    .component<button_color_style_ref>(button_style);
+                
+                node_iptr button_n = button_i->get_component<actor>().get().node();
+                button_n->scale(v3f(0.2f, 0.2f, 1.f));
+                button_n->translation(v3f{40.f, -50.f, 0.f});
             }
             return true;
         }
@@ -259,7 +455,7 @@ namespace
                 .system<game_system>(world::priority_update)
                 .system<rotator_system>(world::priority_update)
                 .system<button_system>(world::priority_update)
-                .system<draggable_system>(world::priority_update)
+                .system<ui_style_system>(world::priority_update + 100)
                 .system<camera_system>(world::priority_pre_render);
             return true;
         }
