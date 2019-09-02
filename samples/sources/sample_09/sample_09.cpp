@@ -94,6 +94,10 @@ namespace
             return propagate_bits_.get(flag);
         }
 
+        bool should_propagate(ui_style_state changed) const noexcept {
+            return changed.flags.to_ulong() & propagate_bits_.flags.to_ulong();
+        }
+
         void set(type flag, bool value) noexcept {
             bits_.set(flag, value);
         }
@@ -102,13 +106,17 @@ namespace
             return bits_.get(flag);
         }
 
-        void copy_to(ui_style_state& changed, ui_style& dst) const noexcept {
+        bool copy_to(ui_style_state& changed, ui_style& dst) const noexcept {
             changed.flags = bits(changed.flags.to_ulong() & propagate_bits_.flags.to_ulong());
+            if ( changed.flags.to_ulong() == 0 ) {
+                return false;
+            }
             for ( size_t i = 0; i < changed.flags.size(); ++i ) {
                 if ( changed.flags[i] ) {
                     dst.bits_.flags[i] = bits_.flags[i];
                 }
             }
+            return true;
         }
     private:
         ui_style_state bits_;
@@ -118,8 +126,6 @@ namespace
     class button_system final : public ecs::system {
     public:
         void process(ecs::registry& owner) override {
-            owner.remove_all_components<ui_style::style_changed_tag>();
-
             flat_map<ecs::entity_id, ui_style_state> changed;
 
             // process touch down event
@@ -135,7 +141,6 @@ namespace
                 auto& flags = changed[id]
                     .set(ui_style_state::dragging)
                     .set(ui_style_state::touched);
-
                 style.set(ui_style_state::dragging, false);
                 style.set(ui_style_state::touched, false);
                 if ( btn.selectable() ) {
@@ -183,9 +188,10 @@ namespace
                     if ( auto* st = n->owner()->entity().find_component<ui_style>() ) {
                         n->owner()->entity_filler().component<ui_style::style_changed_tag>();
                         ui_style_state flags = changed;
-                        style.copy_to(flags, *st);
-                        child_visitor visitor{*st, flags};
-                        n->for_each_child(visitor);
+                        if ( style.copy_to(flags, *st) ) {
+                            child_visitor visitor{*st, flags};
+                            n->for_each_child(visitor);
+                        }
                     } else {
                         child_visitor visitor{style, changed};
                         n->for_each_child(visitor);
@@ -200,7 +206,7 @@ namespace
                 e.assign_component<ui_style::style_changed_tag>();
 
                 auto[style, act] = e.find_components<ui_style, actor>();
-                if ( style && act ) {
+                if ( style && act && act->node() && style->should_propagate(flags) ) {
                     child_visitor visitor{*style, flags};
                     act->node()->for_each_child(visitor);
                 }
@@ -211,9 +217,9 @@ namespace
     class ui_style_system final : public ecs::system {
     public:
         void process(ecs::registry& owner) override {
-            owner.for_joined_components</*ui_style::style_changed_tag,*/ ui_style, button_color_style_ref, sprite_renderer>(
+            owner.for_joined_components<ui_style::style_changed_tag, ui_style, button_color_style_ref, sprite_renderer>(
             [](const ecs::const_entity&,
-               //ui_style::style_changed_tag,
+               ui_style::style_changed_tag,
                const ui_style& state,
                const button_color_style_ref& color_style,
                sprite_renderer& spr)
@@ -232,9 +238,9 @@ namespace
                     spr.tint(color_style.ref->idle);
                 }
             });
-            owner.for_joined_components</*ui_style::style_changed_tag,*/ ui_style, button_color_style_ref, label>(
+            owner.for_joined_components<ui_style::style_changed_tag, ui_style, button_color_style_ref, label>(
             [&owner](ecs::entity_id id,
-               //ui_style::style_changed_tag,
+               ui_style::style_changed_tag,
                const ui_style& state,
                const button_color_style_ref& color_style,
                label& lbl)
@@ -254,6 +260,7 @@ namespace
                 }
                 ecs::entity(owner, id).assign_component<label::dirty>();
             });
+            owner.remove_all_components<ui_style::style_changed_tag>();
         }
     };
 
@@ -457,6 +464,32 @@ namespace
                 button_n->scale(v3f(0.2f, 0.2f, 1.f));
                 button_n->translation(v3f{40.f, -50.f, 0.f});
             }
+            {
+                auto button_i = the<world>().instantiate();
+                button_i->entity_filler()
+                    .component<actor>(node::create(button_i, window_n))
+                    .component<renderer>(renderer()
+                        .materials({sprite_mat}))
+                    .component<sprite_renderer>(button_res)
+                    .component<touchable>(true)
+                    .component<circle_shape>(
+                        (button_res->content().texrect().position - button_res->content().pivot() +
+                         button_res->content().texrect().size * 0.5f),
+                        math::max(button_res->content().texrect().size.x, button_res->content().texrect().size.y) * 0.5f)
+                    .component<ui_style>()
+                    .component<button>(button())
+                    .component<button_color_style_ref>(button_style);
+                
+                node_iptr button_n = button_i->get_component<actor>().get().node();
+                button_n->scale(v3f(0.2f, 0.2f, 1.f));
+                button_n->translation(v3f{0.f, 0.f, 0.f});
+            }
+
+            the<world>().registry().for_each_component<ui_style>(
+            [](ecs::entity_id id, const ui_style&) {
+                ecs::entity(the<world>().registry(), id)
+                    .assign_component<ui_style::style_changed_tag>();
+            });
             return true;
         }
 
