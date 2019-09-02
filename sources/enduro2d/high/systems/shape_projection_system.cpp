@@ -187,7 +187,7 @@ namespace
     void project_rectangle_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<rectangle_shape, rectangle_screenspace_collider, actor>(
         [&input_ev](
-            const ecs::const_entity& e,
+            const ecs::const_entity&,
             const rectangle_shape& shape,
             rectangle_screenspace_collider& screenspace_shape,
             const actor& act)
@@ -199,7 +199,7 @@ namespace
     void project_circle_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<circle_shape, circle_screenspace_collider, actor>(
         [&input_ev](
-            const ecs::const_entity& e,
+            const ecs::const_entity&,
             const circle_shape& shape,
             circle_screenspace_collider& screenspace_shape,
             const actor& act)
@@ -211,7 +211,7 @@ namespace
     void project_polygon_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<polygon_shape, polygon_screenspace_collider, actor>(
         [&input_ev](
-            const ecs::const_entity& e,
+            const ecs::const_entity&,
             const polygon_shape& shape,
             polygon_screenspace_collider& screenspace_shape,
             const actor& act)
@@ -224,7 +224,7 @@ namespace
         // TODO: replace 'touch_focus_tag' with something else
         owner.for_joined_components<touch_focus_tag, rectangle_shape, rectangle_screenspace_collider, actor>(
         [&input_ev](
-            const ecs::const_entity& e,
+            const ecs::const_entity&,
             touch_focus_tag,
             const rectangle_shape& shape,
             rectangle_screenspace_collider& screenspace_shape,
@@ -238,7 +238,7 @@ namespace
         // TODO: replace 'touch_focus_tag' with something else
         owner.for_joined_components<touch_focus_tag, circle_shape, circle_screenspace_collider, actor>(
         [&input_ev](
-            const ecs::const_entity& e,
+            const ecs::const_entity&,
             touch_focus_tag,
             const circle_shape& shape,
             circle_screenspace_collider& screenspace_shape,
@@ -252,7 +252,7 @@ namespace
         // TODO: replace 'touch_focus_tag' with something else
         owner.for_joined_components<touch_focus_tag, polygon_shape, polygon_screenspace_collider, actor>(
         [&input_ev](
-            const ecs::const_entity& e,
+            const ecs::const_entity&,
             touch_focus_tag,
             const polygon_shape& shape,
             polygon_screenspace_collider& screenspace_shape,
@@ -269,10 +269,10 @@ namespace e2d
         owner.for_joined_components<input_event, camera::input_handler_tag, camera>(
         [&owner, this]
         (ecs::entity_id id, const input_event& input_ev, camera::input_handler_tag, const camera&) {
+        #if 0
             const b2f& viewport = input_ev.data()->viewport;
             const m4f& view_proj = input_ev.data()->view_proj;
 
-        #if 0
             if ( camera_entity_ != id ||
                  !math::approximately(last_vp_matrix_, view_proj) ||
                  !math::approximately(last_viewport_, viewport) )
@@ -290,6 +290,7 @@ namespace e2d
                 project_polygon_shapes_if_changed(owner, input_ev);
             }
         #else
+            E2D_UNUSED(id);
             project_rectangle_shapes(owner, input_ev);
             project_circle_shapes(owner, input_ev);
             project_polygon_shapes(owner, input_ev);

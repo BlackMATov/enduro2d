@@ -70,7 +70,7 @@ namespace e2d
 
     void convex_hull_screenspace_raycast_system::process(ecs::registry& owner) {
         owner.for_joined_components<input_event, camera::input_handler_tag, camera>(
-        [&owner](const ecs::const_entity& e, const input_event& input_ev, camera::input_handler_tag, const camera& cam) {
+        [&owner](const ecs::const_entity&, const input_event& input_ev, camera::input_handler_tag, const camera&) {
             if ( input_ev.data()->type != input_event::event_type::mouse_move &&
                  input_ev.data()->type != input_event::event_type::touch_down )
             {

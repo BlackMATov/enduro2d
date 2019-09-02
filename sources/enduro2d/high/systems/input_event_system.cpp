@@ -210,8 +210,9 @@ namespace e2d
                     }
                     auto* t_comp = n->owner()->entity().find_component<touchable>();
                     if ( t_comp ) {
-                        last_touched = n->owner()->entity().id();
-                        add_tag(n->owner()->entity());
+                        ecs::entity e = n->owner()->entity();
+                        last_touched = e.id();
+                        add_tag(e);
                         if ( t_comp->stop_propagation() ) {
                             break;
                         }
