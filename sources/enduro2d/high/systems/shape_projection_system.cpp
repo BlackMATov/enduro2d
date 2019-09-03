@@ -144,8 +144,7 @@ namespace
 
     void create_rectangle_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<rectangle_shape, actor>(
-        [&owner, &input_ev](ecs::entity_id id, const rectangle_shape& shape, const actor& act) {
-            ecs::entity e(owner, id);
+        [&owner, &input_ev](ecs::entity e, const rectangle_shape& shape, const actor& act) {
             if ( !e.find_component<rectangle_screenspace_collider>() ) {
                 project_rectangle(
                     e.assign_component<rectangle_screenspace_collider>(),
@@ -158,8 +157,7 @@ namespace
     
     void create_circle_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<circle_shape, actor>(
-        [&owner, &input_ev](ecs::entity_id id, const circle_shape& shape, const actor& act) {
-            ecs::entity e(owner, id);
+        [&owner, &input_ev](ecs::entity e, const circle_shape& shape, const actor& act) {
             if ( !e.find_component<circle_screenspace_collider>() ) {
                 project_circle(
                     e.assign_component<circle_screenspace_collider>(),
@@ -172,8 +170,7 @@ namespace
     
     void create_polygon_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<polygon_shape, actor>(
-        [&owner, &input_ev](ecs::entity_id id, const polygon_shape& shape, const actor& act) {
-            ecs::entity e(owner, id);
+        [&owner, &input_ev](ecs::entity e, const polygon_shape& shape, const actor& act) {
             if ( !e.find_component<polygon_screenspace_collider>() ) {
                 project_polygon(
                     e.assign_component<polygon_screenspace_collider>(),
