@@ -15,29 +15,47 @@ using namespace e2d;
 
 namespace
 {
+    void join_rect(b2f& l, const b2f& r) noexcept {
+        const v2f l1 = l.position + l.size;
+        const v2f r1 = r.position + r.size;
+        l.position.x = math::min(l.position.x, r.position.x);
+        l.position.y = math::min(l.position.y, r.position.y);
+        f32 ax = math::max(l1.x, r1.x);
+        f32 ay = math::max(l1.y, r1.y);
+        l.size.x = ax - l.position.x;
+        l.size.y = ay - l.position.y;
+    }
+
     void update_fixed_layout(
         ecs::entity& e,
-        const b2f& parent_rect,
+        b2f& inout_region,
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<fixed_layout>();
+
+        inout_region = layout.region();
     }
     
     void update_auto_layout2(
         ecs::entity& e,
-        const b2f& parent_rect,
+        b2f& inout_region,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<auto_layout>();
+        if ( childs.empty() ) {
+            inout_region = b2f() + inout_region.position;
+            return;
+        }
+        inout_region = childs.front().region;
+        for ( size_t i = 1; i < childs.size(); ++i ) {
+            join_rect(inout_region, childs[i].region);
+        }
     }
 
     void update_auto_layout(
         ecs::entity& e,
-        const b2f& parent_rect,
+        b2f& parent_rect,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<auto_layout>();
-
         for ( auto& c : childs ) {
             c.region = parent_rect;
         }
@@ -49,7 +67,7 @@ namespace
 
     void update_stack_layout(
         ecs::entity& e,
-        const b2f& parent_rect,
+        b2f& inout_region,
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<stack_layout>();
@@ -57,7 +75,7 @@ namespace
 
     void update_fill_stack_layout(
         ecs::entity& e,
-        const b2f& parent_rect,
+        b2f& inout_region,
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<fill_stack_layout>();
@@ -65,7 +83,7 @@ namespace
 
     void update_dock_layout(
         ecs::entity& e,
-        const b2f& parent_rect,
+        b2f& inout_region,
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<dock_layout>();

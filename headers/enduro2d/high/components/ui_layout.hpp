@@ -17,7 +17,7 @@ namespace e2d
         class root_tag final {};
         
         struct layout_state;
-        using update_fn_t = void(*)(ecs::entity&, const b2f&, std::vector<layout_state>&);
+        using update_fn_t = void(*)(ecs::entity&, b2f&, std::vector<layout_state>&);
     public:
         ui_layout& update_fn(update_fn_t fn) noexcept;
         update_fn_t update_fn() const noexcept;

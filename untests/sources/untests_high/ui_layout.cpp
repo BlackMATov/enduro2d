@@ -48,36 +48,86 @@ namespace
 
 TEST_CASE("ui_layout") {
     safe_world_initializer initializer;
-    SECTION("fixed_layout") {
-        world& w = the<world>();
 
-        gobject_iptr g1 = w.instantiate();
-        g1->entity_filler()
-            .component<actor>(node::create(g1, initializer.scene_r))
+    SECTION("fixed_layout") {
+        gobject_iptr fl1 = the<world>().instantiate();
+        fl1->entity_filler()
+            .component<actor>(node::create(fl1, initializer.scene_r))
             .component<ui_layout>()
             .component<fixed_layout>(b2f(20.0f, 30.0f, 100.0f, 200.0f))
             .component<fixed_layout::dirty_flag>();
-        node_iptr g1_node = g1->get_component<actor>().get().node();
+        node_iptr fl1_node = fl1->get_component<actor>().get().node();
         
-        gobject_iptr g2 = w.instantiate();
-        g2->entity_filler()
-            .component<actor>(node::create(g2, g1_node))
+        gobject_iptr fl2 = the<world>().instantiate();
+        fl2->entity_filler()
+            .component<actor>(node::create(fl2, fl1_node))
             .component<ui_layout>()
             .component<fixed_layout>(b2f(40.0f, 50.0f, 200.0f, 300.0f))
             .component<fixed_layout::dirty_flag>();
-        node_iptr g2_node = g2->get_component<actor>().get().node();
 
         ui_layout_system system;
-        system.process(w.registry());
+        system.process(the<world>().registry());
 
-        REQUIRE_FALSE(g1->get_component<fixed_layout::dirty_flag>().exists());
-        REQUIRE_FALSE(g2->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
 
-        auto* layout1 = g1->get_component<ui_layout>().find();
-        auto* layout2 = g2->get_component<ui_layout>().find();
+        auto* layout1 = fl1->get_component<ui_layout>().find();
+        auto* layout2 = fl2->get_component<ui_layout>().find();
         REQUIRE(layout1 != nullptr);
         REQUIRE(layout2 != nullptr);
         REQUIRE(layout1->region() == b2f(20.0f, 30.0f, 100.0f, 200.0f));
         REQUIRE(layout2->region() == b2f(40.0f, 50.0f, 200.0f, 300.0f));
+    }
+
+    SECTION("auto_layout") {
+        gobject_iptr al = the<world>().instantiate();
+        al->entity_filler()
+            .component<actor>(node::create(al, initializer.scene_r))
+            .component<ui_layout>()
+            .component<auto_layout>()
+            .component<auto_layout::dirty_flag>();
+        node_iptr al_node = al->get_component<actor>().get().node();
+
+        gobject_iptr fl1 = the<world>().instantiate();
+        fl1->entity_filler()
+            .component<actor>(node::create(fl1, al_node))
+            .component<ui_layout>()
+            .component<fixed_layout>(b2f(50.0f, 50.0f) + v2f(-50.0f, 0.0f))
+            .component<fixed_layout::dirty_flag>();
+        
+        gobject_iptr fl2 = the<world>().instantiate();
+        fl2->entity_filler()
+            .component<actor>(node::create(fl2, al_node))
+            .component<ui_layout>()
+            .component<fixed_layout>(b2f(100.0f, 100.0f) + v2f(100.0f, 100.0f))
+            .component<fixed_layout::dirty_flag>();
+        
+        gobject_iptr fl3 = the<world>().instantiate();
+        fl3->entity_filler()
+            .component<actor>(node::create(fl3, al_node))
+            .component<ui_layout>()
+            .component<fixed_layout>(b2f(120.0f, 700.0f) + v2f(50.0f, 180.0f))
+            .component<fixed_layout::dirty_flag>();
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
+        
+        auto* layout1 = fl1->get_component<ui_layout>().find();
+        auto* layout2 = fl2->get_component<ui_layout>().find();
+        auto* layout3 = fl3->get_component<ui_layout>().find();
+        auto* layout4 = al->get_component<ui_layout>().find();
+        REQUIRE(layout1 != nullptr);
+        REQUIRE(layout2 != nullptr);
+        REQUIRE(layout3 != nullptr);
+        REQUIRE(layout4 != nullptr);
+        REQUIRE(layout1->region() == b2f(50.0f, 50.0f) + v2f(-50.0f, 0.0f));
+        REQUIRE(layout2->region() == b2f(100.0f, 100.0f) + v2f(100.0f, 100.0f));
+        REQUIRE(layout3->region() == b2f(120.0f, 700.0f) + v2f(50.0f, 180.0f));
+        REQUIRE(layout4->region() == b2f(-50.0f, 0.0f, 250.0f, 880.0f));
     }
 }
