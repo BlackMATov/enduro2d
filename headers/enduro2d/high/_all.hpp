@@ -39,10 +39,12 @@
 #include "components/shape2d.hpp"
 #include "components/screenspace_collider.hpp"
 #include "components/touchable.hpp"
+#include "components/ui_layout.hpp"
 
 #include "systems/flipbook_system.hpp"
 #include "systems/label_system.hpp"
 #include "systems/render_system.hpp"
+#include "systems/ui_layout_system.hpp"
 
 #include "address.hpp"
 #include "asset.hpp"

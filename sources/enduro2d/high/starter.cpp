@@ -20,6 +20,7 @@
 #include <enduro2d/high/components/scene.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/shape2d.hpp>
+#include <enduro2d/high/components/ui_layout.hpp>
 
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
@@ -27,6 +28,7 @@
 #include <enduro2d/high/systems/screenspace_raycast_system.hpp>
 #include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
+#include <enduro2d/high/systems/ui_layout_system.hpp>
 
 namespace
 {
@@ -52,7 +54,8 @@ namespace
                 .system<input_event_system_pre_update>(world::priority_pre_update)
                 .system<shape_projection_system>(world::priority_pre_update + 1)
                 .system<convex_hull_screenspace_raycast_system>(world::priority_pre_update + 2)
-                .system<input_event_system_post_update>(world::priority_pre_update + 3);
+                .system<input_event_system_post_update>(world::priority_pre_update + 3)
+                .system<ui_layout_system>(world::priority_update);
             return !application_ || application_->initialize();
         }
 
@@ -146,8 +149,13 @@ namespace e2d
             .register_component<model_renderer>("model_renderer")
             .register_component<renderer>("renderer")
             .register_component<scene>("scene")
-            .register_component<sprite_renderer>("sprite_renderer")/*
-            .register_component<rectangle_shape>("rectangle_shape")*/;
+            .register_component<sprite_renderer>("sprite_renderer")
+            .register_component<ui_layout>("ui_layout")
+            .register_component<fixed_layout>("fixed_layout")
+            .register_component<auto_layout>("auto_layout")
+            .register_component<stack_layout>("stack_layout")
+            .register_component<fill_stack_layout>("fill_stack_layout")
+            .register_component<dock_layout>("dock_layout");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }

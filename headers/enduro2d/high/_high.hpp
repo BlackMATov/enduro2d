@@ -49,6 +49,7 @@ namespace e2d
     class sprite_renderer;
     class touchable;
     class input_event;
+    class ui_layout;
 
     class flipbook_system;
     class label_system;
@@ -56,6 +57,7 @@ namespace e2d
     class convex_hull_screenspace_raycast_system;
     class input_event_system_per_update;
     class input_event_system_post_update;
+    class ui_layout_system;
 
     template < typename Asset, typename Content >
     class content_asset;
