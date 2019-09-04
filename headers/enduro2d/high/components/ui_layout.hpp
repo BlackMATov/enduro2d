@@ -7,7 +7,7 @@
 #pragma once
 
 #include "../_high.hpp"
-
+#include "../node.hpp"
 #include "../factory.hpp"
 
 namespace e2d
@@ -17,21 +17,22 @@ namespace e2d
         class root_tag final {};
         
         struct layout_state;
-        using update_fn_t = void(*)(ecs::entity&, b2f&, std::vector<layout_state>&);
+        using update_fn_t = void(*)(ecs::entity&, b2f&, const node_iptr&, std::vector<layout_state>&);
     public:
         ui_layout& update_fn(update_fn_t fn) noexcept;
         update_fn_t update_fn() const noexcept;
 
-        ui_layout& region(const b2f& value) noexcept;
-        const b2f& region() const noexcept;
+        ui_layout& size(const v2f& value) noexcept;
+        const v2f& size() const noexcept;
     private:
         update_fn_t update_ = nullptr;
-        b2f region_;
+        v2f size_;
     };
     
     struct ui_layout::layout_state {
         ecs::entity_id id;
         update_fn_t update;
+        node_iptr node;
         b2f region; // in: required size or region of the layout
                     // out: region that can be used by layout
     };
@@ -58,12 +59,12 @@ namespace e2d
         class dirty_flag final {};
     public:
         fixed_layout() = default;
-        fixed_layout(const b2f& r);
+        fixed_layout(const v2f& size);
 
-        fixed_layout& region(const b2f& value) noexcept;
-        const b2f& region() const noexcept;
+        fixed_layout& size(const v2f& value) noexcept;
+        const v2f& size() const noexcept;
     private:
-        b2f region_;
+        v2f size_;
     };
     
     template <>
@@ -86,8 +87,6 @@ namespace e2d
     class auto_layout final {
     public:
         class dirty_flag final {};
-    private:
-
     };
     
     template <>
@@ -110,8 +109,21 @@ namespace e2d
     class stack_layout final {
     public:
         class dirty_flag final {};
+
+        enum class stack_origin {
+            left,
+            top,
+            right,
+            bottom,
+        };
+    public:
+        stack_layout() = default;
+        stack_layout(stack_origin value);
+
+        stack_layout& origin(stack_origin value) noexcept;
+        stack_origin origin() const noexcept;
     private:
-        std::vector<b2f> child_regions_;
+        stack_origin origin_ = stack_origin::top;
     };
     
     template <>

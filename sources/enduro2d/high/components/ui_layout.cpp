@@ -17,13 +17,13 @@ namespace e2d
         return update_;
     }
 
-    ui_layout& ui_layout::region(const b2f& value) noexcept {
-        region_ = value;
+    ui_layout& ui_layout::size(const v2f& value) noexcept {
+        size_ = value;
         return *this;
     }
 
-    const b2f& ui_layout::region() const noexcept {
-        return region_;
+    const v2f& ui_layout::size() const noexcept {
+        return size_;
     }
 }
 
@@ -56,16 +56,16 @@ namespace e2d
 
 namespace e2d
 {
-    fixed_layout::fixed_layout(const b2f& r)
-    : region_(r) {}
+    fixed_layout::fixed_layout(const v2f& size)
+    : size_(size) {}
 
-    fixed_layout& fixed_layout::region(const b2f& value) noexcept {
-        region_ = value;
+    fixed_layout& fixed_layout::size(const v2f& value) noexcept {
+        size_ = value;
         return *this;
     }
 
-    const b2f& fixed_layout::region() const noexcept {
-        return region_;
+    const v2f& fixed_layout::size() const noexcept {
+        return size_;
     }
 }
 
@@ -120,6 +120,21 @@ namespace e2d
     {
         E2D_UNUSED(dependencies, ctx);
         return true;
+    }
+}
+
+namespace e2d
+{
+    stack_layout::stack_layout(stack_origin value)
+    : origin_(value) {}
+
+    stack_layout& stack_layout::origin(stack_origin value) noexcept {
+        origin_ = value;
+        return *this;
+    }
+
+    stack_layout::stack_origin stack_layout::origin() const noexcept {
+        return origin_;
     }
 }
 

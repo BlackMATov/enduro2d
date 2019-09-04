@@ -29,16 +29,18 @@ namespace
     void update_fixed_layout(
         ecs::entity& e,
         b2f& inout_region,
+        const node_iptr&,
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<fixed_layout>();
 
-        inout_region = layout.region();
+        inout_region.size = layout.size();
     }
     
     void update_auto_layout2(
         ecs::entity& e,
         b2f& inout_region,
+        const node_iptr&,
         std::vector<ui_layout::layout_state>& childs)
     {
         if ( childs.empty() ) {
@@ -54,6 +56,7 @@ namespace
     void update_auto_layout(
         ecs::entity& e,
         b2f& parent_rect,
+        const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
         for ( auto& c : childs ) {
@@ -62,20 +65,56 @@ namespace
         childs.push_back({
             e.id(),
             &update_auto_layout2,
+            node,
             parent_rect});
     }
 
     void update_stack_layout(
         ecs::entity& e,
         b2f& inout_region,
+        const node_iptr&,
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<stack_layout>();
+
+        const v2f max_size = inout_region.size;
+        v2f offset;
+        b2f local_r;
+
+        for (auto& c : childs ) {
+            auto& cell_r = c.region;
+
+            switch ( layout.origin() ) {
+                case stack_layout::stack_origin::left:
+                    cell_r += v2f(offset.x, 0.f);
+                    offset.x += cell_r.size.x;
+                    break;
+                case stack_layout::stack_origin::right:
+                    cell_r += v2f(max_size.x - offset.x, 0.f);
+                    offset.x += cell_r.size.x;
+                    break;
+                case stack_layout::stack_origin::bottom:
+                    cell_r += v2f(0.0f, offset.y);
+                    offset.y += cell_r.size.y;
+                    break;
+                case stack_layout::stack_origin::top:
+                    cell_r += v2f(0.0f, max_size.y - offset.y);
+                    offset.y += cell_r.size.y;
+                    break;
+            }
+            if ( &c != childs.data() ) {
+                join_rect(local_r, cell_r);
+            } else {
+                local_r = cell_r;
+            }
+        }
+        inout_region = local_r;
     }
 
     void update_fill_stack_layout(
         ecs::entity& e,
         b2f& inout_region,
+        const node_iptr&,
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<fill_stack_layout>();
@@ -84,6 +123,7 @@ namespace
     void update_dock_layout(
         ecs::entity& e,
         b2f& inout_region,
+        const node_iptr&,
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<dock_layout>();
@@ -126,6 +166,27 @@ namespace
     }
 
     b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
+        const m4f m = n->local_matrix();
+        const v4f points[] = {
+            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * m,
+            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * m,
+            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * m,
+            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * m
+        };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        return b2f(min, max - min);
+    }
+
+    void project_to_local(const node_iptr& n, ui_layout& layout, const b2f& r) noexcept {
+        // TODO:
+        // - rotation is not supported
         const auto inv_opt = math::inversed(n->local_matrix());
         const m4f inv = inv_opt.second
             ? inv_opt.first
@@ -144,28 +205,8 @@ namespace
             max.x = math::max(max.x, points[i].x);
             max.y = math::max(max.y, points[i].y);
         }
-        return b2f(min, max - min);
-    }
-
-    b2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
-        // TODO:
-        // - rotation is not supported
-        const m4f m = n->local_matrix();
-        const v4f points[] = {
-            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * m,
-            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * m,
-            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * m,
-            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * m
-        };
-        v2f min = v2f(points[0]);
-        v2f max = min;
-        for ( size_t i = 1; i < std::size(points); ++i ) {
-            min.x = math::min(min.x, points[i].x);
-            min.y = math::min(min.y, points[i].y);
-            max.x = math::max(max.x, points[i].x);
-            max.y = math::max(max.y, points[i].y);
-        }
-        return b2f(min, max - min);
+        n->translation(n->translation() + v3f(min.x, min.y, 0.0f));
+        layout.size(max - min);
     }
 
     b2f get_bounding_box(const node_iptr& root) {
@@ -234,6 +275,7 @@ namespace
             pending.push_back({
                 e.id(),
                 layout.update_fn(),
+                root,
                 bbox});
         }
 
@@ -249,18 +291,19 @@ namespace
             node->for_each_child([&temp_layouts](const node_iptr& n) {
                 auto& e = n->owner()->entity();
                 ui_layout& layout = e.get_component<ui_layout>();
-                b2f bbox = project_to_parent(n, layout.region());
+                b2f bbox = project_to_parent(n, b2f(layout.size()));
 
                 temp_layouts.push_back({
                     e.id(),
                     layout.update_fn(),
+                    n,
                     bbox});
             });
 
             if ( curr.update ) {
-                curr.update(e, curr.region, temp_layouts);
+                curr.update(e, curr.region, curr.node, temp_layouts);
             }
-            layout.region(project_to_local(node, curr.region));
+            project_to_local(node, layout, curr.region);
 
             for ( auto i = temp_layouts.rbegin(); i != temp_layouts.rend(); ++i ) {
                 pending.push_back(*i);
@@ -273,7 +316,7 @@ namespace
         owner.for_joined_components<fixed_layout::dirty_flag, fixed_layout, ui_layout>(
         [](const ecs::entity&, fixed_layout::dirty_flag, const fixed_layout& fl, ui_layout& layout) {
             layout.update_fn(&update_fixed_layout);
-            layout.region(fl.region());
+            layout.size(fl.size());
         });
         owner.remove_all_components<fixed_layout::dirty_flag>();
         
