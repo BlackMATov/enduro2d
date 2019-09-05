@@ -26,94 +26,206 @@ namespace
         l.size.y = ay - l.position.y;
     }
 
+    b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
+        const m4f m = n->local_matrix();
+        const v4f points[] = {
+            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * m,
+            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * m,
+            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * m,
+            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * m
+        };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        return b2f(min, max - min);
+    }
+
+    v2f project_to_parent(const node_iptr& n, const v2f& p) noexcept {
+        const m4f m = n->local_matrix();
+        return v2f(v4f(p.x, p.y, 0.0f, 1.0f) * m);
+    }
+
+    b2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
+        // TODO:
+        // - rotation is not supported
+        const auto inv_opt = math::inversed(n->local_matrix());
+        const m4f inv = inv_opt.second
+            ? inv_opt.first
+            : m4f::identity();
+        const v4f points[] = {
+            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * inv,
+            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * inv,
+            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * inv,
+            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * inv
+        };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        return b2f(min, max - min);
+    }
+
+    v2f project_to_local(const node_iptr& n, const v2f& p) noexcept {
+        const auto inv_opt = math::inversed(n->local_matrix());
+        const m4f inv = inv_opt.second
+            ? inv_opt.first
+            : m4f::identity();
+        return v2f(v4f(p.x, p.y, 0.0f, 1.0f) * inv);
+    }
+
     void update_fixed_layout(
         ecs::entity& e,
-        b2f& inout_region,
-        const node_iptr&,
+        const b2f& region,
+        const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<fixed_layout>();
-
-        inout_region.size = layout.size();
+        // layout size is fixed.
+        // position may be changed somewhere
     }
     
     void update_auto_layout2(
         ecs::entity& e,
-        b2f& inout_region,
-        const node_iptr&,
+        const b2f& parent_rect,
+        const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        if ( childs.empty() ) {
-            inout_region = b2f() + inout_region.position;
-            return;
-        }
-        inout_region = childs.front().region;
-        for ( size_t i = 1; i < childs.size(); ++i ) {
-            join_rect(inout_region, childs[i].region);
+        auto& layout = e.get_component<ui_layout>();
+        b2f region;
+
+        if ( !childs.empty() ) {
+            // project childs into auto-layout space and join regions
+            region = project_to_parent(childs.front().node, b2f(childs.front().layout->size()));
+
+            for ( size_t i = 1; i < childs.size(); ++i ) {
+                b2f r = project_to_parent(childs[i].node, b2f(childs[i].layout->size()));
+                join_rect(region, r);
+            }
+            
+            // update layout size and node position
+            node->translation(node->translation() + v3f(region.position, 0.0f));
+            layout.size(region.size);
+
+            // update child transformation
+            for ( auto& c : childs ) {
+                v2f off = project_to_local(c.node, v2f()) -
+                    project_to_local(c.node, v2f(node->translation()));
+                c.node->translation(c.node->translation() + v3f(off, 0.0f));
+            }
+        } else {
+            layout.size(v2f());
         }
     }
 
     void update_auto_layout(
         ecs::entity& e,
-        b2f& parent_rect,
+        const b2f& region,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
+        // project into auto-layout space
+        b2f local = project_to_local(node, region);
+        auto& layout = e.get_component<ui_layout>();
+
         for ( auto& c : childs ) {
-            c.region = parent_rect;
+            c.parent_rect = local;
         }
         childs.push_back({
             e.id(),
             &update_auto_layout2,
             node,
-            parent_rect});
+            &layout,
+            region});
     }
-
-    void update_stack_layout(
+    
+    void update_stack_layout2(
         ecs::entity& e,
-        b2f& inout_region,
-        const node_iptr&,
+        const b2f& parent_rect,
+        const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<stack_layout>();
+        auto& sl = e.get_component<stack_layout>();
+        auto& layout = e.get_component<ui_layout>();
 
-        const v2f max_size = inout_region.size;
+        const v2f max_size = parent_rect.size;
         v2f offset;
         b2f local_r;
 
         for (auto& c : childs ) {
-            auto& cell_r = c.region;
+            // project childs into stack layout
+            b2f item_r = project_to_parent(c.node, b2f(c.layout->size()));
+            item_r.position = v2f(); // TODO: remove ???
 
-            switch ( layout.origin() ) {
+            // place into stack
+            switch ( sl.origin() ) {
                 case stack_layout::stack_origin::left:
-                    cell_r += v2f(offset.x, 0.f);
-                    offset.x += cell_r.size.x;
+                    item_r += v2f(offset.x, 0.f);
+                    offset.x += item_r.size.x;
                     break;
                 case stack_layout::stack_origin::right:
-                    cell_r += v2f(max_size.x - offset.x, 0.f);
-                    offset.x += cell_r.size.x;
+                    item_r += v2f(max_size.x - offset.x, 0.f);
+                    offset.x += item_r.size.x;
                     break;
                 case stack_layout::stack_origin::bottom:
-                    cell_r += v2f(0.0f, offset.y);
-                    offset.y += cell_r.size.y;
+                    item_r += v2f(0.0f, offset.y);
+                    offset.y += item_r.size.y;
                     break;
                 case stack_layout::stack_origin::top:
-                    cell_r += v2f(0.0f, max_size.y - offset.y);
-                    offset.y += cell_r.size.y;
+                    item_r += v2f(0.0f, max_size.y - offset.y);
+                    offset.y += item_r.size.y;
                     break;
             }
+            // project back into child local space and set position
+            b2f bbox = project_to_local(c.node, item_r);
+            c.node->translation(c.node->translation() + v3f(bbox.position, 0.0f));
+
             if ( &c != childs.data() ) {
-                join_rect(local_r, cell_r);
+                join_rect(local_r, item_r);
             } else {
-                local_r = cell_r;
+                local_r = item_r;
             }
         }
-        inout_region = local_r;
+        
+        layout.size(local_r.size);
+    }
+
+    void update_stack_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        bool post_update = false;
+        for (auto& c : childs ) {
+            post_update |= c.layout->post_update();
+        }
+        auto& layout = e.get_component<ui_layout>();
+
+        if ( post_update ) {
+            // if auto layout in stack then use delayed update
+            childs.push_back({
+                e.id(),
+                &update_stack_layout2,
+                node,
+                &layout,
+                parent_rect});
+            return;
+        }
+
+        update_stack_layout2(e, parent_rect, node, childs);
     }
 
     void update_fill_stack_layout(
         ecs::entity& e,
-        b2f& inout_region,
+        const b2f& region,
         const node_iptr&,
         std::vector<ui_layout::layout_state>& childs)
     {
@@ -122,7 +234,7 @@ namespace
 
     void update_dock_layout(
         ecs::entity& e,
-        b2f& inout_region,
+        const b2f& region,
         const node_iptr&,
         std::vector<ui_layout::layout_state>& childs)
     {
@@ -163,62 +275,6 @@ namespace
             max.y = math::max(max.y, points[i].y);
         }
         return b2f(min, max - min);
-    }
-
-    b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
-        const m4f m = n->local_matrix();
-        const v4f points[] = {
-            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * m,
-            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * m,
-            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * m,
-            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * m
-        };
-        v2f min = v2f(points[0]);
-        v2f max = min;
-        for ( size_t i = 1; i < std::size(points); ++i ) {
-            min.x = math::min(min.x, points[i].x);
-            min.y = math::min(min.y, points[i].y);
-            max.x = math::max(max.x, points[i].x);
-            max.y = math::max(max.y, points[i].y);
-        }
-        return b2f(min, max - min);
-    }
-
-    void project_to_local(const node_iptr& n, ui_layout& layout, const b2f& r) noexcept {
-        // TODO:
-        // - rotation is not supported
-        const auto inv_opt = math::inversed(n->local_matrix());
-        const m4f inv = inv_opt.second
-            ? inv_opt.first
-            : m4f::identity();
-        const v4f points[] = {
-            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * inv,
-            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * inv,
-            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * inv,
-            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * inv
-        };
-        v2f min = v2f(points[0]);
-        v2f max = min;
-        for ( size_t i = 1; i < std::size(points); ++i ) {
-            min.x = math::min(min.x, points[i].x);
-            min.y = math::min(min.y, points[i].y);
-            max.x = math::max(max.x, points[i].x);
-            max.y = math::max(max.y, points[i].y);
-        }
-        n->translation(n->translation() + v3f(min.x, min.y, 0.0f));
-        layout.size(max - min);
-    }
-
-    b2f get_bounding_box(const node_iptr& root) {
-        if ( auto* rect = root->owner()->entity().find_component<rectangle_shape>() ) {
-            return rect->rectangle();
-        }
-
-        if ( auto* circle = root->owner()->entity().find_component<circle_shape>() ) {
-            return b2f(v2f(circle->radius())) + circle->center();
-        }
-
-        return b2f();
     }
 
     std::tuple<m4f,b2f> get_vp_and_viewport(
@@ -276,6 +332,7 @@ namespace
                 e.id(),
                 layout.update_fn(),
                 root,
+                &layout,
                 bbox});
         }
 
@@ -286,24 +343,27 @@ namespace
             ecs::entity e(owner, curr.id);
             actor& act = e.get_component<actor>();
             node_iptr node = act.node();
-            ui_layout& layout = e.get_component<ui_layout>();
+            const ui_layout& layout = e.get_component<ui_layout>();
             
-            node->for_each_child([&temp_layouts](const node_iptr& n) {
+            node->for_each_child([&temp_layouts, &curr](const node_iptr& n) {
                 auto& e = n->owner()->entity();
-                ui_layout& layout = e.get_component<ui_layout>();
-                b2f bbox = project_to_parent(n, b2f(layout.size()));
+                const ui_layout& layout = e.get_component<ui_layout>();
 
                 temp_layouts.push_back({
                     e.id(),
                     layout.update_fn(),
                     n,
-                    bbox});
+                    &layout,
+                    curr.parent_rect});
             });
 
             if ( curr.update ) {
-                curr.update(e, curr.region, curr.node, temp_layouts);
+                curr.update(e, curr.parent_rect, curr.node, temp_layouts);
+            } else {
+                b2f b = project_to_local(node, curr.parent_rect);
+                //layout.size(b.size);
+                node->translation(node->translation() + v3f(b.position, 0.0f));
             }
-            project_to_local(node, layout, curr.region);
 
             for ( auto i = temp_layouts.rbegin(); i != temp_layouts.rend(); ++i ) {
                 pending.push_back(*i);
@@ -323,24 +383,28 @@ namespace
         owner.for_joined_components<auto_layout::dirty_flag, auto_layout, ui_layout>(
         [](const ecs::entity&, auto_layout::dirty_flag, const auto_layout&, ui_layout& layout) {
             layout.update_fn(&update_auto_layout);
+            layout.post_update(true);
         });
         owner.remove_all_components<auto_layout::dirty_flag>();
         
         owner.for_joined_components<stack_layout::dirty_flag, stack_layout, ui_layout>(
         [](const ecs::entity&, stack_layout::dirty_flag, const stack_layout&, ui_layout& layout) {
             layout.update_fn(&update_stack_layout);
+            layout.post_update(true);
         });
         owner.remove_all_components<stack_layout::dirty_flag>();
         
         owner.for_joined_components<fill_stack_layout::dirty_flag, fill_stack_layout, ui_layout>(
         [](const ecs::entity&, fill_stack_layout::dirty_flag, const fill_stack_layout&, ui_layout& layout) {
             layout.update_fn(&update_fill_stack_layout);
+            layout.post_update(true);
         });
         owner.remove_all_components<fill_stack_layout::dirty_flag>();
         
         owner.for_joined_components<dock_layout::dirty_flag, dock_layout, ui_layout>(
         [](const ecs::entity&, dock_layout::dirty_flag, const dock_layout&, ui_layout& layout) {
             layout.update_fn(&update_dock_layout);
+            layout.post_update(true); // TODO ???
         });
         owner.remove_all_components<dock_layout::dirty_flag>();
     }

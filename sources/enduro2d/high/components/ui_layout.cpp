@@ -25,6 +25,15 @@ namespace e2d
     const v2f& ui_layout::size() const noexcept {
         return size_;
     }
+
+    ui_layout& ui_layout::post_update(bool enable) noexcept {
+        post_update_ = enable;
+        return *this;
+    }
+
+    bool ui_layout::post_update() const noexcept {
+        return post_update_;
+    }
 }
 
 namespace e2d

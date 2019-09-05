@@ -17,24 +17,28 @@ namespace e2d
         class root_tag final {};
         
         struct layout_state;
-        using update_fn_t = void(*)(ecs::entity&, b2f&, const node_iptr&, std::vector<layout_state>&);
+        using update_fn_t = void(*)(ecs::entity&, const b2f&, const node_iptr&, std::vector<layout_state>&);
     public:
         ui_layout& update_fn(update_fn_t fn) noexcept;
         update_fn_t update_fn() const noexcept;
 
         ui_layout& size(const v2f& value) noexcept;
         const v2f& size() const noexcept;
+
+        ui_layout& post_update(bool enable) noexcept;
+        bool post_update() const noexcept;
     private:
         update_fn_t update_ = nullptr;
-        v2f size_;
+        v2f size_; // layout size in local space
+        bool post_update_ = false; // set true if size depends on child sizes
     };
     
     struct ui_layout::layout_state {
         ecs::entity_id id;
         update_fn_t update;
         node_iptr node;
-        b2f region; // in: required size or region of the layout
-                    // out: region that can be used by layout
+        const ui_layout* layout;
+        b2f parent_rect; // region that can be allocated (in parent space)
     };
 
     template <>
