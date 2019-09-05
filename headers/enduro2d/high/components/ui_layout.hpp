@@ -147,30 +147,6 @@ namespace e2d
 
 namespace e2d
 {
-    class fill_stack_layout final {
-    public:
-        class dirty_flag final {};
-    private:
-        std::vector<b2f> child_regions_;
-    };
-    
-    template <>
-    class factory_loader<fill_stack_layout> final : factory_loader<> {
-    public:
-        static const char* schema_source;
-
-        bool operator()(
-            fill_stack_layout& component,
-            const fill_context& ctx) const;
-            
-        bool operator()(
-            asset_dependencies& dependencies,
-            const collect_context& ctx) const;
-    };
-}
-
-namespace e2d
-{
     class dock_layout final {
     public:
         class dirty_flag final {};
@@ -181,14 +157,22 @@ namespace e2d
             right = 1 << 1,
             bottom = 1 << 2,
             top = 1 << 3,
+            center_x = 1 << 4,
+            center_y = 1 << 5,
             fill = left | right | bottom | top,
         };
     public:
-
+        dock_layout() = default;
+        dock_layout(dock_type dock);
+        
+        dock_layout& dock(dock_type value) noexcept;
+        dock_type dock() const noexcept;
+        bool has_dock(dock_type value) const noexcept;
     private:
         dock_type dock_ = dock_type::none;
-        v2f size_;
     };
+
+    dock_layout::dock_type operator|(dock_layout::dock_type l, dock_layout::dock_type r) noexcept;
     
     template <>
     class factory_loader<dock_layout> final : factory_loader<> {

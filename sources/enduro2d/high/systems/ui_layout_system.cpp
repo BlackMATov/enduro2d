@@ -117,12 +117,12 @@ namespace
 
     void update_auto_layout(
         ecs::entity& e,
-        const b2f& region,
+        const b2f& parent_rect,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
         // project into auto-layout space
-        b2f local = project_to_local(node, region);
+        b2f local = project_to_local(node, parent_rect);
         auto& layout = e.get_component<ui_layout>();
 
         for ( auto& c : childs ) {
@@ -133,7 +133,7 @@ namespace
             &update_auto_layout2,
             node,
             &layout,
-            region});
+            parent_rect});
     }
     
     void update_stack_layout2(
@@ -144,21 +144,21 @@ namespace
     {
         auto& sl = e.get_component<stack_layout>();
         auto& layout = e.get_component<ui_layout>();
-
-        v2f max_size;
-        v2f offset;
-        b2f local_r;
+        const b2f local = project_to_local(node, parent_rect);
         
         // project childs into stack layout and calculate max size
+        v2f max_size;
         std::vector<v2f> projected(childs.size());
         for ( size_t i = 0; i < childs.size(); ++i ) {
             v2f p = project_to_parent(childs[i].node, b2f(childs[i].layout->size())).size;
             projected[i] = p;
             max_size += p;
         }
-        max_size.x = math::min(max_size.x, parent_rect.size.x);
-        max_size.y = math::min(max_size.y, parent_rect.size.y);
+        max_size.x = math::min(max_size.x, local.size.x);
+        max_size.y = math::min(max_size.y, local.size.y);
         
+        v2f offset;
+        b2f local_r;
         for ( size_t i = 0; i < childs.size(); ++i ) {
             auto& c = childs[i];
             b2f item_r(projected[i]);
@@ -192,12 +192,6 @@ namespace
                 local_r = item_r;
             }
         }
-
-        if ( sl.origin() == stack_layout::stack_origin::right ||
-             sl.origin() == stack_layout::stack_origin::top )
-        {
-            node->translation(node->translation() + v3f(local_r.position, 0.0f));
-        }
         
         layout.size(local_r.size);
     }
@@ -215,7 +209,6 @@ namespace
         auto& layout = e.get_component<ui_layout>();
 
         if ( post_update ) {
-            // if auto layout in stack then use delayed update
             childs.push_back({
                 e.id(),
                 &update_stack_layout2,
@@ -228,22 +221,85 @@ namespace
         update_stack_layout2(e, parent_rect, node, childs);
     }
 
-    void update_fill_stack_layout(
+    void update_dock_layout2(
         ecs::entity& e,
-        const b2f& region,
-        const node_iptr&,
+        const b2f& parent_rect,
+        const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<fill_stack_layout>();
+        v2f size;
+        if ( childs.size() ) {
+            E2D_ASSERT(childs.size() == 1);
+            size = project_to_parent(childs.front().node, b2f(childs.front().layout->size())).size;
+        }
+
+        using dock = dock_layout::dock_type;
+        auto& dl = e.get_component<dock_layout>();
+        auto& layout = e.get_component<ui_layout>();
+        const b2f local = project_to_local(node, parent_rect);
+        b2f region;
+
+        // horizontal docking
+        if ( dl.has_dock(dock::center_x) ) {
+            region.position.x = (local.size.x - size.x) * 0.5f;
+            region.size.x = size.x;
+        } else if ( dl.has_dock(dock::left | dock::right) ) {
+            region.position.x = 0.0f;
+            region.size.x = local.size.x;
+        } else if ( dl.has_dock(dock::left) ) {
+            region.position.x = 0.0f;
+            region.size.x = size.x;
+        } else if ( dl.has_dock(dock::right) ) {
+            region.position.x = local.size.x - size.x;
+            region.size.x = size.x;
+        } else {
+            E2D_ASSERT_MSG(false, "undefined horizontal docking");
+        }
+
+        // vertical docking
+        if ( dl.has_dock(dock::center_y) ) {
+            region.position.y = (local.size.y - size.y) * 0.5f;
+            region.size.y = size.y;
+        } else if ( dl.has_dock(dock::top | dock::bottom) ) {
+            region.position.y = 0.0f;
+            region.size.y = local.size.y;
+        } else if ( dl.has_dock(dock::bottom) ) {
+            region.position.y = 0.0f;
+            region.size.y = size.y;
+        } else if ( dl.has_dock(dock::top) ) {
+            region.position.y = local.size.y - size.y;
+            region.size.y = size.y;
+        } else {
+            E2D_ASSERT_MSG(false, "undefined vertial docking");
+        }
+        
+        node->translation(node->translation() + v3f(region.position, 0.0f));
+        layout.size(region.size);
     }
 
     void update_dock_layout(
         ecs::entity& e,
-        const b2f& region,
-        const node_iptr&,
+        const b2f& parent_rect,
+        const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<dock_layout>();
+        bool post_update = false;
+        for (auto& c : childs ) {
+            post_update |= c.layout->post_update();
+        }
+        auto& layout = e.get_component<ui_layout>();
+
+        if ( post_update ) {
+            childs.push_back({
+                e.id(),
+                &update_dock_layout2,
+                node,
+                &layout,
+                parent_rect});
+            return;
+        }
+
+        update_dock_layout2(e, parent_rect, node, childs);
     }
 }
 
@@ -394,13 +450,6 @@ namespace
             layout.post_update(true);
         });
         owner.remove_all_components<stack_layout::dirty_flag>();
-        
-        owner.for_joined_components<fill_stack_layout::dirty_flag, fill_stack_layout, ui_layout>(
-        [](const ecs::entity&, fill_stack_layout::dirty_flag, const fill_stack_layout&, ui_layout& layout) {
-            layout.update_fn(&update_fill_stack_layout);
-            layout.post_update(true);
-        });
-        owner.remove_all_components<fill_stack_layout::dirty_flag>();
         
         owner.for_joined_components<dock_layout::dirty_flag, dock_layout, ui_layout>(
         [](const ecs::entity&, dock_layout::dirty_flag, const dock_layout&, ui_layout& layout) {

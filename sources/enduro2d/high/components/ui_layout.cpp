@@ -176,28 +176,25 @@ namespace e2d
 
 namespace e2d
 {
-    const char* factory_loader<fill_stack_layout>::schema_source = R"json({
-        "type" : "object",
-        "required" : [],
-        "additionalProperties" : false,
-        "properties" : {
-        }
-    })json";
+    dock_layout::dock_layout(dock_type dock)
+    : dock_(dock) {}
 
-    bool factory_loader<fill_stack_layout>::operator()(
-        fill_stack_layout& component,
-        const fill_context& ctx) const
-    {
-        E2D_UNUSED(component, ctx);
-        return true;
+    dock_layout& dock_layout::dock(dock_type value) noexcept {
+        dock_ = value;
+        return *this;
     }
 
-    bool factory_loader<fill_stack_layout>::operator()(
-        asset_dependencies& dependencies,
-        const collect_context& ctx) const
-    {
-        E2D_UNUSED(dependencies, ctx);
-        return true;
+    dock_layout::dock_type dock_layout::dock() const noexcept {
+        return dock_;
+    }
+    
+    bool dock_layout::has_dock(dock_type value) const noexcept {
+        auto mask = utils::enum_to_underlying(value);
+        return (utils::enum_to_underlying(dock_) & mask) == mask;
+    }
+
+    dock_layout::dock_type operator|(dock_layout::dock_type l, dock_layout::dock_type r) noexcept {
+        return dock_layout::dock_type(utils::enum_to_underlying(l) | utils::enum_to_underlying(r));
     }
 }
 
