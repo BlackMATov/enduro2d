@@ -72,7 +72,7 @@ namespace
         return result;
     }
 
-    gobject_iptr create_fixed_layout(const node_iptr& root, const v2f& pos, const v2f& size) {
+    gobject_iptr create_fixed_layout(const node_iptr& root, const v2f& pos, const v2f& size, const v2f& scale) {
         gobject_iptr fl = the<world>().instantiate();
         fl->entity_filler()
             .component<actor>(node::create(fl, root))
@@ -81,7 +81,12 @@ namespace
             .component<fixed_layout::dirty_flag>();
         node_iptr fl_node = fl->get_component<actor>().get().node();
         fl_node->translation(v3f(pos.x, pos.y, 0.f));
+        fl_node->scale(v3f(scale, 1.0f));
         return fl;
+    }
+
+    gobject_iptr create_fixed_layout(const node_iptr& root, const v2f& pos, const v2f& size) {
+        return create_fixed_layout(root, pos, size, v2f(1.0f));
     }
 }
 
@@ -90,8 +95,6 @@ TEST_CASE("ui_layout") {
     
     SECTION("fixed_layout") {
         gobject_iptr fl1 = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
-        node_iptr fl1_node = fl1->get_component<actor>().get().node();
-        
         gobject_iptr fl2 = create_fixed_layout(initializer.scene_r, {40.0f, 50.0f}, {200.0f, 300.0f});
 
         ui_layout_system system;
@@ -102,6 +105,19 @@ TEST_CASE("ui_layout") {
 
         REQUIRE(get_region(fl1) == b2f(20.0f, 30.0f, 100.0f, 200.0f));
         REQUIRE(get_region(fl2) == b2f(40.0f, 50.0f, 200.0f, 300.0f));
+    }
+    SECTION("fixed_layout-2") {
+        gobject_iptr fl1 = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f}, {1.5f, 2.1f});
+        gobject_iptr fl2 = create_fixed_layout(initializer.scene_r, {40.0f, 50.0f}, {200.0f, 300.0f}, {1.8f, 3.4f});
+
+        ui_layout_system system;
+        system.process(the<world>().registry());
+
+        REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
+
+        REQUIRE(get_region(fl1) == b2f(20.0f, 30.0f, 100.0f * 1.5f, 200.0f * 2.1f));
+        REQUIRE(get_region(fl2) == b2f(40.0f, 50.0f, 200.0f * 1.8f, 300.0f * 3.4f));
     }
     SECTION("stack_layout - bottom") {
         gobject_iptr sl = the<world>().instantiate();
@@ -145,7 +161,7 @@ TEST_CASE("ui_layout") {
         node_iptr sl_node = sl->get_component<actor>().get().node();
         
         gobject_iptr fl1 = create_fixed_layout(sl_node, {}, {55.0f, 100.0f});
-        gobject_iptr fl2 = create_fixed_layout(sl_node, {}, {120.0f, 200.0f});
+        gobject_iptr fl2 = create_fixed_layout(sl_node, {}, {60.0f, 100.0f}, {2.0f, 2.0f});
         gobject_iptr fl3 = create_fixed_layout(sl_node, {}, {33.0f, 150.0f});
         gobject_iptr fl4 = create_fixed_layout(sl_node, {}, {90.0f, 170.0f});
         gobject_iptr fl5 = create_fixed_layout(sl_node, {}, {111.0f, 90.0f});
@@ -195,12 +211,12 @@ TEST_CASE("ui_layout") {
         REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty_flag>().exists());
         REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty_flag>().exists());
         
-        REQUIRE(get_region(fl1) == b2f(55.0f, 100.0f) + v2f(545.0f, 0.0f));
-        REQUIRE(get_region(fl2) == b2f(120.0f, 200.0f) + v2f(425.0f, 0.0f));
-        REQUIRE(get_region(fl3) == b2f(33.0f, 150.0f) + v2f(392.0f, 0.0f));
-        REQUIRE(get_region(fl4) == b2f(90.0f, 170.0f) + v2f(302.0f, 0.0f));
-        REQUIRE(get_region(fl5) == b2f(111.0f, 90.0f) + v2f(191.0f, 0.0f));
-        REQUIRE(get_region(sl) == b2f(409.0f, 200.0f) + v2f(191.0f, 0.0f));
+        REQUIRE(get_region(fl1) == b2f(55.0f, 100.0f) + v2f(354.0f, 0.0f));
+        REQUIRE(get_region(fl2) == b2f(120.0f, 200.0f) + v2f(234.0f, 0.0f));
+        REQUIRE(get_region(fl3) == b2f(33.0f, 150.0f) + v2f(201.0f, 0.0f));
+        REQUIRE(get_region(fl4) == b2f(90.0f, 170.0f) + v2f(111.0f, 0.0f));
+        REQUIRE(get_region(fl5) == b2f(111.0f, 90.0f) + v2f(0.0f, 0.0f));
+        REQUIRE(get_region(sl) == b2f(409.0f, 200.0f));
     }
     SECTION("auto_layout") {
         gobject_iptr al = the<world>().instantiate();

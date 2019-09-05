@@ -155,14 +155,23 @@ namespace
         auto& sl = e.get_component<stack_layout>();
         auto& layout = e.get_component<ui_layout>();
 
-        const v2f max_size = parent_rect.size;
+        v2f max_size;
         v2f offset;
         b2f local_r;
-
-        for (auto& c : childs ) {
-            // project childs into stack layout
-            b2f item_r = project_to_parent(c.node, b2f(c.layout->size()));
-            item_r.position = v2f(); // TODO: remove ???
+        
+        // project childs into stack layout and calculate max size
+        std::vector<v2f> projected(childs.size());
+        for ( size_t i = 0; i < childs.size(); ++i ) {
+            v2f p = project_to_parent(childs[i].node, b2f(childs[i].layout->size())).size;
+            projected[i] = p;
+            max_size += p;
+        }
+        max_size.x = math::min(max_size.x, parent_rect.size.x);
+        max_size.y = math::min(max_size.y, parent_rect.size.y);
+        
+        for ( size_t i = 0; i < childs.size(); ++i ) {
+            auto& c = childs[i];
+            b2f item_r(projected[i]);
 
             // place into stack
             switch ( sl.origin() ) {
@@ -185,7 +194,7 @@ namespace
             }
             // project back into child local space and set position
             b2f bbox = project_to_local(c.node, item_r);
-            c.node->translation(c.node->translation() + v3f(bbox.position, 0.0f));
+            c.node->translation(c.node->translation() + v3f(bbox.position, 0.0f) * c.node->scale()); // TODO: why scale?
 
             if ( &c != childs.data() ) {
                 join_rect(local_r, item_r);

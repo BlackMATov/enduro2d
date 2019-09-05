@@ -36,7 +36,7 @@ namespace e2d
     struct ui_layout::layout_state {
         ecs::entity_id id;
         update_fn_t update;
-        node_iptr node;
+        node_iptr node; // node contains left bottom coordinate of layout
         const ui_layout* layout;
         b2f parent_rect; // region that can be allocated (in parent space)
     };
