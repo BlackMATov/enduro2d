@@ -244,6 +244,32 @@ TEST_CASE("ui_layout") {
         REQUIRE(get_region(fl2) == b2f(100.0f, 100.0f) + v2f(150.0f, 90.0f));
         REQUIRE(get_region(fl3) == b2f(120.0f, 700.0f) + v2f(100.0f, 170.0f));
     }
+    SECTION("auto_layout - scale") {
+        gobject_iptr al = the<world>().instantiate();
+        al->entity_filler()
+            .component<actor>(node::create(al, initializer.scene_r))
+            .component<ui_layout>()
+            .component<auto_layout>()
+            .component<auto_layout::dirty_flag>();
+        node_iptr al_node = al->get_component<actor>().get().node();
+        
+        gobject_iptr fl1 = create_fixed_layout(al_node, {-50.0f, 10.0f}, {50.0f, 50.0f});
+        gobject_iptr fl2 = create_fixed_layout(al_node, {100.0f, 100.0f}, {100.0f, 100.0f}, {1.5f, 2.0f});
+        gobject_iptr fl3 = create_fixed_layout(al_node, {50.0f, 180.0f}, {120.0f, 500.0f});
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
+        
+        REQUIRE(get_region(al) == b2f(-50.0f, 10.0f, 300.0f, 670.0f));
+        REQUIRE(get_region(fl1) == b2f(50.0f, 50.0f) + v2f(0.0f, 0.0f));
+        REQUIRE(get_region(fl2) == b2f(150.0f, 200.0f) + v2f(150.0f, 90.0f));
+        REQUIRE(get_region(fl3) == b2f(120.0f, 500.0f) + v2f(100.0f, 170.0f));
+    }
     SECTION("auto_layout in stack layout") {
         gobject_iptr sl = the<world>().instantiate();
         sl->entity_filler()

@@ -81,16 +81,6 @@ namespace
             : m4f::identity();
         return v2f(v4f(p.x, p.y, 0.0f, 1.0f) * inv);
     }
-
-    void update_fixed_layout(
-        ecs::entity& e,
-        const b2f& region,
-        const node_iptr& node,
-        std::vector<ui_layout::layout_state>& childs)
-    {
-        // layout size is fixed.
-        // position may be changed somewhere
-    }
     
     void update_auto_layout2(
         ecs::entity& e,
@@ -118,7 +108,7 @@ namespace
             for ( auto& c : childs ) {
                 v2f off = project_to_local(c.node, v2f()) -
                     project_to_local(c.node, v2f(node->translation()));
-                c.node->translation(c.node->translation() + v3f(off, 0.0f));
+                c.node->translation(c.node->translation() + v3f(off, 0.0f) * c.node->scale());
             }
         } else {
             layout.size(v2f());
@@ -194,7 +184,7 @@ namespace
             }
             // project back into child local space and set position
             b2f bbox = project_to_local(c.node, item_r);
-            c.node->translation(c.node->translation() + v3f(bbox.position, 0.0f) * c.node->scale()); // TODO: why scale?
+            c.node->translation(c.node->translation() + v3f(bbox.position, 0.0f) * c.node->scale());
 
             if ( &c != childs.data() ) {
                 join_rect(local_r, item_r);
@@ -375,10 +365,6 @@ namespace
 
             if ( curr.update ) {
                 curr.update(e, curr.parent_rect, curr.node, temp_layouts);
-            } else {
-                b2f b = project_to_local(node, curr.parent_rect);
-                //layout.size(b.size);
-                node->translation(node->translation() + v3f(b.position, 0.0f));
             }
 
             for ( auto i = temp_layouts.rbegin(); i != temp_layouts.rend(); ++i ) {
@@ -391,7 +377,6 @@ namespace
     void register_update_fn(ecs::registry& owner) {
         owner.for_joined_components<fixed_layout::dirty_flag, fixed_layout, ui_layout>(
         [](const ecs::entity&, fixed_layout::dirty_flag, const fixed_layout& fl, ui_layout& layout) {
-            layout.update_fn(&update_fixed_layout);
             layout.size(fl.size());
         });
         owner.remove_all_components<fixed_layout::dirty_flag>();
