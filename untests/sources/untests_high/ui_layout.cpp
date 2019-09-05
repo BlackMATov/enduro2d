@@ -83,68 +83,11 @@ namespace
         fl_node->translation(v3f(pos.x, pos.y, 0.f));
         return fl;
     }
-    /*
-    b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
-        const m4f m = n->local_matrix();
-        const v4f points[] = {
-            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * m,
-            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * m,
-            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * m,
-            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * m
-        };
-        v2f min = v2f(points[0]);
-        v2f max = min;
-        for ( size_t i = 1; i < std::size(points); ++i ) {
-            min.x = math::min(min.x, points[i].x);
-            min.y = math::min(min.y, points[i].y);
-            max.x = math::max(max.x, points[i].x);
-            max.y = math::max(max.y, points[i].y);
-        }
-        return b2f(min, max - min);
-    }
-
-    v2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
-        // TODO:
-        // - rotation is not supported
-        const auto inv_opt = math::inversed(n->local_matrix());
-        const m4f inv = inv_opt.second
-            ? inv_opt.first
-            : m4f::identity();
-        const v4f points[] = {
-            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * inv,
-            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * inv,
-            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * inv,
-            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * inv
-        };
-        v2f min = v2f(points[0]);
-        v2f max = min;
-        for ( size_t i = 1; i < std::size(points); ++i ) {
-            min.x = math::min(min.x, points[i].x);
-            min.y = math::min(min.y, points[i].y);
-            max.x = math::max(max.x, points[i].x);
-            max.y = math::max(max.y, points[i].y);
-        }
-        n->translation(n->translation() + v3f(min.x, min.y, 0.0f));
-        return max - min;
-    }*/
 }
 
 TEST_CASE("ui_layout") {
     safe_world_initializer initializer;
     
-    /*SECTION("projection") {
-        auto n0 = node::create();
-        auto n1 = node::create();
-        n1->translation(v3f(20.0f, 30.0f, 0.0f));
-
-        b2f b1(100.0f, 200.0f);
-        b2f b2 = project_to_parent(n1, b1);
-
-        b2.position += v2f(10.0f);
-        v2f b3 = project_to_local(n1, b2);
-
-        REQUIRE(n1->translation() == v3f(30.0f, 40.0f, 0.0f));
-    }*/
     SECTION("fixed_layout") {
         gobject_iptr fl1 = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
         node_iptr fl1_node = fl1->get_component<actor>().get().node();
@@ -224,6 +167,41 @@ TEST_CASE("ui_layout") {
         REQUIRE(get_region(fl5) == b2f(111.0f, 90.0f) + v2f(298.0f, 0.0f));
         REQUIRE(get_region(sl) == b2f(409.0f, 200.0f));
     }
+    SECTION("stack_layout - right") {
+        gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 400.0f});
+        node_iptr root_node = root->get_component<actor>().get().node();
+
+        gobject_iptr sl = the<world>().instantiate();
+        sl->entity_filler()
+            .component<actor>(node::create(sl, root_node))
+            .component<ui_layout>()
+            .component<stack_layout>(stack_layout::stack_origin::right)
+            .component<stack_layout::dirty_flag>();
+        node_iptr sl_node = sl->get_component<actor>().get().node();
+        
+        gobject_iptr fl1 = create_fixed_layout(sl_node, {}, {55.0f, 100.0f});
+        gobject_iptr fl2 = create_fixed_layout(sl_node, {}, {120.0f, 200.0f});
+        gobject_iptr fl3 = create_fixed_layout(sl_node, {}, {33.0f, 150.0f});
+        gobject_iptr fl4 = create_fixed_layout(sl_node, {}, {90.0f, 170.0f});
+        gobject_iptr fl5 = create_fixed_layout(sl_node, {}, {111.0f, 90.0f});
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(sl->get_component<stack_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty_flag>().exists());
+        
+        REQUIRE(get_region(fl1) == b2f(55.0f, 100.0f) + v2f(545.0f, 0.0f));
+        REQUIRE(get_region(fl2) == b2f(120.0f, 200.0f) + v2f(425.0f, 0.0f));
+        REQUIRE(get_region(fl3) == b2f(33.0f, 150.0f) + v2f(392.0f, 0.0f));
+        REQUIRE(get_region(fl4) == b2f(90.0f, 170.0f) + v2f(302.0f, 0.0f));
+        REQUIRE(get_region(fl5) == b2f(111.0f, 90.0f) + v2f(191.0f, 0.0f));
+        REQUIRE(get_region(sl) == b2f(409.0f, 200.0f) + v2f(191.0f, 0.0f));
+    }
     SECTION("auto_layout") {
         gobject_iptr al = the<world>().instantiate();
         al->entity_filler()
@@ -249,5 +227,45 @@ TEST_CASE("ui_layout") {
         REQUIRE(get_region(fl1) == b2f(50.0f, 50.0f) + v2f(0.0f, 0.0f));
         REQUIRE(get_region(fl2) == b2f(100.0f, 100.0f) + v2f(150.0f, 90.0f));
         REQUIRE(get_region(fl3) == b2f(120.0f, 700.0f) + v2f(100.0f, 170.0f));
+    }
+    SECTION("auto_layout in stack layout") {
+        gobject_iptr sl = the<world>().instantiate();
+        sl->entity_filler()
+            .component<actor>(node::create(sl, initializer.scene_r))
+            .component<ui_layout>()
+            .component<stack_layout>(stack_layout::stack_origin::left)
+            .component<stack_layout::dirty_flag>();
+        node_iptr sl_node = sl->get_component<actor>().get().node();
+
+        gobject_iptr al = the<world>().instantiate();
+        al->entity_filler()
+            .component<actor>(node::create(al, sl_node))
+            .component<ui_layout>()
+            .component<auto_layout>()
+            .component<auto_layout::dirty_flag>();
+        node_iptr al_node = al->get_component<actor>().get().node();
+
+        gobject_iptr fl1 = create_fixed_layout(al_node, {-50.0f, 10.0f}, {50.0f, 50.0f});
+        gobject_iptr fl2 = create_fixed_layout(al_node, {100.0f, 100.0f}, {100.0f, 100.0f});
+        gobject_iptr fl3 = create_fixed_layout(al_node, {50.0f, 180.0f}, {120.0f, 220.0f});
+        
+        gobject_iptr fl4 = create_fixed_layout(sl_node, {}, {70.0f, 80.0f});
+        gobject_iptr fl5 = create_fixed_layout(sl_node, {}, {110.0f, 30.0f});
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(sl->get_component<auto_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty_flag>().exists());
+        
+        REQUIRE(get_region(al) == b2f(250.0f, 390.0f));
+        REQUIRE(get_region(fl4) == b2f(70.0f, 80.0f) + v2f(250.0f, 0.0f));
+        REQUIRE(get_region(fl5) == b2f(110.0f, 30.0f) + v2f(320.0f, 0.0f));
+        REQUIRE(get_region(sl) == b2f(430.0f, 390.0f));
     }
 }

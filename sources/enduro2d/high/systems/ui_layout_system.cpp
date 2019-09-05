@@ -171,7 +171,7 @@ namespace
                     offset.x += item_r.size.x;
                     break;
                 case stack_layout::stack_origin::right:
-                    item_r += v2f(max_size.x - offset.x, 0.f);
+                    item_r += v2f(max_size.x - offset.x - item_r.size.x, 0.f);
                     offset.x += item_r.size.x;
                     break;
                 case stack_layout::stack_origin::bottom:
@@ -179,7 +179,7 @@ namespace
                     offset.y += item_r.size.y;
                     break;
                 case stack_layout::stack_origin::top:
-                    item_r += v2f(0.0f, max_size.y - offset.y);
+                    item_r += v2f(0.0f, max_size.y - offset.y - item_r.size.y);
                     offset.y += item_r.size.y;
                     break;
             }
@@ -192,6 +192,12 @@ namespace
             } else {
                 local_r = item_r;
             }
+        }
+
+        if ( sl.origin() == stack_layout::stack_origin::right ||
+             sl.origin() == stack_layout::stack_origin::top )
+        {
+            node->translation(node->translation() + v3f(local_r.position, 0.0f));
         }
         
         layout.size(local_r.size);
@@ -344,8 +350,9 @@ namespace
             actor& act = e.get_component<actor>();
             node_iptr node = act.node();
             const ui_layout& layout = e.get_component<ui_layout>();
+            const b2f parent_rect(layout.size());
             
-            node->for_each_child([&temp_layouts, &curr](const node_iptr& n) {
+            node->for_each_child([&temp_layouts, &parent_rect](const node_iptr& n) {
                 auto& e = n->owner()->entity();
                 const ui_layout& layout = e.get_component<ui_layout>();
 
@@ -354,7 +361,7 @@ namespace
                     layout.update_fn(),
                     n,
                     &layout,
-                    curr.parent_rect});
+                    parent_rect});
             });
 
             if ( curr.update ) {
