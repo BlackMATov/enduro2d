@@ -1,0 +1,5 @@
+{
+    "texture" : "rect.png",
+    "pivot" : { "x" : 0, "y" : 0 },
+    "texrect" : { "x" : 0, "y" : 0, "w" : 64, "h" : 64 }
+}
