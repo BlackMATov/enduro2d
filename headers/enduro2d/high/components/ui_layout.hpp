@@ -25,12 +25,16 @@ namespace e2d
         ui_layout& size(const v2f& value) noexcept;
         const v2f& size() const noexcept;
 
-        ui_layout& post_update(bool enable) noexcept;
-        bool post_update() const noexcept;
+        ui_layout& depends_on_childs(bool enable) noexcept;
+        bool depends_on_childs() const noexcept;
+        
+        ui_layout& depends_on_parent(bool enable) noexcept;
+        bool depends_on_parent() const noexcept;
     private:
         update_fn_t update_ = nullptr;
         v2f size_; // layout size in local space
-        bool post_update_ = false; // set true if size depends on child sizes
+        bool depends_on_childs_ = false; // set true if size depends on child sizes
+        bool depends_on_parent_ = false; // set true if size depends on parent size
     };
     
     struct ui_layout::layout_state {
@@ -39,20 +43,7 @@ namespace e2d
         node_iptr node; // node contains left bottom coordinate of layout
         const ui_layout* layout;
         b2f parent_rect; // region that can be allocated (in parent space)
-    };
-
-    template <>
-    class factory_loader<ui_layout> final : factory_loader<> {
-    public:
-        static const char* schema_source;
-
-        bool operator()(
-            ui_layout& component,
-            const fill_context& ctx) const;
-            
-        bool operator()(
-            asset_dependencies& dependencies,
-            const collect_context& ctx) const;
+        bool is_post_update;
     };
 }
 
@@ -186,5 +177,27 @@ namespace e2d
         bool operator()(
             asset_dependencies& dependencies,
             const collect_context& ctx) const;
+    };
+}
+
+namespace e2d
+{
+    class image_layout final {
+    public:
+        class dirty_flag final {};
+    public:
+        image_layout() = default;
+        
+        image_layout& pivot(const v2f& value) noexcept;
+        image_layout& size(const v2f& value) noexcept;
+        image_layout& preserve_aspect(bool value) noexcept;
+        
+        const v2f& pivot() const noexcept;
+        const v2f& size() const noexcept;
+        bool preserve_aspect() const noexcept;
+    private:
+        v2f pivot_;
+        v2f size_;
+        bool preserve_aspect_ = true;
     };
 }

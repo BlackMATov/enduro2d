@@ -8,7 +8,7 @@
 #include <enduro2d/high/components/ui_layout.hpp>
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
-#include <enduro2d/high/components/shape2d.hpp>
+#include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/node.hpp>
 
 using namespace e2d;
@@ -93,11 +93,18 @@ namespace
 
         if ( !childs.empty() ) {
             // project childs into auto-layout space and join regions
-            region = project_to_parent(childs.front().node, b2f(childs.front().layout->size()));
-
-            for ( size_t i = 1; i < childs.size(); ++i ) {
-                b2f r = project_to_parent(childs[i].node, b2f(childs[i].layout->size()));
-                join_rect(region, r);
+            bool first = true;
+            for ( auto& c : childs ) {
+                if ( c.layout->depends_on_parent() ) {
+                    continue;
+                }
+                b2f r = project_to_parent(c.node, b2f(c.layout->size()));
+                if ( !first ) {
+                    join_rect(region, r);
+                } else {
+                    first = false;
+                    region = r;
+                }
             }
             
             // update layout size and node position
@@ -109,6 +116,7 @@ namespace
                 v2f off = project_to_local(c.node, v2f()) -
                     project_to_local(c.node, v2f(node->translation()));
                 c.node->translation(c.node->translation() + v3f(off, 0.0f) * c.node->scale());
+                c.parent_rect = b2f(region.size);
             }
         } else {
             layout.size(v2f());
@@ -133,7 +141,8 @@ namespace
             &update_auto_layout2,
             node,
             &layout,
-            parent_rect});
+            parent_rect,
+            true});
     }
     
     void update_stack_layout2(
@@ -144,7 +153,6 @@ namespace
     {
         auto& sl = e.get_component<stack_layout>();
         auto& layout = e.get_component<ui_layout>();
-        const b2f local = project_to_local(node, parent_rect);
         
         // project childs into stack layout and calculate max size
         v2f max_size;
@@ -154,8 +162,6 @@ namespace
             projected[i] = p;
             max_size += p;
         }
-        max_size.x = math::min(max_size.x, local.size.x);
-        max_size.y = math::min(max_size.y, local.size.y);
         
         v2f offset;
         b2f local_r;
@@ -204,17 +210,18 @@ namespace
     {
         bool post_update = false;
         for (auto& c : childs ) {
-            post_update |= c.layout->post_update();
+            post_update |= c.layout->depends_on_childs();
         }
-        auto& layout = e.get_component<ui_layout>();
 
         if ( post_update ) {
+            auto& layout = e.get_component<ui_layout>();
             childs.push_back({
                 e.id(),
                 &update_stack_layout2,
                 node,
                 &layout,
-                parent_rect});
+                parent_rect,
+                true});
             return;
         }
 
@@ -285,7 +292,7 @@ namespace
     {
         bool post_update = false;
         for (auto& c : childs ) {
-            post_update |= c.layout->post_update();
+            post_update |= c.layout->depends_on_childs();
         }
         auto& layout = e.get_component<ui_layout>();
 
@@ -295,11 +302,29 @@ namespace
                 &update_dock_layout2,
                 node,
                 &layout,
-                parent_rect});
+                parent_rect,
+                true});
             return;
         }
-
         update_dock_layout2(e, parent_rect, node, childs);
+    }
+
+    void update_image_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        const b2f local = project_to_local(node, parent_rect);
+        auto& layout = e.get_component<ui_layout>();
+        auto& il = e.get_component<image_layout>();
+
+        if ( il.preserve_aspect() ) {
+            f32 scale = math::min(local.size.x / il.size().x, local.size.y / il.size().y);
+            node->scale(v3f(scale));
+        } else {
+            node->scale(v3f(local.size / il.size(), 0.0f));
+        }
     }
 }
 
@@ -394,7 +419,8 @@ namespace
                 layout.update_fn(),
                 root,
                 &layout,
-                bbox});
+                bbox,
+                false});
         }
 
         for (; !pending.empty(); ) {
@@ -402,21 +428,24 @@ namespace
             pending.pop_back();
 
             ecs::entity e(owner, curr.id);
-            actor& act = e.get_component<actor>();
-            node_iptr node = act.node();
-            const ui_layout& layout = e.get_component<ui_layout>();
-            const b2f parent_rect(layout.size());
+            const b2f parent_rect(curr.layout->size());
+            const bool is_post_update = curr.is_post_update;
             
-            node->for_each_child([&temp_layouts, &parent_rect](const node_iptr& n) {
+            curr.node->for_each_child([&temp_layouts, &parent_rect, is_post_update](const node_iptr& n) {
                 auto& e = n->owner()->entity();
                 const ui_layout& layout = e.get_component<ui_layout>();
 
+                // TODO
+                /*if ( is_post_update && !layout.depends_on_parent() ) {
+                    return;
+                }*/
                 temp_layouts.push_back({
                     e.id(),
                     layout.update_fn(),
                     n,
                     &layout,
-                    parent_rect});
+                    parent_rect,
+                    is_post_update});
             });
 
             if ( curr.update ) {
@@ -440,23 +469,36 @@ namespace
         owner.for_joined_components<auto_layout::dirty_flag, auto_layout, ui_layout>(
         [](const ecs::entity&, auto_layout::dirty_flag, const auto_layout&, ui_layout& layout) {
             layout.update_fn(&update_auto_layout);
-            layout.post_update(true);
+            layout.depends_on_childs(true);
         });
         owner.remove_all_components<auto_layout::dirty_flag>();
         
         owner.for_joined_components<stack_layout::dirty_flag, stack_layout, ui_layout>(
-        [](const ecs::entity&, stack_layout::dirty_flag, const stack_layout&, ui_layout& layout) {
+        [](const ecs::entity&, stack_layout::dirty_flag, const stack_layout& sl, ui_layout& layout) {
             layout.update_fn(&update_stack_layout);
-            layout.post_update(true);
+            layout.depends_on_childs(true);
         });
         owner.remove_all_components<stack_layout::dirty_flag>();
         
         owner.for_joined_components<dock_layout::dirty_flag, dock_layout, ui_layout>(
         [](const ecs::entity&, dock_layout::dirty_flag, const dock_layout&, ui_layout& layout) {
             layout.update_fn(&update_dock_layout);
-            layout.post_update(true); // TODO ???
+            layout.depends_on_childs(true);
+            layout.depends_on_parent(true);
         });
         owner.remove_all_components<dock_layout::dirty_flag>();
+        
+        owner.for_joined_components<image_layout::dirty_flag, image_layout, ui_layout, sprite_renderer>(
+        [](const ecs::entity&, image_layout::dirty_flag, image_layout& img_layout,
+           ui_layout& layout, const sprite_renderer& spr)
+        {
+            img_layout.pivot(spr.sprite()->content().pivot());
+            img_layout.size(spr.sprite()->content().texrect().size);
+            layout.update_fn(&update_image_layout);
+            layout.depends_on_parent(true);
+            layout.size(img_layout.size());
+        });
+        owner.remove_all_components<image_layout::dirty_flag>();
     }
 }
 

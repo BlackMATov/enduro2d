@@ -26,40 +26,22 @@ namespace e2d
         return size_;
     }
 
-    ui_layout& ui_layout::post_update(bool enable) noexcept {
-        post_update_ = enable;
+    ui_layout& ui_layout::depends_on_childs(bool enable) noexcept {
+        depends_on_childs_ = enable;
         return *this;
     }
 
-    bool ui_layout::post_update() const noexcept {
-        return post_update_;
-    }
-}
-
-namespace e2d
-{
-    const char* factory_loader<ui_layout>::schema_source = R"json({
-        "type" : "object",
-        "required" : [],
-        "additionalProperties" : false,
-        "properties" : {
-        }
-    })json";
-
-    bool factory_loader<ui_layout>::operator()(
-        ui_layout& component,
-        const fill_context& ctx) const
-    {
-        E2D_UNUSED(component, ctx);
-        return true;
+    bool ui_layout::depends_on_childs() const noexcept {
+        return depends_on_childs_;
     }
 
-    bool factory_loader<ui_layout>::operator()(
-        asset_dependencies& dependencies,
-        const collect_context& ctx) const
-    {
-        E2D_UNUSED(dependencies, ctx);
-        return true;
+    ui_layout& ui_layout::depends_on_parent(bool enable) noexcept {
+        depends_on_parent_ = enable;
+        return *this;
+    }
+
+    bool ui_layout::depends_on_parent() const noexcept {
+        return depends_on_parent_;
     }
 }
 
@@ -222,5 +204,35 @@ namespace e2d
     {
         E2D_UNUSED(dependencies, ctx);
         return true;
+    }
+}
+
+namespace e2d
+{
+    image_layout& image_layout::pivot(const v2f& value) noexcept {
+        pivot_ = value;
+        return *this;
+    }
+
+    image_layout& image_layout::size(const v2f& value) noexcept {
+        size_ = value;
+        return *this;
+    }
+
+    image_layout& image_layout::preserve_aspect(bool value) noexcept {
+        preserve_aspect_ = value;
+        return *this;
+    }
+        
+    const v2f& image_layout::pivot() const noexcept {
+        return pivot_;
+    }
+
+    const v2f& image_layout::size() const noexcept {
+        return size_;
+    }
+
+    bool image_layout::preserve_aspect() const noexcept {
+        return preserve_aspect_;
     }
 }

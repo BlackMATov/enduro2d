@@ -402,4 +402,87 @@ TEST_CASE("ui_layout") {
         REQUIRE(get_region(fl) == b2f(100.0f, 100.0f));
         REQUIRE(get_region(dl) == b2f(600.0f, 100.0f) + v2f(0.0f, 250.0f));
     }
+    SECTION("image_layout") {
+        gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 500.0f});
+        node_iptr root_node = root->get_component<actor>().get().node();
+
+        sprite_asset::ptr sprite_res = sprite_asset::create(sprite()
+            .set_pivot({12.0f, 12.0f})
+            .set_texrect(b2f(24.0f, 24.0f)));
+        
+        gobject_iptr il = the<world>().instantiate();
+        il->entity_filler()
+            .component<actor>(node::create(il, root_node))
+            .component<ui_layout>()
+            .component<image_layout>(image_layout()
+                .preserve_aspect(false))
+            .component<image_layout::dirty_flag>()
+            .component<sprite_renderer>(sprite_res);
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(il->get_component<image_layout::dirty_flag>().exists());
+
+        REQUIRE(get_region(il) == b2f(600.0f, 500.0f));
+    }
+    SECTION("image_layout - preserve_aspect") {
+        gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 500.0f});
+        node_iptr root_node = root->get_component<actor>().get().node();
+
+        sprite_asset::ptr sprite_res = sprite_asset::create(sprite()
+            .set_pivot({12.0f, 12.0f})
+            .set_texrect(b2f(24.0f, 24.0f)));
+        
+        gobject_iptr il = the<world>().instantiate();
+        il->entity_filler()
+            .component<actor>(node::create(il, root_node))
+            .component<ui_layout>()
+            .component<image_layout>(image_layout()
+                .preserve_aspect(true))
+            .component<image_layout::dirty_flag>()
+            .component<sprite_renderer>(sprite_res);
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(il->get_component<image_layout::dirty_flag>().exists());
+
+        REQUIRE(get_region(il) == b2f(500.0f, 500.0f));
+    }
+    SECTION("auto_layout + fixed_layout + image_layout") {
+        gobject_iptr al = the<world>().instantiate();
+        al->entity_filler()
+            .component<actor>(node::create(al, initializer.scene_r))
+            .component<ui_layout>()
+            .component<auto_layout>()
+            .component<auto_layout::dirty_flag>();
+        node_iptr al_node = al->get_component<actor>().get().node();
+        
+        gobject_iptr fl = create_fixed_layout(al_node, {}, {200.0f, 300.0f});
+        
+        sprite_asset::ptr sprite_res = sprite_asset::create(sprite()
+            .set_pivot({12.0f, 12.0f})
+            .set_texrect(b2f(24.0f, 24.0f)));
+        
+        gobject_iptr il = the<world>().instantiate();
+        il->entity_filler()
+            .component<actor>(node::create(il, al_node))
+            .component<ui_layout>()
+            .component<image_layout>(image_layout()
+                .preserve_aspect(true))
+            .component<image_layout::dirty_flag>()
+            .component<sprite_renderer>(sprite_res);
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(il->get_component<image_layout::dirty_flag>().exists());
+        
+        REQUIRE(get_region(fl) == b2f(200.0f, 300.0f));
+        REQUIRE(get_region(al) == b2f(200.0f, 300.0f));
+        REQUIRE(get_region(il) == b2f(200.0f, 200.0f));
+    }
 }

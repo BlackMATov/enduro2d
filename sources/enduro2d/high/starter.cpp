@@ -150,11 +150,11 @@ namespace e2d
             .register_component<renderer>("renderer")
             .register_component<scene>("scene")
             .register_component<sprite_renderer>("sprite_renderer")
-            .register_component<ui_layout>("ui_layout")
             .register_component<fixed_layout>("fixed_layout")
             .register_component<auto_layout>("auto_layout")
             .register_component<stack_layout>("stack_layout")
-            .register_component<dock_layout>("dock_layout");
+            .register_component<dock_layout>("dock_layout")
+            .register_component<image_layout>("image_layout");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }
