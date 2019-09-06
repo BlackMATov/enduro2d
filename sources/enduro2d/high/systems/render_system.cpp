@@ -9,6 +9,7 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/scene.hpp>
+#include <enduro2d/high/components/scissor_rect.hpp>
 
 #include "render_system_impl/render_system_base.hpp"
 #include "render_system_impl/render_system_batcher.hpp"
@@ -19,21 +20,52 @@ namespace
     using namespace e2d;
     using namespace e2d::render_system_impl;
 
+    b2u clip_rect(const b2u& l, const b2u& r) {
+        b2u result;
+        u32 right = math::min(l.position.x + l.size.x, r.position.x + r.size.x);
+        u32 top = math::min(l.position.y + l.size.y, r.position.y + r.size.y);
+        result.position.x = math::max(l.position.x, r.position.x);
+        result.position.y = math::max(l.position.y, r.position.y);
+        result.size.x = right - result.position.x;
+        result.size.y = top - result.position.y;
+        return result;
+    }
+
     template < typename F >
     void for_each_by_nodes(const const_node_iptr& root, F&& f) {
-        static vector<const_node_iptr> temp_nodes;
+        struct node_info {
+            const_node_iptr node;
+            b2u scissor;
+        };
+        static vector<node_info> pending, temp;
         try {
-            if ( root ) {
-                root->extract_all_nodes(std::back_inserter(temp_nodes));
-                for ( const const_node_iptr& node : temp_nodes ) {
-                    f(node);
+            {
+                const scissor_rect* scr = root->owner()->get_component<scissor_rect>().find();
+                pending.push_back({root, scr ? scr->rect() : b2u(~0u, ~0u)});
+            }
+            for (; !pending.empty(); ) {
+                auto curr = pending.back();
+                pending.pop_back();
+                
+                f(curr.node, curr.scissor);
+
+                curr.node->for_each_child([&curr](const const_node_iptr& n) {
+                    const scissor_rect* scr = n->owner()->get_component<scissor_rect>().find();
+                    const b2u scissor = scr ? clip_rect(curr.scissor, scr->rect()) : curr.scissor;
+                    temp.push_back({n, scissor});
+                });
+
+                for ( auto i = temp.rbegin(); i != temp.rend(); ++i ) {
+                    pending.push_back(*i);
                 }
+                temp.clear();
             }
         } catch (...) {
-            temp_nodes.clear();
+            pending.clear();
+            temp.clear();
             throw;
         }
-        temp_nodes.clear();
+        pending.clear();
     }
 
     template < typename T, typename Comp, typename F >
@@ -67,8 +99,8 @@ namespace
         const auto func = [&ctx](const ecs::const_entity& scn_e, const scene&) {
             const actor* scn_a = scn_e.find_component<actor>();
             if ( scn_a && scn_a->node() ) {
-                for_each_by_nodes(scn_a->node(), [&ctx](const const_node_iptr& node){
-                    ctx.draw(node);
+                for_each_by_nodes(scn_a->node(), [&ctx](const const_node_iptr& node, const b2u& scr){
+                    ctx.draw(node, scr);
                 });
             }
         };

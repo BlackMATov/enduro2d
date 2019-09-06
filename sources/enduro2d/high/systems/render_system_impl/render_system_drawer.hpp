@@ -41,7 +41,8 @@ namespace e2d::render_system_impl
             ~context() noexcept;
 
             void draw(
-                const const_node_iptr& node);
+                const const_node_iptr& node,
+                const b2u& scissor);
 
             void draw(
                 const const_node_iptr& node,

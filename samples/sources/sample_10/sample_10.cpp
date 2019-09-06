@@ -135,7 +135,7 @@ namespace
                     .tint(color32::blue()));
             node_iptr fixed3_n = fixed3_i->get_component<actor>().get().node();
             fixed3_n->scale(v3f(1.0f));
-            /*
+            
             auto fixed4_i = the<world>().instantiate();
             fixed4_i->entity_filler()
                 .component<actor>(node::create(fixed4_i, scene_r))
@@ -147,9 +147,21 @@ namespace
                 .component<sprite_renderer>(sprite_renderer(sprite_res)
                     .tint(color32::magenta()));
             node_iptr fixed4_n = fixed4_i->get_component<actor>().get().node();
-            fixed4_n->translation(v3f(64.0f, 128.0f, 0.0f));
-            fixed4_n->scale(v3f(1.0f));
-            */
+            fixed4_n->translation(v3f(-128.0f, -128.0f, 0.0f));
+
+            auto fixed5_i = the<world>().instantiate();
+            fixed5_i->entity_filler()
+                .component<actor>(node::create(fixed5_i, fixed4_n))
+                .component<ui_layout>()
+                .component<fixed_layout>(v2f(64.0f, 64.0f))
+                .component<fixed_layout::dirty_flag>()
+                .component<renderer>(renderer()
+                    .materials({sprite_mat}))
+                .component<sprite_renderer>(sprite_renderer(sprite_res)
+                    .tint(color32::yellow()));
+            node_iptr fixed5_n = fixed5_i->get_component<actor>().get().node();
+            fixed5_n->translation(v3f(-20.0f, -20.0f, 0.0f));
+            
             return true;
         }
 

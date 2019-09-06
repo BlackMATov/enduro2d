@@ -9,6 +9,7 @@
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/model_renderer.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
+#include <enduro2d/high/components/scissor_rect.hpp>
 
 namespace
 {
@@ -57,9 +58,10 @@ namespace e2d::render_system_impl
             .property(matrix_vp_property_hash, m_v * m_p)
             .property(game_time_property_hash, engine.time());
 
-        render.execute(render::command_block<3>()
+        render.execute(render::command_block<8>()
             .add_command(render::target_command(cam.target()))
             .add_command(render::viewport_command(cam.viewport()))
+            .add_command(render::scissor_command())
             .add_command(render::clear_command()
                 .color_value(cam.background())));
     }
@@ -69,7 +71,8 @@ namespace e2d::render_system_impl
     }
 
     void drawer::context::draw(
-        const const_node_iptr& node)
+        const const_node_iptr& node,
+        const b2u& scissor)
     {
         if ( !node || !node->owner() ) {
             return;
@@ -80,6 +83,9 @@ namespace e2d::render_system_impl
         const renderer* node_r = node_e.find_component<renderer>();
 
         if ( node_r && node_r->enabled() ) {
+            flush();
+            render_.execute(render::scissor_command(scissor));
+
             const model_renderer* mdl_r = node_e.find_component<model_renderer>();
             if ( mdl_r ) {
                 draw(node, *node_r, *mdl_r);

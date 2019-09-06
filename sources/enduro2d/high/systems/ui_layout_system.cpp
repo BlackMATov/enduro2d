@@ -9,6 +9,7 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
+#include <enduro2d/high/components/scissor_rect.hpp>
 #include <enduro2d/high/node.hpp>
 
 using namespace e2d;
@@ -466,35 +467,39 @@ namespace
 
     void register_update_fn(ecs::registry& owner) {
         owner.for_joined_components<fixed_layout::dirty_flag, fixed_layout, ui_layout>(
-        [](const ecs::entity&, fixed_layout::dirty_flag, const fixed_layout& fl, ui_layout& layout) {
+        [](ecs::entity e, fixed_layout::dirty_flag, const fixed_layout& fl, ui_layout& layout) {
             layout.size(fl.size());
+            e.assign_component<scissor_rect>();
         });
         owner.remove_all_components<fixed_layout::dirty_flag>();
         
         owner.for_joined_components<auto_layout::dirty_flag, auto_layout, ui_layout>(
-        [](const ecs::entity&, auto_layout::dirty_flag, const auto_layout&, ui_layout& layout) {
+        [](ecs::entity e, auto_layout::dirty_flag, const auto_layout&, ui_layout& layout) {
             layout.update_fn(&update_auto_layout);
             layout.depends_on_childs(true);
+            e.assign_component<scissor_rect>();
         });
         owner.remove_all_components<auto_layout::dirty_flag>();
         
         owner.for_joined_components<stack_layout::dirty_flag, stack_layout, ui_layout>(
-        [](const ecs::entity&, stack_layout::dirty_flag, const stack_layout& sl, ui_layout& layout) {
+        [](ecs::entity e, stack_layout::dirty_flag, const stack_layout& sl, ui_layout& layout) {
             layout.update_fn(&update_stack_layout);
             layout.depends_on_childs(true);
+            e.assign_component<scissor_rect>();
         });
         owner.remove_all_components<stack_layout::dirty_flag>();
         
         owner.for_joined_components<dock_layout::dirty_flag, dock_layout, ui_layout>(
-        [](const ecs::entity&, dock_layout::dirty_flag, const dock_layout&, ui_layout& layout) {
+        [](ecs::entity e, dock_layout::dirty_flag, const dock_layout&, ui_layout& layout) {
             layout.update_fn(&update_dock_layout);
             layout.depends_on_childs(true);
             layout.depends_on_parent(true);
+            e.assign_component<scissor_rect>();
         });
         owner.remove_all_components<dock_layout::dirty_flag>();
         
         owner.for_joined_components<image_layout::dirty_flag, image_layout, ui_layout, sprite_renderer>(
-        [](const ecs::entity&, image_layout::dirty_flag, image_layout& img_layout,
+        [](ecs::entity e, image_layout::dirty_flag, image_layout& img_layout,
            ui_layout& layout, const sprite_renderer& spr)
         {
             img_layout.pivot(spr.sprite()->content().pivot());
@@ -502,8 +507,46 @@ namespace
             layout.update_fn(&update_image_layout);
             layout.depends_on_parent(true);
             layout.size(img_layout.size());
+            //e.assign_component<scissor_rect>();
         });
         owner.remove_all_components<image_layout::dirty_flag>();
+    }
+
+    void update_scissor(ecs::registry& owner) {
+        std::tuple<m4f,b2f> vp_and_viewport;
+        owner.for_joined_components<camera>(
+        [&vp_and_viewport](const ecs::const_entity& e, const camera& cam) {
+            if ( cam.target() ) {
+                return;
+            }
+            vp_and_viewport = get_vp_and_viewport(e, cam);
+        });
+
+        owner.for_joined_components<ui_layout, scissor_rect, actor>(
+        [&vp_and_viewport](const ecs::entity&, const ui_layout& layout, scissor_rect& scissor, const actor& act) {
+            const auto& view_proj = std::get<0>(vp_and_viewport);
+            const auto& viewport = std::get<1>(vp_and_viewport);
+            const auto& m = act.node()->world_matrix();
+            const m4f mvp = m * view_proj;
+            const v2f size = layout.size();
+
+            const v3f points[] = {
+                math::project(v3f(0.0f,   0.0f,   0.0f), mvp, viewport),
+                math::project(v3f(0.0f,   size.y, 0.0f), mvp, viewport),
+                math::project(v3f(size.x, size.y, 0.0f), mvp, viewport),
+                math::project(v3f(size.x, 0.0f,   0.0f), mvp, viewport),
+            };
+            v2f min = v2f(points[0]);
+            v2f max = min;
+            for ( size_t i = 1; i < std::size(points); ++i ) {
+                min.x = math::min(min.x, points[i].x);
+                min.y = math::min(min.y, points[i].y);
+                max.x = math::max(max.x, points[i].x);
+                max.y = math::max(max.y, points[i].y);
+            }
+            b2u r = b2f(min - 0.5f, max - min + 0.5f).cast_to<u32>();
+            scissor.rect(r);
+        });
     }
 }
 
@@ -516,5 +559,6 @@ namespace e2d
     void ui_layout_system::process(ecs::registry& owner) {
         register_update_fn(owner);
         update_layouts(owner);
+        update_scissor(owner);
     }
 }

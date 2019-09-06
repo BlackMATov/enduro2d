@@ -195,9 +195,8 @@ namespace e2d
                                 .mag_filter(render::sampler_mag_filter::linear));
 
                         render_.execute(render::command_block<8>()
-                            .add_command(render::viewport_command(
-                                display_size_r.cast_to<u32>(),
-                                clip_r.cast_to<u32>()))
+                            .add_command(render::viewport_command(display_size_r.cast_to<u32>()))
+                            .add_command(render::scissor_command(clip_r.cast_to<u32>()))
                             .add_command(render::draw_command(material_, geometry, mprops_)
                                 .index_range(first_index, pcmd.ElemCount)));
                     }
