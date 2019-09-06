@@ -315,6 +315,9 @@ namespace
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
+        node->translation(v3f(0.0f));
+        node->scale(v3f(1.0f));
+
         const b2f local = project_to_local(node, parent_rect);
         auto& layout = e.get_component<ui_layout>();
         auto& il = e.get_component<image_layout>();
@@ -323,8 +326,10 @@ namespace
             f32 scale = math::min(local.size.x / il.size().x, local.size.y / il.size().y);
             node->scale(v3f(scale));
         } else {
-            node->scale(v3f(local.size / il.size(), 0.0f));
+            node->scale(v3f(local.size / il.size(), 1.0f));
         }
+
+        node->translation(v3f(il.pivot(), 0.0f) * node->scale());
     }
 }
 

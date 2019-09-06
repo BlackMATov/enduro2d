@@ -200,4 +200,19 @@ namespace e2d
         v2f size_;
         bool preserve_aspect_ = true;
     };
+    
+    template <>
+    class factory_loader<image_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            image_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}
 }

@@ -236,3 +236,30 @@ namespace e2d
         return preserve_aspect_;
     }
 }
+
+namespace e2d
+{
+    const char* factory_loader<image_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {
+        }
+    })json";
+
+    bool factory_loader<image_layout>::operator()(
+        image_layout& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<image_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
