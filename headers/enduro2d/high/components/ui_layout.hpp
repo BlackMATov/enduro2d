@@ -215,4 +215,81 @@ namespace e2d
             const collect_context& ctx) const;
     };
 }
+
+namespace e2d
+{
+    class margin_layout final {
+    public:
+        class dirty_flag final {};
+    public:
+        margin_layout() = default;
+        margin_layout(f32 left, f32 bottom, f32 right, f32 top);
+
+        margin_layout& left(f32 value) noexcept;
+        f32 left() const noexcept;
+
+        margin_layout& top(f32 value) noexcept;
+        f32 top() const noexcept;
+
+        margin_layout& right(f32 value) noexcept;
+        f32 right() const noexcept;
+
+        margin_layout& bottom(f32 value) noexcept;
+        f32 bottom() const noexcept;
+    private:
+        f32 left_{0.0f}, bottom_{0.0f}, right_{0.0f}, top_{0.0f};
+    };
+    
+    template <>
+    class factory_loader<margin_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            margin_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}
+
+namespace e2d
+{
+    class padding_layout final {
+    public:
+        class dirty_flag final {};
+    public:
+        padding_layout() = default;
+        padding_layout(f32 left, f32 bottom, f32 right, f32 top);
+        
+        padding_layout& left(f32 value) noexcept;
+        f32 left() const noexcept;
+
+        padding_layout& top(f32 value) noexcept;
+        f32 top() const noexcept;
+
+        padding_layout& right(f32 value) noexcept;
+        f32 right() const noexcept;
+
+        padding_layout& bottom(f32 value) noexcept;
+        f32 bottom() const noexcept;
+    private:
+        f32 left_{0.0f}, bottom_{0.0f}, right_{0.0f}, top_{0.0f};
+    };
+    
+    template <>
+    class factory_loader<padding_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            padding_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }

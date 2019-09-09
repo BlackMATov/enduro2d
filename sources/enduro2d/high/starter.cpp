@@ -154,7 +154,9 @@ namespace e2d
             .register_component<auto_layout>("auto_layout")
             .register_component<stack_layout>("stack_layout")
             .register_component<dock_layout>("dock_layout")
-            .register_component<image_layout>("image_layout");
+            .register_component<image_layout>("image_layout")
+            .register_component<image_layout>("margin_layout")
+            .register_component<image_layout>("layout_layout");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }

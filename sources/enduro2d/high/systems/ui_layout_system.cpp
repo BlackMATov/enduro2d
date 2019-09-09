@@ -396,6 +396,77 @@ namespace
 
         node->translation(v3f(il.pivot(), 0.0f) * node->scale());
     }
+    
+    void update_margin_layout2(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        if ( childs.empty() ) {
+            return;
+        }
+        
+        E2D_ASSERT(childs.size() == 1);
+        auto& child = childs.front();
+        const auto& ml = e.get_component<margin_layout>();
+        auto& layout = e.get_component<ui_layout>();
+
+        v2f size = project_to_parent(child.node, b2f(child.layout->size())).size;
+        v2f off = project_to_local(child.node, v2f(ml.left(), ml.bottom()));
+
+        layout.size(size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
+        child.node->translation(v3f(off, 0.0f));
+    }
+
+    void update_margin_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        bool post_update = false;
+        for (auto& c : childs ) {
+            post_update |= c.layout->depends_on_childs();
+        }
+        auto& layout = e.get_component<ui_layout>();
+
+        if ( post_update ) {
+            childs.push_back({
+                e.id(),
+                &update_margin_layout2,
+                node,
+                &layout,
+                parent_rect,
+                true});
+            return;
+        }
+        update_margin_layout2(e, parent_rect, node, childs);
+    }
+
+    void update_padding_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        auto& layout = e.get_component<ui_layout>();
+        const auto& pl = e.get_component<padding_layout>();
+        const b2f local = project_to_local(node, parent_rect);
+        const v2f pad_size = v2f(pl.left() + pl.right(), pl.bottom() + pl.top());
+
+        if ( local.size.x > pad_size.x && local.size.y > pad_size.y ) {
+            node->translation(v3f(pl.left(), pl.bottom(), 0.0f));
+            layout.size(local.size - pad_size);
+        } else {
+            node->translation(v3f());
+            layout.size(v2f());
+        }
+
+        for ( auto& c : childs ) {
+            c.parent_rect = b2f(layout.size());
+        }
+    }
 }
 
 namespace
@@ -569,6 +640,20 @@ namespace
             layout.size(img_layout.size());
         });
         owner.remove_all_components<image_layout::dirty_flag>();
+        
+        owner.for_joined_components<margin_layout::dirty_flag, margin_layout, ui_layout>(
+        [](const ecs::entity&, margin_layout::dirty_flag, const margin_layout&, ui_layout& layout) {
+            layout.update_fn(&update_margin_layout);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<margin_layout::dirty_flag>();
+        
+        owner.for_joined_components<padding_layout::dirty_flag, padding_layout, ui_layout>(
+        [](const ecs::entity&, padding_layout::dirty_flag, const padding_layout&, ui_layout& layout) {
+            layout.update_fn(&update_padding_layout);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<padding_layout::dirty_flag>();
     }
 }
 

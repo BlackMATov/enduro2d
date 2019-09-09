@@ -64,9 +64,10 @@ namespace e2d
 {
     const char* factory_loader<fixed_layout>::schema_source = R"json({
         "type" : "object",
-        "required" : [],
+        "required" : [ "size" ],
         "additionalProperties" : false,
         "properties" : {
+            "size" : { "$ref": "#/common_definitions/v2" }
         }
     })json";
 
@@ -74,7 +75,14 @@ namespace e2d
         fixed_layout& component,
         const fill_context& ctx) const
     {
-        E2D_UNUSED(component, ctx);
+        E2D_ASSERT(ctx.root.HasMember("size"));
+
+        v2f size;
+        if ( !json_utils::try_parse_value(ctx.root["size"], size) ) {
+            the<debug>().error("FIXED_LAYOUT: Incorrect formatting of 'size' property");
+            return false;
+        }
+        component.size(size);
         return true;
     }
 
@@ -133,9 +141,21 @@ namespace e2d
 {
     const char* factory_loader<stack_layout>::schema_source = R"json({
         "type" : "object",
-        "required" : [],
+        "required" : [ "origin" ],
         "additionalProperties" : false,
         "properties" : {
+            "origin" : { "$ref": "#/definitions/stack_origin" }
+        },
+        "definitions" : {
+            "stack_origin" : {
+                "type" : "string",
+                "enum" : [
+                    "left",
+                    "top",
+                    "right",
+                    "bottom"
+                ]
+            }
         }
     })json";
 
@@ -143,7 +163,19 @@ namespace e2d
         stack_layout& component,
         const fill_context& ctx) const
     {
-        E2D_UNUSED(component, ctx);
+        E2D_ASSERT(ctx.root.HasMember("origin"));
+        str_view str = ctx.root["origin"].GetString();
+        if ( str == "left" ) {
+            component.origin(stack_layout::stack_origin::left);
+        } else if ( str == "top" ) {
+            component.origin(stack_layout::stack_origin::top);
+        } else if ( str == "right" ) {
+            component.origin(stack_layout::stack_origin::right);
+        } else if ( str == "bottom" ) {
+            component.origin(stack_layout::stack_origin::bottom);
+        } else {
+            the<debug>().error("STACK_LAYOUT: Incorrect formatting of 'dock' property");
+        }
         return true;
     }
 
@@ -184,9 +216,25 @@ namespace e2d
 {
     const char* factory_loader<dock_layout>::schema_source = R"json({
         "type" : "object",
-        "required" : [],
+        "required" : [ "dock" ],
         "additionalProperties" : false,
         "properties" : {
+            "dock" : { "$ref": "#/definitions/dock_type" }
+        },
+        "definitions" : {
+            "dock_type" : {
+                "type" : "string",
+                "enum" : [
+                    "none",
+                    "left",
+                    "right",
+                    "bottom",
+                    "top",
+                    "center_x",
+                    "center_y",
+                    "fill"
+                ]
+            }
         }
     })json";
 
@@ -194,7 +242,22 @@ namespace e2d
         dock_layout& component,
         const fill_context& ctx) const
     {
-        E2D_UNUSED(component, ctx);
+        E2D_ASSERT(ctx.root.HasMember("dock"));
+        str_view dock = ctx.root["dock"].GetString();
+        if ( dock == "node" ) {
+            component.dock(dock_layout::dock_type::none);
+        } else {
+            #define DEFINE_CASE(x) if ( dock == #x ) { component.dock(dock_layout::dock_type::x); }
+            DEFINE_CASE(left);
+            DEFINE_CASE(right);
+            DEFINE_CASE(bottom);
+            DEFINE_CASE(top);
+            DEFINE_CASE(center_x);
+            DEFINE_CASE(center_y);
+            DEFINE_CASE(fill);
+            #undef DEFINE_CASE
+        }
+
         return true;
     }
 
@@ -244,6 +307,7 @@ namespace e2d
         "required" : [],
         "additionalProperties" : false,
         "properties" : {
+            "preserve_aspect" : { "type" : "boolean" }
         }
     })json";
 
@@ -251,11 +315,186 @@ namespace e2d
         image_layout& component,
         const fill_context& ctx) const
     {
-        E2D_UNUSED(component, ctx);
+        E2D_ASSERT(ctx.root.HasMember("preserve_aspect"));
+        component.preserve_aspect(ctx.root["preserve_aspect"].GetBool());
         return true;
     }
 
     bool factory_loader<image_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
+
+namespace e2d
+{
+    margin_layout::margin_layout(f32 left, f32 bottom, f32 right, f32 top)
+    : left_(left)
+    , bottom_(bottom)
+    , right_(right)
+    , top_(top) {}
+
+    margin_layout& margin_layout::left(f32 value) noexcept {
+        left_ = value;
+        return *this;
+    }
+
+    f32 margin_layout::left() const noexcept {
+        return left_;
+    }
+
+    margin_layout& margin_layout::top(f32 value) noexcept {
+        top_ = value;
+        return *this;
+    }
+
+    f32 margin_layout::top() const noexcept {
+        return top_;
+    }
+
+    margin_layout& margin_layout::right(f32 value) noexcept {
+        right_ = value;
+        return *this;
+    }
+    
+    f32 margin_layout::right() const noexcept {
+        return right_;
+    }
+
+    margin_layout& margin_layout::bottom(f32 value) noexcept {
+        bottom_ = value;
+        return *this;
+    }
+
+    f32 margin_layout::bottom() const noexcept {
+        return bottom_;
+    }
+}
+
+namespace e2d
+{
+    const char* factory_loader<margin_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {
+            "left" : { "type" : "number" },
+            "top" : { "type" : "number" },
+            "right" : { "type" : "number" },
+            "bottom" : { "type" : "number" }
+        }
+    })json";
+
+    bool factory_loader<margin_layout>::operator()(
+        margin_layout& component,
+        const fill_context& ctx) const
+    {
+        if ( ctx.root.HasMember("left") ) {
+            component.left(ctx.root["left"].GetFloat());
+        }
+        if ( ctx.root.HasMember("top") ) {
+            component.top(ctx.root["top"].GetFloat());
+        }
+        if ( ctx.root.HasMember("right") ) {
+            component.right(ctx.root["right"].GetFloat());
+        }
+        if ( ctx.root.HasMember("bottom") ) {
+            component.bottom(ctx.root["bottom"].GetFloat());
+        }
+        return true;
+    }
+
+    bool factory_loader<margin_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
+
+namespace e2d
+{
+    padding_layout::padding_layout(f32 left, f32 bottom, f32 right, f32 top)
+    : left_(left)
+    , bottom_(bottom)
+    , right_(right)
+    , top_(top) {}
+
+    padding_layout& padding_layout::left(f32 value) noexcept {
+        left_ = value;
+        return *this;
+    }
+
+    f32 padding_layout::left() const noexcept {
+        return left_;
+    }
+
+    padding_layout& padding_layout::top(f32 value) noexcept {
+        top_ = value;
+        return *this;
+    }
+
+    f32 padding_layout::top() const noexcept {
+        return top_;
+    }
+
+    padding_layout& padding_layout::right(f32 value) noexcept {
+        right_ = value;
+        return *this;
+    }
+    
+    f32 padding_layout::right() const noexcept {
+        return right_;
+    }
+
+    padding_layout& padding_layout::bottom(f32 value) noexcept {
+        bottom_ = value;
+        return *this;
+    }
+
+    f32 padding_layout::bottom() const noexcept {
+        return bottom_;
+    }
+}
+
+namespace e2d
+{
+    const char* factory_loader<padding_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {
+            "left" : { "type" : "number" },
+            "top" : { "type" : "number" },
+            "right" : { "type" : "number" },
+            "bottom" : { "type" : "number" }
+        }
+    })json";
+
+    bool factory_loader<padding_layout>::operator()(
+        padding_layout& component,
+        const fill_context& ctx) const
+    {
+        if ( ctx.root.HasMember("left") ) {
+            component.left(ctx.root["left"].GetFloat());
+        }
+        if ( ctx.root.HasMember("top") ) {
+            component.top(ctx.root["top"].GetFloat());
+        }
+        if ( ctx.root.HasMember("right") ) {
+            component.right(ctx.root["right"].GetFloat());
+        }
+        if ( ctx.root.HasMember("bottom") ) {
+            component.bottom(ctx.root["bottom"].GetFloat());
+        }
+        return true;
+    }
+
+    bool factory_loader<padding_layout >::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {

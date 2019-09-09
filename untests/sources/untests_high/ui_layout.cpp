@@ -407,7 +407,6 @@ TEST_CASE("ui_layout") {
         node_iptr root_node = root->get_component<actor>().get().node();
 
         sprite_asset::ptr sprite_res = sprite_asset::create(sprite()
-            .set_pivot({12.0f, 12.0f})
             .set_texrect(b2f(24.0f, 24.0f)));
         
         gobject_iptr il = the<world>().instantiate();
@@ -426,12 +425,35 @@ TEST_CASE("ui_layout") {
 
         REQUIRE(get_region(il) == b2f(600.0f, 500.0f));
     }
-    SECTION("image_layout - preserve_aspect") {
+    SECTION("image_layout - pivot") {
         gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 500.0f});
         node_iptr root_node = root->get_component<actor>().get().node();
 
         sprite_asset::ptr sprite_res = sprite_asset::create(sprite()
             .set_pivot({12.0f, 12.0f})
+            .set_texrect(b2f(24.0f, 24.0f)));
+        
+        gobject_iptr il = the<world>().instantiate();
+        il->entity_filler()
+            .component<actor>(node::create(il, root_node))
+            .component<ui_layout>()
+            .component<image_layout>(image_layout()
+                .preserve_aspect(false))
+            .component<image_layout::dirty_flag>()
+            .component<sprite_renderer>(sprite_res);
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(il->get_component<image_layout::dirty_flag>().exists());
+
+        REQUIRE(get_region(il) == b2f(300.0f, 250.0f, 600.0f, 500.0f));
+    }
+    SECTION("image_layout - preserve_aspect") {
+        gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 500.0f});
+        node_iptr root_node = root->get_component<actor>().get().node();
+
+        sprite_asset::ptr sprite_res = sprite_asset::create(sprite()
             .set_texrect(b2f(24.0f, 24.0f)));
         
         gobject_iptr il = the<world>().instantiate();
@@ -462,7 +484,6 @@ TEST_CASE("ui_layout") {
         gobject_iptr fl = create_fixed_layout(al_node, {}, {200.0f, 300.0f});
         
         sprite_asset::ptr sprite_res = sprite_asset::create(sprite()
-            .set_pivot({12.0f, 12.0f})
             .set_texrect(b2f(24.0f, 24.0f)));
         
         gobject_iptr il = the<world>().instantiate();
@@ -484,5 +505,45 @@ TEST_CASE("ui_layout") {
         REQUIRE(get_region(fl) == b2f(200.0f, 300.0f));
         REQUIRE(get_region(al) == b2f(200.0f, 300.0f));
         REQUIRE(get_region(il) == b2f(200.0f, 200.0f));
+    }
+    SECTION("padding_layout") {
+        gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {200.0f, 300.0f});
+        node_iptr root_node = root->get_component<actor>().get().node();
+        
+        gobject_iptr pl = the<world>().instantiate();
+        pl->entity_filler()
+            .component<actor>(node::create(pl, root_node))
+            .component<ui_layout>()
+            .component<padding_layout>(1.0f, 2.0f, 3.0f, 4.0f)
+            .component<padding_layout::dirty_flag>();
+        
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(root->get_component<fixed_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(pl->get_component<padding_layout::dirty_flag>().exists());
+        
+        REQUIRE(get_region(root) == b2f(200.0f, 300.0f));
+        REQUIRE(get_region(pl) == b2f(1.0f, 2.0f, 196.0f, 294.0f));
+    }
+    SECTION("margin_layout") {
+        gobject_iptr ml = the<world>().instantiate();
+        ml->entity_filler()
+            .component<actor>(node::create(ml, initializer.scene_r))
+            .component<ui_layout>()
+            .component<margin_layout>(1.0f, 2.0f, 3.0f, 4.0f)
+            .component<margin_layout::dirty_flag>();
+        node_iptr ml_node = ml->get_component<actor>().get().node();
+        
+        gobject_iptr fl = create_fixed_layout(ml_node, {}, {200.0f, 300.0f});
+
+        ui_layout_system system;
+        system.process(the<world>().registry());
+        
+        REQUIRE_FALSE(ml->get_component<margin_layout::dirty_flag>().exists());
+        REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+        
+        REQUIRE(get_region(ml) == b2f(204.0f, 306.0f));
+        REQUIRE(get_region(fl) == b2f(1.0f, 2.0f, 200.0f, 300.0f));
     }
 }
