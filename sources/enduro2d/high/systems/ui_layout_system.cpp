@@ -26,6 +26,70 @@ namespace
         l.size.y = ay - l.position.y;
     }
 
+#if 1
+    t3f inverse_pos_scale(const t3f& v) noexcept {
+        E2D_ASSERT(math::approximately(v.rotation, q4f::identity()));
+        t3f result;
+        result.scale = 1.0f / v.scale;
+        result.translation = -v.translation * result.scale;
+        return result;
+    }
+
+    v3f trnasform(const t3f& t, const v3f& v) noexcept {
+        return v * t.scale + t.translation;
+    }
+
+    b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
+        const t3f tr = n->transform();
+        const v3f points[] = {
+            trnasform(tr, v3f(r.position.x,            r.position.y,            0.0f)),
+            trnasform(tr, v3f(r.position.x,            r.position.y + r.size.y, 0.0f)),
+            trnasform(tr, v3f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f)),
+            trnasform(tr, v3f(r.position.x + r.size.x, r.position.y,            0.0f))
+        };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        return b2f(min, max - min);
+    }
+
+    v2f project_to_parent(const node_iptr& n, const v2f& p) noexcept {
+        const t3f tr = n->transform();
+        return v2f(trnasform(tr, v3f(p.x, p.y, 0.0f)));
+    }
+
+    b2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
+        // TODO:
+        // - rotation is not supported
+        const t3f tr = inverse_pos_scale(n->transform());
+        const v3f points[] = {
+            trnasform(tr, v3f(r.position.x,            r.position.y,            0.0f)),
+            trnasform(tr, v3f(r.position.x,            r.position.y + r.size.y, 0.0f)),
+            trnasform(tr, v3f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f)),
+            trnasform(tr, v3f(r.position.x + r.size.x, r.position.y,            0.0f))
+        };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        return b2f(min, max - min);
+    }
+
+    v2f project_to_local(const node_iptr& n, const v2f& p) noexcept {
+        const t3f tr = inverse_pos_scale(n->transform());
+        return v2f(trnasform(tr, v3f(p.x, p.y, 0.0f)));
+    }
+#else
+
     b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
         const m4f m = n->local_matrix();
         const v4f points[] = {
@@ -81,6 +145,7 @@ namespace
             : m4f::identity();
         return v2f(v4f(p.x, p.y, 0.0f, 1.0f) * inv);
     }
+#endif
     
     void update_auto_layout2(
         ecs::entity& e,
