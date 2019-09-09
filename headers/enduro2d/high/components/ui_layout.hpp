@@ -150,7 +150,9 @@ namespace e2d
             top = 1 << 3,
             center_x = 1 << 4,
             center_y = 1 << 5,
-            fill = left | right | bottom | top,
+            fill_x = left | right,
+            fill_y = bottom | top,
+            fill = fill_x | fill_y,
         };
     public:
         dock_layout() = default;
@@ -223,6 +225,7 @@ namespace e2d
         class dirty_flag final {};
     public:
         margin_layout() = default;
+        margin_layout(f32 margin);
         margin_layout(f32 left, f32 bottom, f32 right, f32 top);
 
         margin_layout& left(f32 value) noexcept;

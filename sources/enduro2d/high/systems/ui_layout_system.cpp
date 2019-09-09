@@ -117,7 +117,7 @@ namespace
     b2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
         // TODO:
         // - rotation is not supported
-        const auto inv_opt = math::inversed(n->local_matrix());
+        const auto inv_opt = math::inversed(n->local_matrix(), 0.0f);
         const m4f inv = inv_opt.second
             ? inv_opt.first
             : m4f::identity();
@@ -139,7 +139,7 @@ namespace
     }
 
     v2f project_to_local(const node_iptr& n, const v2f& p) noexcept {
-        const auto inv_opt = math::inversed(n->local_matrix());
+        const auto inv_opt = math::inversed(n->local_matrix(), 0.0f);
         const m4f inv = inv_opt.second
             ? inv_opt.first
             : m4f::identity();
@@ -178,8 +178,7 @@ namespace
 
             // update child transformation
             for ( auto& c : childs ) {
-                v2f off = project_to_local(c.node, v2f()) -
-                    project_to_local(c.node, v2f(node->translation()));
+                v2f off = project_to_local(c.node, v2f()) - project_to_local(c.node, region.position);
                 c.node->translation(c.node->translation() + v3f(off, 0.0f) * c.node->scale());
                 c.parent_rect = b2f(region.size);
             }
@@ -342,10 +341,10 @@ namespace
             region.position.y = local.size.y - size.y;
             region.size.y = size.y;
         } else {
-            E2D_ASSERT_MSG(false, "undefined vertial docking");
+            E2D_ASSERT_MSG(false, "undefined vertical docking");
         }
         
-        node->translation(node->translation() + v3f(region.position, 0.0f));
+        node->translation(v3f(region.position, 0.0f));
         layout.size(region.size);
     }
 
@@ -378,7 +377,7 @@ namespace
         ecs::entity& e,
         const b2f& parent_rect,
         const node_iptr& node,
-        std::vector<ui_layout::layout_state>& childs)
+        std::vector<ui_layout::layout_state>&)
     {
         node->translation(v3f(0.0f));
         node->scale(v3f(1.0f));
@@ -386,6 +385,10 @@ namespace
         const b2f local = project_to_local(node, parent_rect);
         auto& layout = e.get_component<ui_layout>();
         auto& il = e.get_component<image_layout>();
+
+        if ( math::approximately(local.size, v2f()) ) {
+            return;
+        }
 
         if ( il.preserve_aspect() ) {
             f32 scale = math::min(local.size.x / il.size().x, local.size.y / il.size().y);
@@ -416,7 +419,7 @@ namespace
         v2f off = project_to_local(child.node, v2f(ml.left(), ml.bottom()));
 
         layout.size(size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
-        child.node->translation(v3f(off, 0.0f));
+        child.node->translation(child.node->translation() + v3f(off, 0.0f));
     }
 
     void update_margin_layout(
@@ -472,7 +475,7 @@ namespace
 namespace
 {
     b2f unproject(const m4f& mvp, const b2f& viewport) noexcept {
-        const auto inv_mvp_opt = math::inversed(mvp);
+        const auto inv_mvp_opt = math::inversed(mvp, 0.0f);
         const m4f inv_mvp = inv_mvp_opt.second
             ? inv_mvp_opt.first
             : m4f::identity();
@@ -512,7 +515,7 @@ namespace
         const m4f& cam_w = cam_a && cam_a->node()
             ? cam_a->node()->world_matrix()
             : m4f::identity();
-        const auto cam_w_inv = math::inversed(cam_w);
+        const auto cam_w_inv = math::inversed(cam_w, 0.0f);
         const m4f& m_v = cam_w_inv.second
             ? cam_w_inv.first
             : m4f::identity();
@@ -543,6 +546,10 @@ namespace
             }
             vp_and_viewport = get_vp_and_viewport(e, cam);
         });
+
+        if ( math::approximately(std::get<1>(vp_and_viewport).size, v2f()) ) {
+            return;
+        }
         
         std::vector<ui_layout::layout_state> temp_layouts;
         std::vector<ui_layout::layout_state> pending;
@@ -553,7 +560,8 @@ namespace
             const m4f mvp = root->world_matrix() * std::get<0>(vp_and_viewport);
             const b2f bbox = unproject(mvp, std::get<1>(vp_and_viewport));
             auto& e = root->owner()->entity();
-            const ui_layout& layout = e.get_component<ui_layout>();
+            ui_layout& layout = e.get_component<ui_layout>();
+            layout.size(bbox.size);
 
             pending.push_back({
                 e.id(),
@@ -570,16 +578,15 @@ namespace
 
             ecs::entity e(owner, curr.id);
             const b2f parent_rect(curr.layout->size());
-            const bool is_post_update = curr.is_post_update;
+            const bool is_post_update = curr.is_post_update && !curr.layout->depends_on_childs();
             
             curr.node->for_each_child([&temp_layouts, &parent_rect, is_post_update](const node_iptr& n) {
                 auto& e = n->owner()->entity();
                 const ui_layout& layout = e.get_component<ui_layout>();
 
-                // TODO
-                /*if ( is_post_update && !layout.depends_on_parent() ) {
+                if ( is_post_update && !layout.depends_on_parent() ) {
                     return;
-                }*/
+                }
                 temp_layouts.push_back({
                     e.id(),
                     layout.update_fn(),
@@ -644,7 +651,7 @@ namespace
         owner.for_joined_components<margin_layout::dirty_flag, margin_layout, ui_layout>(
         [](const ecs::entity&, margin_layout::dirty_flag, const margin_layout&, ui_layout& layout) {
             layout.update_fn(&update_margin_layout);
-            layout.depends_on_parent(true);
+            layout.depends_on_childs(true);
         });
         owner.remove_all_components<margin_layout::dirty_flag>();
         

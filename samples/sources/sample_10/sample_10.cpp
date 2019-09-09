@@ -67,6 +67,7 @@ namespace
                 .component<ui_layout>()
                 .component<ui_layout::root_tag>();
             node_iptr scene_r = scene_i->get_component<actor>().get().node();
+            scene_r->translation(-v3f(the<window>().real_size().cast_to<f32>() * 0.5f, 0.0f));
             
             auto auto_i = the<world>().instantiate();
             auto_i->entity_filler()
@@ -87,10 +88,18 @@ namespace
                     .materials({sprite_mat}))
                 .component<sprite_renderer>(sprite_renderer(sprite_res)
                     .tint(color32::white()));
+                    
+            auto margin_i = the<world>().instantiate();
+            margin_i->entity_filler()
+                .component<actor>(node::create(margin_i, auto_n))
+                .component<ui_layout>()
+                .component<margin_layout>(5.0f)
+                .component<margin_layout::dirty_flag>();
+            node_iptr margin_n = margin_i->get_component<actor>().get().node();
 
             auto stack_i = the<world>().instantiate();
             stack_i->entity_filler()
-                .component<actor>(node::create(stack_i, auto_n))
+                .component<actor>(node::create(stack_i, margin_n))
                 .component<ui_layout>()
                 .component<stack_layout>(stack_layout::stack_origin::left)
                 .component<stack_layout::dirty_flag>();
@@ -134,11 +143,19 @@ namespace
                 .component<sprite_renderer>(sprite_renderer(sprite_res)
                     .tint(color32::blue()));
             node_iptr fixed3_n = fixed3_i->get_component<actor>().get().node();
-            fixed3_n->scale(v3f(1.0f));
-            /*
+            fixed3_n->scale(v3f(1.5f));
+            
+            auto dock_i = the<world>().instantiate();
+            dock_i->entity_filler()
+                .component<actor>(node::create(dock_i, scene_r))
+                .component<ui_layout>()
+                .component<dock_layout>(dock_layout::dock_type::right | dock_layout::dock_type::center_y)
+                .component<dock_layout::dirty_flag>();
+            node_iptr dock_n = dock_i->get_component<actor>().get().node();
+
             auto fixed4_i = the<world>().instantiate();
             fixed4_i->entity_filler()
-                .component<actor>(node::create(fixed4_i, scene_r))
+                .component<actor>(node::create(fixed4_i, dock_n))
                 .component<ui_layout>()
                 .component<fixed_layout>(v2f(64.0f, 64.0f))
                 .component<fixed_layout::dirty_flag>()
@@ -147,9 +164,40 @@ namespace
                 .component<sprite_renderer>(sprite_renderer(sprite_res)
                     .tint(color32::magenta()));
             node_iptr fixed4_n = fixed4_i->get_component<actor>().get().node();
-            fixed4_n->translation(v3f(64.0f, 128.0f, 0.0f));
-            fixed4_n->scale(v3f(1.0f));
-            */
+
+            auto fixed5_i = the<world>().instantiate();
+            fixed5_i->entity_filler()
+                .component<actor>(node::create(fixed5_i, fixed4_n))
+                .component<ui_layout>()
+                .component<fixed_layout>(v2f(64.0f, 64.0f))
+                .component<fixed_layout::dirty_flag>()
+                .component<renderer>(renderer()
+                    .materials({sprite_mat}))
+                .component<sprite_renderer>(sprite_renderer(sprite_res)
+                    .tint(color32::yellow()));
+            node_iptr fixed5_n = fixed5_i->get_component<actor>().get().node();
+            fixed5_n->translation(v3f(-20.0f, -20.0f, 0.0f));
+            
+            auto padding_i = the<world>().instantiate();
+            padding_i->entity_filler()
+                .component<actor>(node::create(padding_i, fixed5_n))
+                .component<ui_layout>()
+                .component<padding_layout>(4.0f, 2.0f, 1.0f, 7.0f)
+                .component<padding_layout::dirty_flag>();
+            node_iptr padding_n = padding_i->get_component<actor>().get().node();
+            
+            auto image2_i = the<world>().instantiate();
+            image2_i->entity_filler()
+                .component<actor>(node::create(image2_i, padding_n))
+                .component<ui_layout>()
+                .component<image_layout>(image_layout()
+                    .preserve_aspect(false))
+                .component<image_layout::dirty_flag>()
+                .component<renderer>(renderer()
+                    .materials({sprite_mat}))
+                .component<sprite_renderer>(sprite_renderer(sprite_res)
+                    .tint(color32::red()));
+
             return true;
         }
 

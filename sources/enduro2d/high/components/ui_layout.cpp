@@ -331,6 +331,12 @@ namespace e2d
 
 namespace e2d
 {
+    margin_layout::margin_layout(f32 margin)
+    : left_(margin)
+    , bottom_(margin)
+    , right_(margin)
+    , top_(margin) {}
+
     margin_layout::margin_layout(f32 left, f32 bottom, f32 right, f32 top)
     : left_(left)
     , bottom_(bottom)
