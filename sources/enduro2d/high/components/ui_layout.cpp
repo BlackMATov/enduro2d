@@ -174,7 +174,7 @@ namespace e2d
         } else if ( str == "bottom" ) {
             component.origin(stack_layout::stack_origin::bottom);
         } else {
-            the<debug>().error("STACK_LAYOUT: Incorrect formatting of 'dock' property");
+            the<debug>().error("STACK_LAYOUT: Incorrect formatting of 'origin' property");
         }
         return true;
     }
@@ -216,22 +216,28 @@ namespace e2d
 {
     const char* factory_loader<dock_layout>::schema_source = R"json({
         "type" : "object",
-        "required" : [ "dock" ],
+        "required" : [ "hdock", "vdock" ],
         "additionalProperties" : false,
         "properties" : {
-            "dock" : { "$ref": "#/definitions/dock_type" }
+            "hdock" : { "$ref": "#/definitions/horizontal_dock_type" },
+            "vdock" : { "$ref": "#/definitions/vertical_dock_type" }
         },
         "definitions" : {
-            "dock_type" : {
+            "horizontal_dock_type" : {
                 "type" : "string",
                 "enum" : [
-                    "none",
                     "left",
                     "right",
+                    "center",
+                    "fill"
+                ]
+            },
+            "vertical_dock_type" : {
+                "type" : "string",
+                "enum" : [
                     "bottom",
                     "top",
-                    "center_x",
-                    "center_y",
+                    "center",
                     "fill"
                 ]
             }
@@ -242,22 +248,38 @@ namespace e2d
         dock_layout& component,
         const fill_context& ctx) const
     {
-        E2D_ASSERT(ctx.root.HasMember("dock"));
-        str_view dock = ctx.root["dock"].GetString();
-        if ( dock == "node" ) {
-            component.dock(dock_layout::dock_type::none);
+        E2D_ASSERT(ctx.root.HasMember("hdock"));
+        E2D_ASSERT(ctx.root.HasMember("vdock"));
+
+        str_view hdock = ctx.root["hdock"].GetString();
+        str_view vdock = ctx.root["vdock"].GetString();
+        dock_layout::dock_type dock = dock_layout::dock_type::none;
+
+        if ( hdock == "left" ) {
+            dock = dock | dock_layout::dock_type::left;
+        } else if ( hdock == "right" ) {
+            dock = dock | dock_layout::dock_type::right;
+        } else if ( hdock == "center" ) {
+            dock = dock | dock_layout::dock_type::center_x;
+        } else if ( hdock == "fill" ) {
+            dock = dock | dock_layout::dock_type::fill_x;
         } else {
-            #define DEFINE_CASE(x) if ( dock == #x ) { component.dock(dock_layout::dock_type::x); }
-            DEFINE_CASE(left);
-            DEFINE_CASE(right);
-            DEFINE_CASE(bottom);
-            DEFINE_CASE(top);
-            DEFINE_CASE(center_x);
-            DEFINE_CASE(center_y);
-            DEFINE_CASE(fill);
-            #undef DEFINE_CASE
+            the<debug>().error("DOCK_LAYOUT: Incorrect formatting of 'hdock' property");
+        }
+        
+        if ( vdock == "top" ) {
+            dock = dock | dock_layout::dock_type::top;
+        } else if ( vdock == "bottom" ) {
+            dock = dock | dock_layout::dock_type::bottom;
+        } else if ( vdock == "center" ) {
+            dock = dock | dock_layout::dock_type::center_y;
+        } else if ( vdock == "fill" ) {
+            dock = dock | dock_layout::dock_type::fill_y;
+        } else {
+            the<debug>().error("DOCK_LAYOUT: Incorrect formatting of 'vdock' property");
         }
 
+        component.dock(dock);
         return true;
     }
 

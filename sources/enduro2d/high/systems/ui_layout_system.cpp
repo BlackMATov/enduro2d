@@ -416,7 +416,8 @@ namespace
         auto& layout = e.get_component<ui_layout>();
 
         v2f size = project_to_parent(child.node, b2f(child.layout->size())).size;
-        v2f off = project_to_local(child.node, v2f(ml.left(), ml.bottom()));
+        v2f off = project_to_local(child.node, v2f(ml.left(), ml.bottom())) -
+            project_to_local(child.node, v2f());
 
         layout.size(size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
         child.node->translation(child.node->translation() + v3f(off, 0.0f));
@@ -559,7 +560,7 @@ namespace
         {
             const m4f mvp = root->world_matrix() * std::get<0>(vp_and_viewport);
             const b2f bbox = unproject(mvp, std::get<1>(vp_and_viewport));
-            auto& e = root->owner()->entity();
+            ecs::entity e = root->owner()->entity();
             ui_layout& layout = e.get_component<ui_layout>();
             layout.size(bbox.size);
 
@@ -581,7 +582,7 @@ namespace
             const bool is_post_update = curr.is_post_update && !curr.layout->depends_on_childs();
             
             curr.node->for_each_child([&temp_layouts, &parent_rect, is_post_update](const node_iptr& n) {
-                auto& e = n->owner()->entity();
+                ecs::entity e = n->owner()->entity();
                 const ui_layout& layout = e.get_component<ui_layout>();
 
                 if ( is_post_update && !layout.depends_on_parent() ) {

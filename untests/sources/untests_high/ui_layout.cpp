@@ -458,6 +458,31 @@ TEST_CASE("ui_layout") {
             REQUIRE(get_region(fl) == b2f(300.0f, 300.0f));
         }
     }
+    SECTION("dock_layout - child offset") {
+        gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 600.0f});
+        node_iptr root_node = root->get_component<actor>().get().node();
+
+        gobject_iptr dl = the<world>().instantiate();
+        dl->entity_filler()
+            .component<actor>(node::create(dl, root_node))
+            .component<ui_layout>()
+            .component<dock_layout>(dock_layout::dock_type::left | dock_layout::dock_type::top)
+            .component<dock_layout::dirty_flag>();
+        node_iptr dl_node = dl->get_component<actor>().get().node();
+        
+        gobject_iptr fl = create_fixed_layout(dl_node, {60.0f, -20.0f}, {100.0f, 100.0f});
+
+        ui_layout_system system;
+        for ( u32 i = 0; i < 9; ++i ) {
+            system.process(the<world>().registry());
+        
+            REQUIRE_FALSE(dl->get_component<dock_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+        
+            REQUIRE(get_region(fl) == b2f(60.0f, -20.0f, 100.0f, 100.0f));
+            REQUIRE(get_region(dl) == b2f(100.0f, 100.0f) + v2f(0.0f, 500.0f));
+        }
+    }
     SECTION("image_layout") {
         gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 500.0f});
         node_iptr root_node = root->get_component<actor>().get().node();
