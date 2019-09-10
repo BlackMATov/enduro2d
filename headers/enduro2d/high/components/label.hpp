@@ -72,6 +72,9 @@ namespace e2d
 
         label& outline_color(const color32& value) noexcept;
         [[nodiscard]] const color32& outline_color() const noexcept;
+
+        label& set_bounds(const b2f& value) noexcept;
+        const b2f& bounds() const noexcept;
     private:
         str text_;
         font_asset::ptr font_;
@@ -84,6 +87,7 @@ namespace e2d
         f32 glyph_dilate_ = 0.f;
         f32 outline_width_ = 0.f;
         color32 outline_color_ = color32::white();
+        b2f bounds_;
     };
 
     template <>
@@ -277,5 +281,14 @@ namespace e2d
 
     inline const color32& label::outline_color() const noexcept {
         return outline_color_;
+    }
+
+    inline label& label::set_bounds(const b2f& value) noexcept {
+        bounds_ = value;
+        return *this;
+    }
+
+    inline const b2f& label::bounds() const noexcept {
+        return bounds_;
     }
 }

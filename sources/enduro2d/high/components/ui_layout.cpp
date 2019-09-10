@@ -717,3 +717,65 @@ namespace e2d
         return true;
     }
 }
+
+namespace e2d
+{
+    label_layout& label_layout::auto_scale(bool value) noexcept {
+        auto_scale_ = value;
+        return *this;
+    }
+
+    bool label_layout::auto_scale() const noexcept {
+        return auto_scale_;
+    }
+        
+    const char* factory_loader<label_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {
+            "auto_scale" : { "type" : "boolean" }
+        }
+    })json";
+
+    bool factory_loader<label_layout>::operator()(
+        label_layout& component,
+        const fill_context& ctx) const
+    {
+        if ( ctx.root.HasMember("auto_scale") ) {
+            component.auto_scale(ctx.root["auto_scale"].GetBool());
+        }
+        return true;
+    }
+
+    bool factory_loader<label_layout >::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+    
+    const char* factory_loader<label_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<label_layout::dirty>::operator()(
+        label_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<label_layout::dirty>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}

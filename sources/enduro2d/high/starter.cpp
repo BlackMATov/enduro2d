@@ -167,6 +167,8 @@ namespace e2d
             .register_component<margin_layout::dirty>("margin_layout.dirty")
             .register_component<padding_layout>("padding_layout")
             .register_component<padding_layout::dirty>("padding_layout.dirty")
+            .register_component<label_layout>("label_layout")
+            .register_component<label_layout::dirty>("label_layout.dirty")
             .register_component<pivot_2d>("pivot_2d");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();

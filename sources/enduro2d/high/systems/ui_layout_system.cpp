@@ -10,6 +10,7 @@
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/pivot_2d.hpp>
+#include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/node.hpp>
 
 using namespace e2d;
@@ -471,6 +472,19 @@ namespace
             c.parent_rect = b2f(layout.size());
         }
     }
+    
+    void update_label_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        auto& layout = e.get_component<ui_layout>();
+        const auto& ll = e.get_component<label_layout>();
+        const label& lbl = e.get_component<label>();
+
+        layout.size(lbl.bounds().size);
+    }
 }
 
 namespace
@@ -662,6 +676,13 @@ namespace
             layout.depends_on_parent(true);
         });
         owner.remove_all_components<padding_layout::dirty>();
+
+        owner.for_joined_components<label_layout::dirty, label_layout, ui_layout>(
+        [](const ecs::entity&, label_layout::dirty, const label_layout&, ui_layout& layout) {
+            layout.update_fn(&update_label_layout);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<label_layout::dirty>();
     }
 }
 

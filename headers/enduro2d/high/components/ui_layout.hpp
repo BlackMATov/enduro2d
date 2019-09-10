@@ -419,3 +419,46 @@ namespace e2d
             const collect_context& ctx) const;
     };
 }
+
+namespace e2d
+{
+    class label_layout final {
+    public:
+        class dirty final {};
+    public:
+        label_layout() = default;
+        
+        label_layout& auto_scale(bool value) noexcept;
+        bool auto_scale() const noexcept;
+    private:
+        bool auto_scale_ = false;
+    };
+    
+    template <>
+    class factory_loader<label_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            label_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+
+    template <>
+    class factory_loader<label_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            label_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}

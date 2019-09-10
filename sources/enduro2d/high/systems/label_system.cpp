@@ -189,7 +189,7 @@ namespace
             .property("u_outline_color", outline_color));
     }
 
-    void update_label_geometry(const label& l, model_renderer& mr, geometry_builder& gb) {
+    void update_label_geometry(label& l, model_renderer& mr, geometry_builder& gb) {
         if ( !l.font() || l.font()->content().empty() || l.text().empty() ) {
             gb.update_model(mr);
             return;
@@ -308,9 +308,12 @@ namespace
             f.info().glyph_ascent,
             f.info().line_height,
             strings.size());
+        v2f min_pos(std::numeric_limits<f32>::max());
+        v2f max_pos(-std::numeric_limits<f32>::max());
 
         for ( std::size_t i = 0, ie = strings.size(); i < ie; ++i ) {
             cursor.x = calculate_halign_offset(l.halign(), strings[i].width);
+            min_pos = math::minimized(min_pos, cursor);
             for ( std::size_t j = strings[i].start, je = strings[i].start + strings[i].length; j < je; ++j ) {
                 const glyph_desc& glyph = glyphs[j];
                 if ( !glyph.glyph ) {
@@ -330,7 +333,10 @@ namespace
                 cursor.x += glyph.glyph->advance + tracking_width;
             }
             cursor.y -= f.info().line_height * l.leading();
+            max_pos = math::maximized(max_pos, cursor);
         }
+
+        l.set_bounds(max_pos - min_pos);
 
         //
         // update model
@@ -344,7 +350,7 @@ namespace
         owner.for_joined_components<label::dirty, label, renderer, model_renderer>([&gb](
             const ecs::const_entity&,
             const label::dirty&,
-            const label& l,
+            label& l,
             renderer& r,
             model_renderer& mr
         ){
