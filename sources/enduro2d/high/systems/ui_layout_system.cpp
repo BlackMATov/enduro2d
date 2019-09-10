@@ -9,6 +9,7 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
+#include <enduro2d/high/components/pivot_2d.hpp>
 #include <enduro2d/high/node.hpp>
 
 using namespace e2d;
@@ -26,7 +27,7 @@ namespace
         l.size.y = ay - l.position.y;
     }
 
-#if 1
+#if 0
     t3f inverse_pos_scale(const t3f& v) noexcept {
         E2D_ASSERT(math::approximately(v.rotation, q4f::identity()));
         t3f result;
@@ -397,7 +398,7 @@ namespace
             node->scale(v3f(local.size / il.size(), 1.0f));
         }
 
-        node->translation(v3f(il.pivot(), 0.0f) * node->scale());
+        //node->translation(v3f(pv ? pv->pivot() : v2f(), 0.0f) * node->scale());
     }
     
     void update_margin_layout2(
@@ -569,7 +570,7 @@ namespace
                 layout.update_fn(),
                 root,
                 &layout,
-                b2f(bbox.size),
+                bbox,
                 false});
         }
 
@@ -641,7 +642,6 @@ namespace
         [](const ecs::entity&, image_layout::dirty, image_layout& img_layout,
            ui_layout& layout, const sprite_renderer& spr)
         {
-            img_layout.pivot(spr.sprite()->content().pivot());
             img_layout.size(spr.sprite()->content().texrect().size);
             layout.update_fn(&update_image_layout);
             layout.depends_on_parent(true);

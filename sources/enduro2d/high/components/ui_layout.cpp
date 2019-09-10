@@ -48,14 +48,22 @@ namespace e2d
         "type" : "object",
         "required" : [],
         "additionalProperties" : false,
-        "properties" : {}
+        "properties" : {
+            "size" : { "$ref": "#/common_definitions/v2" }
+        }
     })json";
 
     bool factory_loader<ui_layout>::operator()(
         ui_layout& component,
         const fill_context& ctx) const
     {
-        E2D_UNUSED(component, ctx);
+        if ( ctx.root.HasMember("size") ) {
+            v2f size;
+            if ( !json_utils::try_parse_value(ctx.root["size"], size) ) {
+                the<debug>().error("UI_LAYOUT: Incorrect formatting of 'size' property");
+            }
+            component.size(size);
+        }
         return true;
     }
 
@@ -422,11 +430,6 @@ namespace e2d
 
 namespace e2d
 {
-    image_layout& image_layout::pivot(const v2f& value) noexcept {
-        pivot_ = value;
-        return *this;
-    }
-
     image_layout& image_layout::size(const v2f& value) noexcept {
         size_ = value;
         return *this;
@@ -435,10 +438,6 @@ namespace e2d
     image_layout& image_layout::preserve_aspect(bool value) noexcept {
         preserve_aspect_ = value;
         return *this;
-    }
-        
-    const v2f& image_layout::pivot() const noexcept {
-        return pivot_;
     }
 
     const v2f& image_layout::size() const noexcept {

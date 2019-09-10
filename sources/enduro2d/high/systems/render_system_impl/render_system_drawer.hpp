@@ -51,7 +51,8 @@ namespace e2d::render_system_impl
             void draw(
                 const const_node_iptr& node,
                 const renderer& node_r,
-                const sprite_renderer& spr_r);
+                const sprite_renderer& spr_r,
+                const pivot_2d* pivot);
 
             void flush();
         private:

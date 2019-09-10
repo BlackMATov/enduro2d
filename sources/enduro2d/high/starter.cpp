@@ -21,6 +21,7 @@
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/shape2d.hpp>
 #include <enduro2d/high/components/ui_layout.hpp>
+#include <enduro2d/high/components/pivot_2d.hpp>
 
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
@@ -165,7 +166,8 @@ namespace e2d
             .register_component<margin_layout>("margin_layout")
             .register_component<margin_layout::dirty>("margin_layout.dirty")
             .register_component<padding_layout>("padding_layout")
-            .register_component<padding_layout::dirty>("padding_layout.dirty");
+            .register_component<padding_layout::dirty>("padding_layout.dirty")
+            .register_component<pivot_2d>("pivot_2d");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }

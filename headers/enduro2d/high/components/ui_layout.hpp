@@ -274,15 +274,12 @@ namespace e2d
     public:
         image_layout() = default;
         
-        image_layout& pivot(const v2f& value) noexcept;
         image_layout& size(const v2f& value) noexcept;
         image_layout& preserve_aspect(bool value) noexcept;
         
-        const v2f& pivot() const noexcept;
         const v2f& size() const noexcept;
         bool preserve_aspect() const noexcept;
     private:
-        v2f pivot_;
         v2f size_;
         bool preserve_aspect_ = true;
     };

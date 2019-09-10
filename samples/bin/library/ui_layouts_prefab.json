@@ -51,8 +51,16 @@
                 },
                 "children" : [{
                     "components" : {
-                        "actor" : {},
+                        "actor" : {
+                            "rotation" : {
+                                "angle" : 45,
+                                "axis" : [0,0,1]
+                            }
+                        },
                         "ui_layout" : {},
+                        "pivot2d" : {
+                            "pivot" : [32, 32]
+                        },
                         "fixed_layout" : {
                             "size" : [64, 64]
                         },

@@ -9,6 +9,7 @@
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/model_renderer.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
+#include <enduro2d/high/components/pivot_2d.hpp>
 
 namespace
 {
@@ -84,9 +85,10 @@ namespace e2d::render_system_impl
             if ( mdl_r ) {
                 draw(node, *node_r, *mdl_r);
             }
+            const pivot_2d* pivot = node_e.find_component<pivot_2d>();
             const sprite_renderer* spr_r = node_e.find_component<sprite_renderer>();
             if ( spr_r ) {
-                draw(node, *node_r, *spr_r);
+                draw(node, *node_r, *spr_r, pivot);
             }
         }
     }
@@ -139,7 +141,8 @@ namespace e2d::render_system_impl
     void drawer::context::draw(
         const const_node_iptr& node,
         const renderer& node_r,
-        const sprite_renderer& spr_r)
+        const sprite_renderer& spr_r,
+        const pivot_2d* pivot_c)
     {
         if ( !node || !node_r.enabled() ) {
             return;
@@ -163,8 +166,9 @@ namespace e2d::render_system_impl
         const f32 sw = tex_r.size.x;
         const f32 sh = tex_r.size.y;
 
-        const f32 px = tex_r.position.x - spr.pivot().x;
-        const f32 py = tex_r.position.y - spr.pivot().y;
+        const v2f pivot = pivot_c ? pivot_c->pivot() : v2f();
+        const f32 px = tex_r.position.x - pivot.x;
+        const f32 py = tex_r.position.y - pivot.y;
 
         const v4f p1{px + 0.f, py + 0.f, 0.f, 1.f};
         const v4f p2{px + sw,  py + 0.f, 0.f, 1.f};
