@@ -45,13 +45,41 @@ namespace e2d
         b2f parent_rect; // region that can be allocated (in parent space)
         bool is_post_update;
     };
+    
+    template <>
+    class factory_loader<ui_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            ui_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+    
+    template <>
+    class factory_loader<ui_layout::root_tag> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            ui_layout::root_tag& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }
 
 namespace e2d
 {
     class fixed_layout final {
     public:
-        class dirty_flag final {};
+        class dirty final {};
     public:
         fixed_layout() = default;
         fixed_layout(const v2f& size);
@@ -75,13 +103,27 @@ namespace e2d
             asset_dependencies& dependencies,
             const collect_context& ctx) const;
     };
+    
+    template <>
+    class factory_loader<fixed_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            fixed_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }
 
 namespace e2d
 {
     class auto_layout final {
     public:
-        class dirty_flag final {};
+        class dirty final {};
     };
     
     template <>
@@ -97,13 +139,27 @@ namespace e2d
             asset_dependencies& dependencies,
             const collect_context& ctx) const;
     };
+    
+    template <>
+    class factory_loader<auto_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            auto_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }
 
 namespace e2d
 {
     class stack_layout final {
     public:
-        class dirty_flag final {};
+        class dirty final {};
 
         enum class stack_origin {
             left,
@@ -134,13 +190,27 @@ namespace e2d
             asset_dependencies& dependencies,
             const collect_context& ctx) const;
     };
+    
+    template <>
+    class factory_loader<stack_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            stack_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }
 
 namespace e2d
 {
     class dock_layout final {
     public:
-        class dirty_flag final {};
+        class dirty final {};
 
         enum class dock_type : u8 {
             none = 0,
@@ -180,13 +250,27 @@ namespace e2d
             asset_dependencies& dependencies,
             const collect_context& ctx) const;
     };
+    
+    template <>
+    class factory_loader<dock_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            dock_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }
 
 namespace e2d
 {
     class image_layout final {
     public:
-        class dirty_flag final {};
+        class dirty final {};
     public:
         image_layout() = default;
         
@@ -216,13 +300,27 @@ namespace e2d
             asset_dependencies& dependencies,
             const collect_context& ctx) const;
     };
+
+    template <>
+    class factory_loader<image_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            image_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }
 
 namespace e2d
 {
     class margin_layout final {
     public:
-        class dirty_flag final {};
+        class dirty final {};
     public:
         margin_layout() = default;
         margin_layout(f32 margin);
@@ -256,13 +354,27 @@ namespace e2d
             asset_dependencies& dependencies,
             const collect_context& ctx) const;
     };
+    
+    template <>
+    class factory_loader<margin_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            margin_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }
 
 namespace e2d
 {
     class padding_layout final {
     public:
-        class dirty_flag final {};
+        class dirty final {};
     public:
         padding_layout() = default;
         padding_layout(f32 left, f32 bottom, f32 right, f32 top);
@@ -289,6 +401,20 @@ namespace e2d
 
         bool operator()(
             padding_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+
+    template <>
+    class factory_loader<padding_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            padding_layout::dirty& component,
             const fill_context& ctx) const;
             
         bool operator()(

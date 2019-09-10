@@ -416,8 +416,7 @@ namespace
         auto& layout = e.get_component<ui_layout>();
 
         v2f size = project_to_parent(child.node, b2f(child.layout->size())).size;
-        v2f off = project_to_local(child.node, v2f(ml.left(), ml.bottom())) -
-            project_to_local(child.node, v2f());
+        v2f off = project_to_local(child.node, v2f(ml.left(), ml.bottom()));
 
         layout.size(size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
         child.node->translation(child.node->translation() + v3f(off, 0.0f));
@@ -563,13 +562,14 @@ namespace
             ecs::entity e = root->owner()->entity();
             ui_layout& layout = e.get_component<ui_layout>();
             layout.size(bbox.size);
+            root->translation(root->translation() + v3f(bbox.position, 0.0f));
 
             pending.push_back({
                 e.id(),
                 layout.update_fn(),
                 root,
                 &layout,
-                bbox,
+                b2f(bbox.size),
                 false});
         }
 
@@ -583,16 +583,16 @@ namespace
             
             curr.node->for_each_child([&temp_layouts, &parent_rect, is_post_update](const node_iptr& n) {
                 ecs::entity e = n->owner()->entity();
-                const ui_layout& layout = e.get_component<ui_layout>();
+                const ui_layout* layout = e.find_component<ui_layout>();
 
-                if ( is_post_update && !layout.depends_on_parent() ) {
+                if ( !layout || (is_post_update && !layout->depends_on_parent()) ) {
                     return;
                 }
                 temp_layouts.push_back({
                     e.id(),
-                    layout.update_fn(),
+                    layout->update_fn(),
                     n,
-                    &layout,
+                    layout,
                     parent_rect,
                     is_post_update});
             });
@@ -609,36 +609,36 @@ namespace
     }
 
     void register_update_fn(ecs::registry& owner) {
-        owner.for_joined_components<fixed_layout::dirty_flag, fixed_layout, ui_layout>(
-        [](const ecs::entity&, fixed_layout::dirty_flag, const fixed_layout& fl, ui_layout& layout) {
+        owner.for_joined_components<fixed_layout::dirty, fixed_layout, ui_layout>(
+        [](const ecs::entity&, fixed_layout::dirty, const fixed_layout& fl, ui_layout& layout) {
             layout.size(fl.size());
         });
-        owner.remove_all_components<fixed_layout::dirty_flag>();
+        owner.remove_all_components<fixed_layout::dirty>();
         
-        owner.for_joined_components<auto_layout::dirty_flag, auto_layout, ui_layout>(
-        [](const ecs::entity&, auto_layout::dirty_flag, const auto_layout&, ui_layout& layout) {
+        owner.for_joined_components<auto_layout::dirty, auto_layout, ui_layout>(
+        [](const ecs::entity&, auto_layout::dirty, const auto_layout&, ui_layout& layout) {
             layout.update_fn(&update_auto_layout);
             layout.depends_on_childs(true);
         });
-        owner.remove_all_components<auto_layout::dirty_flag>();
+        owner.remove_all_components<auto_layout::dirty>();
         
-        owner.for_joined_components<stack_layout::dirty_flag, stack_layout, ui_layout>(
-        [](const ecs::entity&, stack_layout::dirty_flag, const stack_layout& sl, ui_layout& layout) {
+        owner.for_joined_components<stack_layout::dirty, stack_layout, ui_layout>(
+        [](const ecs::entity&, stack_layout::dirty, const stack_layout& sl, ui_layout& layout) {
             layout.update_fn(&update_stack_layout);
             layout.depends_on_childs(true);
         });
-        owner.remove_all_components<stack_layout::dirty_flag>();
+        owner.remove_all_components<stack_layout::dirty>();
         
-        owner.for_joined_components<dock_layout::dirty_flag, dock_layout, ui_layout>(
-        [](const ecs::entity&, dock_layout::dirty_flag, const dock_layout&, ui_layout& layout) {
+        owner.for_joined_components<dock_layout::dirty, dock_layout, ui_layout>(
+        [](const ecs::entity&, dock_layout::dirty, const dock_layout&, ui_layout& layout) {
             layout.update_fn(&update_dock_layout);
             layout.depends_on_childs(true);
             layout.depends_on_parent(true);
         });
-        owner.remove_all_components<dock_layout::dirty_flag>();
+        owner.remove_all_components<dock_layout::dirty>();
         
-        owner.for_joined_components<image_layout::dirty_flag, image_layout, ui_layout, sprite_renderer>(
-        [](const ecs::entity&, image_layout::dirty_flag, image_layout& img_layout,
+        owner.for_joined_components<image_layout::dirty, image_layout, ui_layout, sprite_renderer>(
+        [](const ecs::entity&, image_layout::dirty, image_layout& img_layout,
            ui_layout& layout, const sprite_renderer& spr)
         {
             img_layout.pivot(spr.sprite()->content().pivot());
@@ -647,21 +647,21 @@ namespace
             layout.depends_on_parent(true);
             layout.size(img_layout.size());
         });
-        owner.remove_all_components<image_layout::dirty_flag>();
+        owner.remove_all_components<image_layout::dirty>();
         
-        owner.for_joined_components<margin_layout::dirty_flag, margin_layout, ui_layout>(
-        [](const ecs::entity&, margin_layout::dirty_flag, const margin_layout&, ui_layout& layout) {
+        owner.for_joined_components<margin_layout::dirty, margin_layout, ui_layout>(
+        [](const ecs::entity&, margin_layout::dirty, const margin_layout&, ui_layout& layout) {
             layout.update_fn(&update_margin_layout);
             layout.depends_on_childs(true);
         });
-        owner.remove_all_components<margin_layout::dirty_flag>();
+        owner.remove_all_components<margin_layout::dirty>();
         
-        owner.for_joined_components<padding_layout::dirty_flag, padding_layout, ui_layout>(
-        [](const ecs::entity&, padding_layout::dirty_flag, const padding_layout&, ui_layout& layout) {
+        owner.for_joined_components<padding_layout::dirty, padding_layout, ui_layout>(
+        [](const ecs::entity&, padding_layout::dirty, const padding_layout&, ui_layout& layout) {
             layout.update_fn(&update_padding_layout);
             layout.depends_on_parent(true);
         });
-        owner.remove_all_components<padding_layout::dirty_flag>();
+        owner.remove_all_components<padding_layout::dirty>();
     }
 }
 

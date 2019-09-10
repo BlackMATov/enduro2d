@@ -78,7 +78,7 @@ namespace
             .component<actor>(node::create(fl, root))
             .component<ui_layout>()
             .component<fixed_layout>(size)
-            .component<fixed_layout::dirty_flag>();
+            .component<fixed_layout::dirty>();
         node_iptr fl_node = fl->get_component<actor>().get().node();
         fl_node->translation(v3f(pos.x, pos.y, 0.f));
         fl_node->scale(v3f(scale, 1.0f));
@@ -101,8 +101,8 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
 
-            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
 
             REQUIRE(get_region(fl1) == b2f(20.0f, 30.0f, 100.0f, 200.0f));
             REQUIRE(get_region(fl2) == b2f(40.0f, 50.0f, 200.0f, 300.0f));
@@ -116,8 +116,8 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
 
-            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
 
             REQUIRE(get_region(fl1) == b2f(20.0f, 30.0f, 100.0f * 1.5f, 200.0f * 2.1f));
             REQUIRE(get_region(fl2) == b2f(40.0f, 50.0f, 200.0f * 1.8f, 300.0f * 3.4f));
@@ -129,7 +129,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(sl, initializer.scene_r))
             .component<ui_layout>()
             .component<stack_layout>(stack_layout::stack_origin::bottom)
-            .component<stack_layout::dirty_flag>();
+            .component<stack_layout::dirty>();
         node_iptr sl_node = sl->get_component<actor>().get().node();
         
         gobject_iptr fl1 = create_fixed_layout(sl_node, {}, {100.0f, 200.0f});
@@ -142,12 +142,12 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(sl->get_component<stack_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(sl->get_component<stack_layout::dirty>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(fl1) == b2f(100.0f, 200.0f) + v2f(0.0f, 0.0f));
             REQUIRE(get_region(fl2) == b2f(300.0f, 50.0f) + v2f(0.0f, 200.0f));
@@ -163,7 +163,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(sl, initializer.scene_r))
             .component<ui_layout>()
             .component<stack_layout>(stack_layout::stack_origin::left)
-            .component<stack_layout::dirty_flag>();
+            .component<stack_layout::dirty>();
         node_iptr sl_node = sl->get_component<actor>().get().node();
         
         gobject_iptr fl1 = create_fixed_layout(sl_node, {}, {55.0f, 100.0f});
@@ -176,12 +176,12 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(sl->get_component<stack_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(sl->get_component<stack_layout::dirty>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(fl1) == b2f(55.0f, 100.0f) + v2f(0.0f, 0.0f));
             REQUIRE(get_region(fl2) == b2f(120.0f, 200.0f) + v2f(55.0f, 0.0f));
@@ -200,7 +200,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(sl, root_node))
             .component<ui_layout>()
             .component<stack_layout>(stack_layout::stack_origin::right)
-            .component<stack_layout::dirty_flag>();
+            .component<stack_layout::dirty>();
         node_iptr sl_node = sl->get_component<actor>().get().node();
         
         gobject_iptr fl1 = create_fixed_layout(sl_node, {}, {55.0f, 100.0f});
@@ -213,12 +213,12 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(sl->get_component<stack_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(sl->get_component<stack_layout::dirty>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(fl1) == b2f(55.0f, 100.0f) + v2f(354.0f, 0.0f));
             REQUIRE(get_region(fl2) == b2f(120.0f, 200.0f) + v2f(234.0f, 0.0f));
@@ -234,7 +234,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(al, initializer.scene_r))
             .component<ui_layout>()
             .component<auto_layout>()
-            .component<auto_layout::dirty_flag>();
+            .component<auto_layout::dirty>();
         node_iptr al_node = al->get_component<actor>().get().node();
         
         gobject_iptr fl1 = create_fixed_layout(al_node, {-50.0f, 10.0f}, {50.0f, 50.0f});
@@ -245,10 +245,10 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(al) == b2f(-50.0f, 10.0f, 250.0f, 870.0f));
             REQUIRE(get_region(fl1) == b2f(50.0f, 50.0f) + v2f(0.0f, 0.0f));
@@ -262,7 +262,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(al, initializer.scene_r))
             .component<ui_layout>()
             .component<auto_layout>()
-            .component<auto_layout::dirty_flag>();
+            .component<auto_layout::dirty>();
         node_iptr al_node = al->get_component<actor>().get().node();
         
         gobject_iptr fl1 = create_fixed_layout(al_node, {-50.0f, 10.0f}, {50.0f, 50.0f});
@@ -273,10 +273,10 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(al) == b2f(-50.0f, 10.0f, 300.0f, 670.0f));
             REQUIRE(get_region(fl1) == b2f(50.0f, 50.0f) + v2f(0.0f, 0.0f));
@@ -290,7 +290,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(sl, initializer.scene_r))
             .component<ui_layout>()
             .component<stack_layout>(stack_layout::stack_origin::left)
-            .component<stack_layout::dirty_flag>();
+            .component<stack_layout::dirty>();
         node_iptr sl_node = sl->get_component<actor>().get().node();
 
         gobject_iptr al = the<world>().instantiate();
@@ -298,7 +298,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(al, sl_node))
             .component<ui_layout>()
             .component<auto_layout>()
-            .component<auto_layout::dirty_flag>();
+            .component<auto_layout::dirty>();
         node_iptr al_node = al->get_component<actor>().get().node();
 
         gobject_iptr fl1 = create_fixed_layout(al_node, {-50.0f, 10.0f}, {50.0f, 50.0f});
@@ -312,13 +312,13 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(sl->get_component<auto_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
+            REQUIRE_FALSE(sl->get_component<auto_layout::dirty>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl4->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl5->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(al) == b2f(250.0f, 390.0f));
             REQUIRE(get_region(fl4) == b2f(70.0f, 80.0f) + v2f(250.0f, 0.0f));
@@ -335,7 +335,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(dl, root_node))
             .component<ui_layout>()
             .component<dock_layout>(dock_layout::dock_type::fill)
-            .component<dock_layout::dirty_flag>();
+            .component<dock_layout::dirty>();
         node_iptr dl_node = dl->get_component<actor>().get().node();
         
         gobject_iptr fl = create_fixed_layout(dl_node, {}, {100.0f, 100.0f});
@@ -344,8 +344,8 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(dl->get_component<dock_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(fl) == b2f(100.0f, 100.0f));
             REQUIRE(get_region(dl) == b2f(600.0f, 600.0f));
@@ -360,7 +360,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(dl, root_node))
             .component<ui_layout>()
             .component<dock_layout>(dock_layout::dock_type::left | dock_layout::dock_type::top)
-            .component<dock_layout::dirty_flag>();
+            .component<dock_layout::dirty>();
         node_iptr dl_node = dl->get_component<actor>().get().node();
         
         gobject_iptr fl = create_fixed_layout(dl_node, {}, {100.0f, 100.0f});
@@ -369,8 +369,8 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(dl->get_component<dock_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(fl) == b2f(100.0f, 100.0f));
             REQUIRE(get_region(dl) == b2f(100.0f, 100.0f) + v2f(0.0f, 500.0f));
@@ -385,7 +385,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(dl, root_node))
             .component<ui_layout>()
             .component<dock_layout>(dock_layout::dock_type::right | dock_layout::dock_type::bottom)
-            .component<dock_layout::dirty_flag>();
+            .component<dock_layout::dirty>();
         node_iptr dl_node = dl->get_component<actor>().get().node();
         
         gobject_iptr fl = create_fixed_layout(dl_node, {}, {100.0f, 100.0f});
@@ -394,8 +394,8 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(dl->get_component<dock_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(fl) == b2f(100.0f, 100.0f));
             REQUIRE(get_region(dl) == b2f(100.0f, 100.0f) + v2f(500.0f, 0.0f));
@@ -410,7 +410,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(dl, root_node))
             .component<ui_layout>()
             .component<dock_layout>(dock_layout::dock_type::left | dock_layout::dock_type::right | dock_layout::dock_type::center_y)
-            .component<dock_layout::dirty_flag>();
+            .component<dock_layout::dirty>();
         node_iptr dl_node = dl->get_component<actor>().get().node();
         
         gobject_iptr fl = create_fixed_layout(dl_node, {}, {100.0f, 100.0f});
@@ -419,8 +419,8 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(dl->get_component<dock_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(fl) == b2f(100.0f, 100.0f));
             REQUIRE(get_region(dl) == b2f(600.0f, 100.0f) + v2f(0.0f, 250.0f));
@@ -432,7 +432,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(al, initializer.scene_r))
             .component<ui_layout>()
             .component<auto_layout>()
-            .component<auto_layout::dirty_flag>();
+            .component<auto_layout::dirty>();
         node_iptr al_node = al->get_component<actor>().get().node();
         
         gobject_iptr fl = create_fixed_layout(al_node, {}, {300.0f, 300.0f});
@@ -442,16 +442,16 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(dl, al_node))
             .component<ui_layout>()
             .component<dock_layout>(dock_layout::dock_type::fill)
-            .component<dock_layout::dirty_flag>();
+            .component<dock_layout::dirty>();
         node_iptr dl_node = dl->get_component<actor>().get().node();
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(dl->get_component<dock_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
+            REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(al) == b2f(300.0f, 300.0f));
             REQUIRE(get_region(dl) == b2f(300.0f, 300.0f));
@@ -467,7 +467,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(dl, root_node))
             .component<ui_layout>()
             .component<dock_layout>(dock_layout::dock_type::left | dock_layout::dock_type::top)
-            .component<dock_layout::dirty_flag>();
+            .component<dock_layout::dirty>();
         node_iptr dl_node = dl->get_component<actor>().get().node();
         
         gobject_iptr fl = create_fixed_layout(dl_node, {60.0f, -20.0f}, {100.0f, 100.0f});
@@ -476,8 +476,8 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(dl->get_component<dock_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(fl) == b2f(60.0f, -20.0f, 100.0f, 100.0f));
             REQUIRE(get_region(dl) == b2f(100.0f, 100.0f) + v2f(0.0f, 500.0f));
@@ -496,14 +496,14 @@ TEST_CASE("ui_layout") {
             .component<ui_layout>()
             .component<image_layout>(image_layout()
                 .preserve_aspect(false))
-            .component<image_layout::dirty_flag>()
+            .component<image_layout::dirty>()
             .component<sprite_renderer>(sprite_res);
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(il->get_component<image_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(il->get_component<image_layout::dirty>().exists());
 
             REQUIRE(get_region(il) == b2f(600.0f, 500.0f));
         }
@@ -522,14 +522,14 @@ TEST_CASE("ui_layout") {
             .component<ui_layout>()
             .component<image_layout>(image_layout()
                 .preserve_aspect(false))
-            .component<image_layout::dirty_flag>()
+            .component<image_layout::dirty>()
             .component<sprite_renderer>(sprite_res);
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(il->get_component<image_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(il->get_component<image_layout::dirty>().exists());
 
             REQUIRE(get_region(il) == b2f(300.0f, 250.0f, 600.0f, 500.0f));
         }
@@ -547,14 +547,14 @@ TEST_CASE("ui_layout") {
             .component<ui_layout>()
             .component<image_layout>(image_layout()
                 .preserve_aspect(true))
-            .component<image_layout::dirty_flag>()
+            .component<image_layout::dirty>()
             .component<sprite_renderer>(sprite_res);
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(il->get_component<image_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(il->get_component<image_layout::dirty>().exists());
 
             REQUIRE(get_region(il) == b2f(500.0f, 500.0f));
         }
@@ -565,7 +565,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(al, initializer.scene_r))
             .component<ui_layout>()
             .component<auto_layout>()
-            .component<auto_layout::dirty_flag>();
+            .component<auto_layout::dirty>();
         node_iptr al_node = al->get_component<actor>().get().node();
         
         gobject_iptr fl = create_fixed_layout(al_node, {}, {200.0f, 300.0f});
@@ -579,16 +579,16 @@ TEST_CASE("ui_layout") {
             .component<ui_layout>()
             .component<image_layout>(image_layout()
                 .preserve_aspect(true))
-            .component<image_layout::dirty_flag>()
+            .component<image_layout::dirty>()
             .component<sprite_renderer>(sprite_res);
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(al->get_component<auto_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(il->get_component<image_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(il->get_component<image_layout::dirty>().exists());
         
             REQUIRE(get_region(fl) == b2f(200.0f, 300.0f));
             REQUIRE(get_region(al) == b2f(200.0f, 300.0f));
@@ -604,14 +604,14 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(pl, root_node))
             .component<ui_layout>()
             .component<padding_layout>(1.0f, 2.0f, 3.0f, 4.0f)
-            .component<padding_layout::dirty_flag>();
+            .component<padding_layout::dirty>();
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(root->get_component<fixed_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(pl->get_component<padding_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(root->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(pl->get_component<padding_layout::dirty>().exists());
         
             REQUIRE(get_region(root) == b2f(200.0f, 300.0f));
             REQUIRE(get_region(pl) == b2f(1.0f, 2.0f, 196.0f, 294.0f));
@@ -623,7 +623,7 @@ TEST_CASE("ui_layout") {
             .component<actor>(node::create(ml, initializer.scene_r))
             .component<ui_layout>()
             .component<margin_layout>(1.0f, 2.0f, 3.0f, 4.0f)
-            .component<margin_layout::dirty_flag>();
+            .component<margin_layout::dirty>();
         node_iptr ml_node = ml->get_component<actor>().get().node();
         
         gobject_iptr fl = create_fixed_layout(ml_node, {}, {200.0f, 300.0f});
@@ -632,8 +632,8 @@ TEST_CASE("ui_layout") {
         for ( u32 i = 0; i < 9; ++i ) {
             system.process(the<world>().registry());
         
-            REQUIRE_FALSE(ml->get_component<margin_layout::dirty_flag>().exists());
-            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty_flag>().exists());
+            REQUIRE_FALSE(ml->get_component<margin_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
         
             REQUIRE(get_region(ml) == b2f(204.0f, 306.0f));
             REQUIRE(get_region(fl) == b2f(1.0f, 2.0f, 200.0f, 300.0f));

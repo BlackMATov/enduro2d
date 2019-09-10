@@ -43,6 +43,52 @@ namespace e2d
     bool ui_layout::depends_on_parent() const noexcept {
         return depends_on_parent_;
     }
+    
+    const char* factory_loader<ui_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<ui_layout>::operator()(
+        ui_layout& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<ui_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+    
+    const char* factory_loader<ui_layout::root_tag>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<ui_layout::root_tag>::operator()(
+        ui_layout::root_tag& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<ui_layout::root_tag>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
 }
 
 namespace e2d
@@ -58,10 +104,7 @@ namespace e2d
     const v2f& fixed_layout::size() const noexcept {
         return size_;
     }
-}
 
-namespace e2d
-{
     const char* factory_loader<fixed_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [ "size" ],
@@ -93,6 +136,29 @@ namespace e2d
         E2D_UNUSED(dependencies, ctx);
         return true;
     }
+    
+    const char* factory_loader<fixed_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<fixed_layout::dirty>::operator()(
+        fixed_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<fixed_layout::dirty>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
 }
 
 namespace e2d
@@ -101,8 +167,7 @@ namespace e2d
         "type" : "object",
         "required" : [],
         "additionalProperties" : false,
-        "properties" : {
-        }
+        "properties" : {}
     })json";
 
     bool factory_loader<auto_layout>::operator()(
@@ -114,6 +179,29 @@ namespace e2d
     }
 
     bool factory_loader<auto_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+    
+    const char* factory_loader<auto_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<auto_layout::dirty>::operator()(
+        auto_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<auto_layout::dirty>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
@@ -135,10 +223,7 @@ namespace e2d
     stack_layout::stack_origin stack_layout::origin() const noexcept {
         return origin_;
     }
-}
 
-namespace e2d
-{
     const char* factory_loader<stack_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [ "origin" ],
@@ -186,6 +271,29 @@ namespace e2d
         E2D_UNUSED(dependencies, ctx);
         return true;
     }
+    
+    const char* factory_loader<stack_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<stack_layout::dirty>::operator()(
+        stack_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<stack_layout::dirty>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
 }
 
 namespace e2d
@@ -210,10 +318,7 @@ namespace e2d
     dock_layout::dock_type operator|(dock_layout::dock_type l, dock_layout::dock_type r) noexcept {
         return dock_layout::dock_type(utils::enum_to_underlying(l) | utils::enum_to_underlying(r));
     }
-}
 
-namespace e2d
-{
     const char* factory_loader<dock_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [ "hdock", "vdock" ],
@@ -290,6 +395,29 @@ namespace e2d
         E2D_UNUSED(dependencies, ctx);
         return true;
     }
+
+    const char* factory_loader<dock_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<dock_layout::dirty>::operator()(
+        dock_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<dock_layout::dirty>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
 }
 
 namespace e2d
@@ -320,10 +448,7 @@ namespace e2d
     bool image_layout::preserve_aspect() const noexcept {
         return preserve_aspect_;
     }
-}
 
-namespace e2d
-{
     const char* factory_loader<image_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [],
@@ -343,6 +468,29 @@ namespace e2d
     }
 
     bool factory_loader<image_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+
+    const char* factory_loader<image_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<image_layout::dirty>::operator()(
+        image_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<image_layout::dirty>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
@@ -400,10 +548,7 @@ namespace e2d
     f32 margin_layout::bottom() const noexcept {
         return bottom_;
     }
-}
 
-namespace e2d
-{
     const char* factory_loader<margin_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [],
@@ -436,6 +581,29 @@ namespace e2d
     }
 
     bool factory_loader<margin_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+
+    const char* factory_loader<margin_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<margin_layout::dirty>::operator()(
+        margin_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<margin_layout::dirty>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
@@ -487,10 +655,7 @@ namespace e2d
     f32 padding_layout::bottom() const noexcept {
         return bottom_;
     }
-}
 
-namespace e2d
-{
     const char* factory_loader<padding_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [],
@@ -523,6 +688,29 @@ namespace e2d
     }
 
     bool factory_loader<padding_layout >::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+    
+    const char* factory_loader<padding_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<padding_layout::dirty>::operator()(
+        padding_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<padding_layout::dirty>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {

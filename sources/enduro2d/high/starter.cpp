@@ -150,13 +150,22 @@ namespace e2d
             .register_component<renderer>("renderer")
             .register_component<scene>("scene")
             .register_component<sprite_renderer>("sprite_renderer")
+            .register_component<ui_layout>("ui_layout")
+            .register_component<ui_layout::root_tag>("ui_layout.root_tag")
             .register_component<fixed_layout>("fixed_layout")
+            .register_component<fixed_layout::dirty>("fixed_layout.dirty")
             .register_component<auto_layout>("auto_layout")
+            .register_component<auto_layout::dirty>("auto_layout.dirty")
             .register_component<stack_layout>("stack_layout")
+            .register_component<stack_layout::dirty>("stack_layout.dirty")
             .register_component<dock_layout>("dock_layout")
+            .register_component<dock_layout::dirty>("dock_layout.dirty")
             .register_component<image_layout>("image_layout")
-            .register_component<image_layout>("margin_layout")
-            .register_component<image_layout>("layout_layout");
+            .register_component<image_layout::dirty>("image_layout.dirty")
+            .register_component<margin_layout>("margin_layout")
+            .register_component<margin_layout::dirty>("margin_layout.dirty")
+            .register_component<padding_layout>("padding_layout")
+            .register_component<padding_layout::dirty>("padding_layout.dirty");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }

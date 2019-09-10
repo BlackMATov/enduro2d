@@ -1,0 +1,184 @@
+{
+    "components" : {
+        "scene" : {},
+        "actor" : {},
+        "ui_layout" : {},
+        "ui_layout.root_tag" : {}
+    },
+    "children" : [{
+        "components" : {
+            "actor" : {},
+            "ui_layout" : {},
+            "auto_layout" : {},
+            "auto_layout.dirty" : {}
+        },
+        "children" : [{
+            "components" : {
+                "actor" : {},
+                "ui_layout" : {},
+                "image_layout" : {
+                    "preserve_aspect" : false
+                },
+                "image_layout.dirty" : {},
+                "renderer" : {
+                    "materials" : ["sprite_material.json"]
+                },
+                "sprite_renderer" : {
+                    "sprite" : "rect_sprite.json",
+                    "tint" : [255, 255, 255, 255]
+                }
+            }
+        }, {
+            "components" : {
+                "actor" : {},
+                "ui_layout" : {},
+                "margin_layout" : {
+                    "left" : 4,
+                    "bottom" : 2,
+                    "right" : 1,
+                    "top" : 2
+                },
+                "margin_layout.dirty" : {}
+            },
+            "children" : [{
+                "components" : {
+                    "actor" : {},
+                    "ui_layout" : {},
+                    "stack_layout" : {
+                        "origin" : "left"
+                    },
+                    "stack_layout.dirty" : {}
+                },
+                "children" : [{
+                    "components" : {
+                        "actor" : {},
+                        "ui_layout" : {},
+                        "fixed_layout" : {
+                            "size" : [64, 64]
+                        },
+                        "fixed_layout.dirty" : {},
+                        "renderer" : {
+                            "materials" : ["sprite_material.json"]
+                        },
+                        "sprite_renderer" : {
+                            "sprite" : "rect_sprite.json",
+                            "tint" : [0, 255, 0, 255]
+                        }
+                    }
+                }, {
+                    "components" : {
+                        "actor" : {
+                            "scale" : 2
+                        },
+                        "ui_layout" : {},
+                        "fixed_layout" : {
+                            "size" : [64, 64]
+                        },
+                        "fixed_layout.dirty" : {},
+                        "renderer" : {
+                            "materials" : ["sprite_material.json"]
+                        },
+                        "sprite_renderer" : {
+                            "sprite" : "rect_sprite.json",
+                            "tint" : [255, 0, 0, 255]
+                        }
+                    }
+                }, {
+                    "components" : {
+                        "actor" : {
+                            "scale" : 1.5
+                        },
+                        "ui_layout" : {},
+                        "fixed_layout" : {
+                            "size" : [64, 64]
+                        },
+                        "fixed_layout.dirty" : {},
+                        "renderer" : {
+                            "materials" : ["sprite_material.json"]
+                        },
+                        "sprite_renderer" : {
+                            "sprite" : "rect_sprite.json",
+                            "tint" : [0, 0, 255, 255]
+                        }
+                    }
+                }]
+            }]
+        }]
+    }, {
+        "components" : {
+            "actor" : {},
+            "ui_layout" : {},
+            "dock_layout" : {
+                "hdock" : "right",
+                "vdock" : "center"
+            },
+            "dock_layout.dirty" : {}
+        },
+        "children" : [{
+            "components" : {
+                "actor" : {},
+                "ui_layout" : {},
+                "fixed_layout" : {
+                    "size" : [64, 64]
+                },
+                "fixed_layout.dirty" : {},
+                "renderer" : {
+                    "materials" : ["sprite_material.json"]
+                },
+                "sprite_renderer" : {
+                    "sprite" : "rect_sprite.json",
+                    "tint" : [255, 0, 255, 255]
+                }
+            },
+            "children" : [{
+                "components" : {
+                    "actor" : {
+                        "translation" : [-20, -20, 0]
+                    },
+                    "ui_layout" : {},
+                    "fixed_layout" : {
+                        "size" : [64, 64]
+                    },
+                    "fixed_layout.dirty" : {},
+                    "renderer" : {
+                        "materials" : ["sprite_material.json"]
+                    },
+                    "sprite_renderer" : {
+                        "sprite" : "rect_sprite.json",
+                        "tint" : [255, 255, 0, 255]
+                    }
+                },
+                "children" : [{
+                    "components" : {
+                        "actor" : {},
+                        "ui_layout" : {},
+                        "padding_layout" : {
+                            "left" : 4,
+                            "bottom" : 2,
+                            "right" : 1,
+                            "top" : 2
+                        },
+                        "padding_layout.dirty" : {}
+                    },
+                    "children" : [{
+                        "components" : {
+                            "actor" : {},
+                            "ui_layout" : {},
+                            "image_layout" : {
+                                "preserve_aspect" : false
+                            },
+                            "image_layout.dirty" : {},
+                            "renderer" : {
+                                "materials" : ["sprite_material.json"]
+                            },
+                            "sprite_renderer" : {
+                                "sprite" : "rect_sprite.json",
+                                "tint" : [255, 0, 0, 255]
+                            }
+                        }
+                    }]
+                }]
+            }]
+        }]
+    }]
+}
