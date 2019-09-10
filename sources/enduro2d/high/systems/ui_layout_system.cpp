@@ -345,7 +345,7 @@ namespace
             E2D_ASSERT_MSG(false, "undefined vertical docking");
         }
         
-        node->translation(v3f(region.position, 0.0f));
+        node->translation(v3f(region.position, node->translation().z));
         layout.size(region.size);
     }
 
@@ -380,7 +380,7 @@ namespace
         const node_iptr& node,
         std::vector<ui_layout::layout_state>&)
     {
-        node->translation(v3f(0.0f));
+        node->translation(v3f(0.0f, 0.0f, node->translation().z));
         node->scale(v3f(1.0f));
 
         const b2f local = project_to_local(node, parent_rect);
@@ -460,10 +460,10 @@ namespace
         const v2f pad_size = v2f(pl.left() + pl.right(), pl.bottom() + pl.top());
 
         if ( local.size.x > pad_size.x && local.size.y > pad_size.y ) {
-            node->translation(v3f(pl.left(), pl.bottom(), 0.0f));
+            node->translation(v3f(pl.left(), pl.bottom(), node->translation().z));
             layout.size(local.size - pad_size);
         } else {
-            node->translation(v3f());
+            node->translation(v3f(0.0f, 0.0f, node->translation().z));
             layout.size(v2f());
         }
 
