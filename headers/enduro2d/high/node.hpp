@@ -52,6 +52,12 @@ namespace e2d
         void scale(const v3f& scale) noexcept;
         const v3f& scale() const noexcept;
 
+        void size(const v2f& size) noexcept;
+        const v2f& size() const noexcept;
+
+        void pivot(const v2f& pivot) noexcept;
+        const v2f& pivot() const noexcept;
+
         const m4f& local_matrix() const noexcept;
         const m4f& world_matrix() const noexcept;
 
@@ -146,6 +152,8 @@ namespace e2d
         void update_world_matrix_() const noexcept;
     private:
         t3f transform_;
+        v2f size_;
+        v2f pivot_; // in normalized coords
         gobject_iptr owner_;
         node* parent_{nullptr};
         node_children children_;

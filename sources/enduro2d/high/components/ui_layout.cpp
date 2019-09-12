@@ -17,15 +17,6 @@ namespace e2d
         return update_;
     }
 
-    ui_layout& ui_layout::size(const v2f& value) noexcept {
-        size_ = value;
-        return *this;
-    }
-
-    const v2f& ui_layout::size() const noexcept {
-        return size_;
-    }
-
     ui_layout& ui_layout::depends_on_childs(bool enable) noexcept {
         depends_on_childs_ = enable;
         return *this;
@@ -42,37 +33,6 @@ namespace e2d
 
     bool ui_layout::depends_on_parent() const noexcept {
         return depends_on_parent_;
-    }
-    
-    const char* factory_loader<ui_layout>::schema_source = R"json({
-        "type" : "object",
-        "required" : [],
-        "additionalProperties" : false,
-        "properties" : {
-            "size" : { "$ref": "#/common_definitions/v2" }
-        }
-    })json";
-
-    bool factory_loader<ui_layout>::operator()(
-        ui_layout& component,
-        const fill_context& ctx) const
-    {
-        if ( ctx.root.HasMember("size") ) {
-            v2f size;
-            if ( !json_utils::try_parse_value(ctx.root["size"], size) ) {
-                the<debug>().error("UI_LAYOUT: Incorrect formatting of 'size' property");
-            }
-            component.size(size);
-        }
-        return true;
-    }
-
-    bool factory_loader<ui_layout>::operator()(
-        asset_dependencies& dependencies,
-        const collect_context& ctx) const
-    {
-        E2D_UNUSED(dependencies, ctx);
-        return true;
     }
     
     const char* factory_loader<ui_layout::root_tag>::schema_source = R"json({

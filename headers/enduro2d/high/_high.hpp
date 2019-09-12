@@ -50,7 +50,6 @@ namespace e2d
     class touchable;
     class input_event;
     class ui_layout;
-    class pivot_2d;
 
     class flipbook_system;
     class label_system;

@@ -88,6 +88,22 @@ namespace e2d
     const v3f& node::scale() const noexcept {
         return transform_.scale;
     }
+    
+    void node::size(const v2f& size) noexcept {
+        size_ = size;
+    }
+
+    const v2f& node::size() const noexcept {
+        return size_;
+    }
+
+    void node::pivot(const v2f& pivot) noexcept {
+        pivot_ = pivot;
+    }
+
+    const v2f& node::pivot() const noexcept {
+        return pivot_;
+    }
 
     const m4f& node::local_matrix() const noexcept {
         if ( math::check_and_clear_any_flags(flags_, fm_dirty_local_matrix) ) {
@@ -432,7 +448,9 @@ namespace e2d
     }
 
     void node::update_local_matrix_() const noexcept {
-        local_matrix_ = math::make_trs_matrix4(transform_);
+        local_matrix_ = 
+            math::make_translation_matrix4(-v3f(size_ * pivot_, 0.0f)) *
+            math::make_trs_matrix4(transform_);
     }
 
     void node::update_world_matrix_() const noexcept {

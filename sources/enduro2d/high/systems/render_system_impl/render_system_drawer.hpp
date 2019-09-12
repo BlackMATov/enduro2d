@@ -44,15 +44,15 @@ namespace e2d::render_system_impl
                 const const_node_iptr& node);
 
             void draw(
-                const const_node_iptr& node,
+                const m4f& world_mat,
                 const renderer& node_r,
                 const model_renderer& mdl_r);
-
+            
             void draw(
-                const const_node_iptr& node,
+                const m4f& world_mat,
+                const v2f& size,
                 const renderer& node_r,
-                const sprite_renderer& spr_r,
-                const pivot_2d* pivot);
+                const sprite_renderer& spr_r);
 
             void flush();
         private:

@@ -9,7 +9,6 @@
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/model_renderer.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
-#include <enduro2d/high/components/pivot_2d.hpp>
 
 namespace
 {
@@ -81,27 +80,23 @@ namespace e2d::render_system_impl
         const renderer* node_r = node_e.find_component<renderer>();
 
         if ( node_r && node_r->enabled() ) {
+            const m4f& world_m = node->world_matrix();
             const model_renderer* mdl_r = node_e.find_component<model_renderer>();
             if ( mdl_r ) {
-                draw(node, *node_r, *mdl_r);
+                draw(world_m, *node_r, *mdl_r);
             }
-            const pivot_2d* pivot = node_e.find_component<pivot_2d>();
             const sprite_renderer* spr_r = node_e.find_component<sprite_renderer>();
             if ( spr_r ) {
-                draw(node, *node_r, *spr_r, pivot);
+                draw(world_m, node->size(), *node_r, *spr_r);
             }
         }
     }
 
     void drawer::context::draw(
-        const const_node_iptr& node,
+        const m4f& world_mat,
         const renderer& node_r,
         const model_renderer& mdl_r)
     {
-        if ( !node || !node_r.enabled() ) {
-            return;
-        }
-
         if ( !mdl_r.model() || !mdl_r.model()->content().mesh() ) {
             return;
         }
@@ -112,7 +107,7 @@ namespace e2d::render_system_impl
         try {
             property_cache_
                 .merge(batcher_.flush())
-                .property("u_matrix_m", node->world_matrix())
+                .property("u_matrix_m", world_mat)
                 .merge(node_r.properties());
 
             const std::size_t submesh_count = math::min(
@@ -139,15 +134,11 @@ namespace e2d::render_system_impl
     }
 
     void drawer::context::draw(
-        const const_node_iptr& node,
+        const m4f& world_mat,
+        const v2f& size,
         const renderer& node_r,
-        const sprite_renderer& spr_r,
-        const pivot_2d* pivot_c)
+        const sprite_renderer& spr_r)
     {
-        if ( !node || !node_r.enabled() ) {
-            return;
-        }
-
         if ( !spr_r.sprite() || node_r.materials().empty() ) {
             return;
         }
@@ -163,34 +154,26 @@ namespace e2d::render_system_impl
         const b2f& tex_r = spr.texrect();
         const v2f& tex_s = tex_a->content()->size().cast_to<f32>();
 
-        const f32 sw = tex_r.size.x;
-        const f32 sh = tex_r.size.y;
-
-        const v2f pivot = pivot_c ? pivot_c->pivot() : v2f();
-        const f32 px = tex_r.position.x - pivot.x;
-        const f32 py = tex_r.position.y - pivot.y;
-
-        const v4f p1{px + 0.f, py + 0.f, 0.f, 1.f};
-        const v4f p2{px + sw,  py + 0.f, 0.f, 1.f};
-        const v4f p3{px + sw,  py + sh,  0.f, 1.f};
-        const v4f p4{px + 0.f, py + sh,  0.f, 1.f};
+        const v4f p1{0.0f,   0.0f,   0.f, 1.f};
+        const v4f p2{size.x, 0.0f,   0.f, 1.f};
+        const v4f p3{size.x, size.y, 0.f, 1.f};
+        const v4f p4{0.0f,   size.y, 0.f, 1.f};
 
         const f32 tx = tex_r.position.x / tex_s.x;
         const f32 ty = tex_r.position.y / tex_s.y;
         const f32 tw = tex_r.size.x / tex_s.x;
         const f32 th = tex_r.size.y / tex_s.y;
 
-        const m4f& sm = node->world_matrix();
         const color32& tc = spr_r.tint();
 
         const batcher_type::index_type indices[] = {
             0u, 1u, 2u, 2u, 3u, 0u};
 
         const batcher_type::vertex_type vertices[] = {
-            { v3f(p1 * sm), {tx + 0.f, ty + 0.f}, tc },
-            { v3f(p2 * sm), {tx + tw,  ty + 0.f}, tc },
-            { v3f(p3 * sm), {tx + tw,  ty + th }, tc },
-            { v3f(p4 * sm), {tx + 0.f, ty + th }, tc }};
+            { v3f(p1 * world_mat), {tx + 0.f, ty + 0.f}, tc },
+            { v3f(p2 * world_mat), {tx + tw,  ty + 0.f}, tc },
+            { v3f(p3 * world_mat), {tx + tw,  ty + th }, tc },
+            { v3f(p4 * world_mat), {tx + 0.f, ty + th }, tc }};
 
         const render::sampler_min_filter min_filter = spr_r.filtering()
             ? render::sampler_min_filter::linear

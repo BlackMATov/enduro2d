@@ -40,7 +40,6 @@
 #include "components/screenspace_collider.hpp"
 #include "components/touchable.hpp"
 #include "components/ui_layout.hpp"
-#include "components/pivot_2d.hpp"
 
 #include "systems/flipbook_system.hpp"
 #include "systems/label_system.hpp"

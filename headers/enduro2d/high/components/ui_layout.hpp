@@ -22,9 +22,6 @@ namespace e2d
         ui_layout& update_fn(update_fn_t fn) noexcept;
         update_fn_t update_fn() const noexcept;
 
-        ui_layout& size(const v2f& value) noexcept;
-        const v2f& size() const noexcept;
-
         ui_layout& depends_on_childs(bool enable) noexcept;
         bool depends_on_childs() const noexcept;
         
@@ -32,7 +29,6 @@ namespace e2d
         bool depends_on_parent() const noexcept;
     private:
         update_fn_t update_ = nullptr;
-        v2f size_; // layout size in local space
         bool depends_on_childs_ = false; // set true if size depends on child sizes
         bool depends_on_parent_ = false; // set true if size depends on parent size
     };
@@ -41,23 +37,10 @@ namespace e2d
         ecs::entity_id id;
         update_fn_t update;
         node_iptr node; // node contains left bottom coordinate of layout
-        const ui_layout* layout;
         b2f parent_rect; // region that can be allocated (in parent space)
         bool is_post_update;
-    };
-    
-    template <>
-    class factory_loader<ui_layout> final : factory_loader<> {
-    public:
-        static const char* schema_source;
-
-        bool operator()(
-            ui_layout& component,
-            const fill_context& ctx) const;
-            
-        bool operator()(
-            asset_dependencies& dependencies,
-            const collect_context& ctx) const;
+        bool depends_on_childs;
+        bool depends_on_parent;
     };
     
     template <>

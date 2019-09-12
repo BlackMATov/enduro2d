@@ -402,10 +402,10 @@ namespace e2d
             return;
         }
 
-		GL_CHECK_CODE(debug_, glDebugMessageCallbackARB(debug_output_callback_, this));
+        GL_CHECK_CODE(debug_, glDebugMessageCallbackARB(debug_output_callback_, this));
 
-		// disable notifications
-		GL_CHECK_CODE(debug_, glDebugMessageControlARB(
+        // disable notifications
+        GL_CHECK_CODE(debug_, glDebugMessageControlARB(
             GL_DONT_CARE,
             GL_DONT_CARE,
             GL_DEBUG_SEVERITY_NOTIFICATION,
@@ -429,34 +429,34 @@ namespace e2d
 
         str msg;
         switch ( severity ) {
-			case GL_DEBUG_SEVERITY_HIGH : msg += "[High]"; break;
-			case GL_DEBUG_SEVERITY_MEDIUM : msg += "[Medium]"; break;
-			case GL_DEBUG_SEVERITY_LOW : msg += "[Low]"; break;
-			case GL_DEBUG_SEVERITY_NOTIFICATION : msg += "[Notification]"; break;
+            case GL_DEBUG_SEVERITY_HIGH : msg += "[High]"; break;
+            case GL_DEBUG_SEVERITY_MEDIUM : msg += "[Medium]"; break;
+            case GL_DEBUG_SEVERITY_LOW : msg += "[Low]"; break;
+            case GL_DEBUG_SEVERITY_NOTIFICATION : msg += "[Notification]"; break;
         }
 
         msg += " src: ";
         switch ( source ) {
-			case GL_DEBUG_SOURCE_API : msg += "OpenGL"; break;
-			case GL_DEBUG_SOURCE_WINDOW_SYSTEM : msg += "OS"; break;
-			case GL_DEBUG_SOURCE_SHADER_COMPILER : msg += "GL_Compiler"; break;
-			case GL_DEBUG_SOURCE_THIRD_PARTY : msg += "Third_Party"; break;
-			case GL_DEBUG_SOURCE_APPLICATION : msg += "Application"; break;
-			case GL_DEBUG_SOURCE_OTHER :
+            case GL_DEBUG_SOURCE_API : msg += "OpenGL"; break;
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM : msg += "OS"; break;
+            case GL_DEBUG_SOURCE_SHADER_COMPILER : msg += "GL_Compiler"; break;
+            case GL_DEBUG_SOURCE_THIRD_PARTY : msg += "Third_Party"; break;
+            case GL_DEBUG_SOURCE_APPLICATION : msg += "Application"; break;
+            case GL_DEBUG_SOURCE_OTHER :
             default : msg += "Other"; break;
         }
 
         msg += ", type: ";
         switch ( type ) {
-			case GL_DEBUG_TYPE_ERROR : msg += "Error"; break;
-			case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR : msg += "Deprecated"; break;
-			case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR : msg += "Undefined_Behavior"; break;
-			case GL_DEBUG_TYPE_PORTABILITY : msg += "Portability"; break;
-			case GL_DEBUG_TYPE_PERFORMANCE : msg += "Performance"; break;
-			case GL_DEBUG_TYPE_MARKER : msg += "Marker"; break;
-			case GL_DEBUG_TYPE_PUSH_GROUP : msg += "Push_Group"; break;
-			case GL_DEBUG_TYPE_POP_GROUP : msg += "Pop_Group"; break;
-			case GL_DEBUG_TYPE_OTHER :
+            case GL_DEBUG_TYPE_ERROR : msg += "Error"; break;
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR : msg += "Deprecated"; break;
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR : msg += "Undefined_Behavior"; break;
+            case GL_DEBUG_TYPE_PORTABILITY : msg += "Portability"; break;
+            case GL_DEBUG_TYPE_PERFORMANCE : msg += "Performance"; break;
+            case GL_DEBUG_TYPE_MARKER : msg += "Marker"; break;
+            case GL_DEBUG_TYPE_PUSH_GROUP : msg += "Push_Group"; break;
+            case GL_DEBUG_TYPE_POP_GROUP : msg += "Pop_Group"; break;
+            case GL_DEBUG_TYPE_OTHER :
             default : msg += "Other"; break;
         }
 
