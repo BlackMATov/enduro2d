@@ -402,3 +402,55 @@ namespace e2d
             const collect_context& ctx) const;
     };
 }
+
+namespace e2d
+{
+    class anchor_layout final {
+    public:
+        class dirty final {};
+        struct anchor {
+            v2f position; // in unorm coords
+            v2f offset; // in unorm or in local space coords
+            bool relative_offset = false;
+        };
+    public:
+        anchor_layout() = default;
+        
+        anchor_layout& left_bottom(const anchor& value) noexcept;
+        const anchor& left_bottom() const noexcept;
+
+        anchor_layout& right_top(const anchor& value) noexcept;
+        const anchor& right_top() const noexcept;
+    private:
+        anchor left_bottom_;
+        anchor right_top_;
+    };
+    
+    template <>
+    class factory_loader<anchor_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            anchor_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+
+    template <>
+    class factory_loader<anchor_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            anchor_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}

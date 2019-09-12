@@ -467,6 +467,28 @@ namespace
             c.parent_rect = b2f(node->size());
         }
     }
+
+    void update_anchor_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        auto& al = e.get_component<anchor_layout>();
+        const b2f local = project_to_local(node, parent_rect);
+
+        const v2f lb = local.size * al.left_bottom().position +
+            (al.left_bottom().relative_offset
+                ? local.size * al.left_bottom().offset
+                : al.left_bottom().offset);
+        const v2f rt = local.size * al.right_top().position +
+            (al.right_top().relative_offset
+                ? local.size * al.right_top().offset
+                : al.right_top().offset);
+
+        node->translation(v3f(lb, node->translation().z));
+        node->size(math::maximized(rt - lb, v2f(0.0f)));
+    }
 }
 
 namespace
@@ -669,6 +691,14 @@ namespace
             layout.depends_on_parent(true);
         });
         owner.remove_all_components<padding_layout::dirty>();
+
+        owner.for_joined_components<anchor_layout::dirty, anchor_layout>(
+        [](ecs::entity e, anchor_layout::dirty, const anchor_layout&) {
+            auto& layout = e.assign_component<ui_layout>();
+            layout.update_fn(&update_anchor_layout);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<anchor_layout::dirty>();
     }
 }
 

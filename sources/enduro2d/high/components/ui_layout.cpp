@@ -646,7 +646,7 @@ namespace e2d
         return true;
     }
 
-    bool factory_loader<padding_layout >::operator()(
+    bool factory_loader<padding_layout>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
@@ -670,6 +670,122 @@ namespace e2d
     }
 
     bool factory_loader<padding_layout::dirty>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
+
+namespace e2d
+{
+    anchor_layout& anchor_layout::left_bottom(const anchor& value) noexcept {
+        left_bottom_ = value;
+        return *this;
+    }
+
+    const anchor_layout::anchor& anchor_layout::left_bottom() const noexcept {
+        return left_bottom_;
+    }
+
+    anchor_layout& anchor_layout::right_top(const anchor& value) noexcept {
+        right_top_ = value;
+        return *this;
+    }
+
+    const anchor_layout::anchor& anchor_layout::right_top() const noexcept {
+        return right_top_;
+    }
+
+    const char* factory_loader<anchor_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [ "left_bottom", "right_top" ],
+        "additionalProperties" : false,
+        "properties" : {
+            "left_bottom" : { "$ref": "#/definitions/anchor" },
+            "right_top" : { "$ref": "#/definitions/anchor" }
+        },
+        "definitions" : {
+            "anchor" : {
+                "type" : "object",
+                "required" : [ "position", "offset", "relative_offset" ],
+                "additionalProperties" : false,
+                "properties" : {
+                    "position" : { "$ref": "#/common_definitions/v2" },
+                    "offset" : { "$ref": "#/common_definitions/v2" },
+                    "relative_offset" : { "type" : "boolean" }
+                }
+            }
+        }
+    })json";
+
+    bool parse_anchor(const rapidjson::Value& root, anchor_layout::anchor& a) {
+        E2D_ASSERT(root.HasMember("position"));
+        E2D_ASSERT(root.HasMember("offset"));
+        E2D_ASSERT(root.HasMember("relative_offset"));
+
+        if ( !json_utils::try_parse_value(root["position"], a.position) ) {
+            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'anchor.position' property");
+            return false;
+        }
+
+        if ( !json_utils::try_parse_value(root["offset"], a.offset) ) {
+            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'anchor.offset' property");
+            return false;
+        }
+
+        a.relative_offset = root["relative_offset"].GetBool();
+        return true;
+    }
+
+    bool factory_loader<anchor_layout>::operator()(
+        anchor_layout& component,
+        const fill_context& ctx) const
+    {
+        E2D_ASSERT(ctx.root.HasMember("left_bottom"));
+        E2D_ASSERT(ctx.root.HasMember("right_top"));
+
+        anchor_layout::anchor a;
+        if ( !parse_anchor(ctx.root["left_bottom"], a) ) {
+            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'left_bottom' property");
+            return false;
+        }
+        component.left_bottom(a);
+
+        if ( !parse_anchor(ctx.root["right_top"], a) ) {
+            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'right_top' property");
+            return false;
+        }
+        component.right_top(a);
+
+        return true;
+    }
+
+    bool factory_loader<anchor_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+    
+    const char* factory_loader<anchor_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<anchor_layout::dirty>::operator()(
+        anchor_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<anchor_layout::dirty>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
