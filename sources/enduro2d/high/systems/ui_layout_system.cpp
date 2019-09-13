@@ -156,6 +156,7 @@ namespace
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& layout = e.get_component<ui_layout>();
+        auto& al = e.get_component<auto_layout>();
         b2f region;
 
         if ( !childs.empty() ) {
@@ -173,7 +174,11 @@ namespace
                     region = r;
                 }
             }
-            
+            if ( first ) {
+                region.size = al.min_size();
+            }
+            region.size = math::minimized(region.size, al.max_size());
+
             // update layout size and node position
             node->translation(node->translation() + v3f(region.position, 0.0f));
             layout.size(region.size);
@@ -185,7 +190,7 @@ namespace
                 c.parent_rect = b2f(region.size);
             }
         } else {
-            layout.size(v2f());
+            layout.size(al.min_size());
         }
     }
 

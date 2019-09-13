@@ -124,6 +124,17 @@ namespace e2d
     class auto_layout final {
     public:
         class dirty final {};
+    public:
+        auto_layout() = default;
+
+        auto_layout& min_size(const v2f& value) noexcept;
+        const v2f& min_size() const noexcept;
+
+        auto_layout& max_size(const v2f& value) noexcept;
+        const v2f& max_size() const noexcept;
+    private:
+        v2f min_size_;
+        v2f max_size_ {std::numeric_limits<f32>::max()};
     };
     
     template <>

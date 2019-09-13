@@ -326,6 +326,25 @@ TEST_CASE("ui_layout") {
             REQUIRE(get_region(sl) == b2f(430.0f, 390.0f));
         }
     }
+    SECTION("auto_layout - min size") {
+        gobject_iptr al = the<world>().instantiate();
+        al->entity_filler()
+            .component<actor>(node::create(al, initializer.scene_r))
+            .component<ui_layout>()
+            .component<auto_layout>(auto_layout()
+                .min_size({10.0f, 20.0f}))
+            .component<auto_layout::dirty>();
+        node_iptr al_node = al->get_component<actor>().get().node();
+        
+        ui_layout_system system;
+        for ( u32 i = 0; i < 9; ++i ) {
+            system.process(the<world>().registry());
+        
+            REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
+        
+            REQUIRE(get_region(al) == b2f(10.0f, 20.0f));
+        }
+    }
     SECTION("dock_layout - fill") {
         gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 600.0f});
         node_iptr root_node = root->get_component<actor>().get().node();

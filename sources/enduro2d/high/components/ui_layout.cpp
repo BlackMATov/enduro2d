@@ -171,18 +171,54 @@ namespace e2d
 
 namespace e2d
 {
+    auto_layout& auto_layout::min_size(const v2f& value) noexcept {
+        min_size_ = value;
+        return *this;
+    }
+
+    const v2f& auto_layout::min_size() const noexcept {
+        return min_size_;
+    }
+
+    auto_layout& auto_layout::max_size(const v2f& value) noexcept {
+        max_size_ = value;
+        return *this;
+    }
+
+    const v2f& auto_layout::max_size() const noexcept {
+        return max_size_;
+    }
+
     const char* factory_loader<auto_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [],
         "additionalProperties" : false,
-        "properties" : {}
+        "properties" : {
+            "min_size" : { "$ref": "#/common_definitions/v2" },
+            "max_size" : { "$ref": "#/common_definitions/v2" }
+        }
     })json";
 
     bool factory_loader<auto_layout>::operator()(
         auto_layout& component,
         const fill_context& ctx) const
     {
-        E2D_UNUSED(component, ctx);
+        if ( ctx.root.HasMember("min_size") ) {
+            v2f size;
+            if ( !json_utils::try_parse_value(ctx.root["min_size"], size) ) {
+                the<debug>().error("AUTO_LAYOUT: Incorrect formatting of 'min_size' property");
+                return false;
+            }
+            component.min_size(size);
+        }
+        if ( ctx.root.HasMember("max_size") ) {
+            v2f size(std::numeric_limits<f32>::max());
+            if ( !json_utils::try_parse_value(ctx.root["max_size"], size) ) {
+                the<debug>().error("AUTO_LAYOUT: Incorrect formatting of 'max_size' property");
+                return false;
+            }
+            component.max_size(size);
+        }
         return true;
     }
 
