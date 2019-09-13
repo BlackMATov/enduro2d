@@ -8,29 +8,23 @@
         "components" : {
             "actor" : {},
             "auto_layout" : {},
-            "auto_layout.dirty" : {}
+            "auto_layout.dirty" : {},
+            "renderer" : {
+                "materials" : ["sprite_material.json"]
+            },
+            "sprite_renderer" : {
+                "sprite" : "rect_sprite.json",
+                "tint" : [255, 255, 255, 255]
+            }
         },
         "children" : [{
             "components" : {
-                "actor" : {},
-                "image_layout" : {
-                    "preserve_aspect" : false
+                "actor" : {
+                    "scale" : 0.75
                 },
-                "image_layout.dirty" : {},
-                "renderer" : {
-                    "materials" : ["sprite_material.json"]
-                },
-                "sprite_renderer" : {
-                    "sprite" : "rect_sprite.json",
-                    "tint" : [255, 255, 255, 255]
-                }
-            }
-        }, {
-            "components" : {
-                "actor" : {},
                 "margin_layout" : {
-                    "left" : 4,
-                    "bottom" : 2,
+                    "left" : 10,
+                    "bottom" : 8,
                     "right" : 1,
                     "top" : 2
                 },
@@ -38,11 +32,24 @@
             },
             "children" : [{
                 "components" : {
-                    "actor" : {},
+                    "actor" : {
+                        "rotation" : {
+                            "angle" : 30,
+                            "axis" : [0,0,1]
+                        },
+                        "pivot" : [0.8, 0.2]
+                    },
                     "stack_layout" : {
                         "origin" : "left"
                     },
-                    "stack_layout.dirty" : {}
+                    "stack_layout.dirty" : {},
+                    "renderer" : {
+                        "materials" : ["sprite_material.json"]
+                    },
+                    "sprite_renderer" : {
+                        "sprite" : "rect_sprite.json",
+                        "tint" : [125, 125, 125, 255]
+                    }
                 },
                 "children" : [{
                     "components" : {
@@ -67,6 +74,10 @@
                 }, {
                     "components" : {
                         "actor" : {
+                            "rotation" : {
+                                "angle" : -45,
+                                "axis" : [0,0,1]
+                            },
                             "scale" : 2
                         },
                         "fixed_layout" : {
@@ -157,7 +168,7 @@
                         "components" : {
                             "actor" : {},
                             "image_layout" : {
-                                "preserve_aspect" : false
+                                "preserve_aspect" : true
                             },
                             "image_layout.dirty" : {},
                             "renderer" : {

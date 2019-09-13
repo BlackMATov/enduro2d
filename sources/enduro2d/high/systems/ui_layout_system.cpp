@@ -154,7 +154,6 @@ namespace
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& al = e.get_component<auto_layout>();
-        b2f region;
 
         if ( !childs.empty() ) {
             // project childs into auto-layout space and join regions
@@ -183,8 +182,8 @@ namespace
 
             // update child transformation
             for ( auto& c : childs ) {
-                v2f off = project_to_local(c.node, v2f()) - project_to_local(c.node, region.position);
-                c.node->translation(c.node->translation() + v3f(off, 0.0f) * c.node->scale());
+                v2f off = -region.position;
+                c.node->translation(c.node->translation() + v3f(off, 0.0f));
                 c.parent_rect = b2f(region.size);
             }
         } else {
@@ -225,18 +224,19 @@ namespace
         
         // project childs into stack layout and calculate max size
         v2f max_size;
-        std::vector<v2f> projected(childs.size());
+        std::vector<b2f> projected(childs.size());
         for ( size_t i = 0; i < childs.size(); ++i ) {
-            v2f p = project_to_parent(childs[i].node, b2f(childs[i].node->size())).size;
-            projected[i] = p;
-            max_size += p;
+            childs[i].node->translation(v3f());
+            b2f r = project_to_parent(childs[i].node, b2f(childs[i].node->size()));
+            projected[i] = r;
+            max_size += r.size;
         }
         
         v2f offset;
         b2f local_r;
         for ( size_t i = 0; i < childs.size(); ++i ) {
             auto& c = childs[i];
-            b2f item_r(projected[i]);
+            b2f item_r(projected[i].size);
 
             // place into stack
             switch ( sl.origin() ) {
@@ -257,9 +257,7 @@ namespace
                     offset.y += item_r.size.y;
                     break;
             }
-            // project back into child local space and set position
-            b2f bbox = project_to_local(c.node, item_r);
-            c.node->translation(c.node->translation() + v3f(bbox.position, 0.0f) * c.node->scale());
+            c.node->translation(v3f(item_r.position - projected[i].position, 0.0f));
 
             if ( &c != childs.data() ) {
                 join_rect(local_r, item_r);
@@ -415,12 +413,14 @@ namespace
         E2D_ASSERT(childs.size() == 1);
         auto& child = childs.front();
         const auto& ml = e.get_component<margin_layout>();
+        
+        child.node->translation(v3f());
 
-        v2f size = project_to_parent(child.node, b2f(child.node->size())).size;
-        v2f off = project_to_local(child.node, v2f(ml.left(), ml.bottom()));
+        b2f region = project_to_parent(child.node, b2f(child.node->size()));
+        v2f off = v2f(ml.left(), ml.bottom()) - region.position;
 
-        node->size(size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
-        child.node->translation(child.node->translation() + v3f(off, 0.0f));
+        node->size(region.size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
+        child.node->translation(v3f(off, 0.0f));
     }
 
     void update_margin_layout(

@@ -222,6 +222,43 @@ TEST_CASE("ui_layout") {
             REQUIRE(get_region(sl) == b2f(409.0f, 200.0f));
         }
     }
+    SECTION("stack_layout - item rotation") {
+        gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 400.0f});
+        node_iptr root_node = root->get_component<actor>().get().node();
+
+        gobject_iptr sl = the<world>().instantiate();
+        sl->entity_filler()
+            .component<actor>(node::create(sl, root_node))
+            .component<stack_layout>(stack_layout::stack_origin::left)
+            .component<stack_layout::dirty>();
+        node_iptr sl_node = sl->get_component<actor>().get().node();
+        
+        gobject_iptr fl1 = create_fixed_layout(sl_node, {}, {100.0f, 100.0f});
+        gobject_iptr fl2 = create_fixed_layout(sl_node, {}, {100.0f, 100.0f});
+        gobject_iptr fl3 = create_fixed_layout(sl_node, {}, {100.0f, 100.0f});
+        node_iptr fl1_node = fl1->get_component<actor>().get().node();
+        node_iptr fl2_node = fl2->get_component<actor>().get().node();
+        node_iptr fl3_node = fl3->get_component<actor>().get().node();
+        fl1_node->scale({1.2f, 1.0f, 1.0f});
+        fl2_node->rotation(math::make_quat_from_axis_angle(make_deg(75.0f), v3f::unit_z()));
+        fl2_node->scale({1.0f, 2.0f, 1.0f});
+        fl3_node->scale({0.8f, 1.4f, 1.0f});
+        
+        ui_layout_system system;
+        for ( u32 i = 0; i < 9; ++i ) {
+            system.process(the<world>().registry());
+
+            REQUIRE_FALSE(sl->get_component<stack_layout::dirty>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
+            
+            REQUIRE(math::approximately(get_region(fl1), b2f(0.0f, 0.0f, 120.0f, 100.0f), 0.1f));
+            REQUIRE(math::approximately(get_region(fl2), b2f(120.0f, 0.0f, 219.0f, 148.3f), 0.1f));
+            REQUIRE(math::approximately(get_region(fl3), b2f(339.0f, 0.0f, 80.0f, 140.0f), 0.1f));
+            REQUIRE(math::approximately(get_region(sl), b2f(419.0f, 148.3f), 0.1f));
+        }
+    }
     SECTION("auto_layout") {
         gobject_iptr al = the<world>().instantiate();
         al->entity_filler()
@@ -320,7 +357,6 @@ TEST_CASE("ui_layout") {
         gobject_iptr al = the<world>().instantiate();
         al->entity_filler()
             .component<actor>(node::create(al, initializer.scene_r))
-            .component<ui_layout>()
             .component<auto_layout>(auto_layout()
                 .min_size({10.0f, 20.0f}))
             .component<auto_layout::dirty>();
@@ -333,6 +369,35 @@ TEST_CASE("ui_layout") {
             REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
         
             REQUIRE(get_region(al) == b2f(10.0f, 20.0f));
+        }
+    }
+    SECTION("auto_layout - item scale+rotation") {
+        gobject_iptr al = the<world>().instantiate();
+        al->entity_filler()
+            .component<actor>(node::create(al, initializer.scene_r))
+            .component<auto_layout>()
+            .component<auto_layout::dirty>();
+        node_iptr al_node = al->get_component<actor>().get().node();
+        
+        gobject_iptr fl1 = create_fixed_layout(al_node, {-50.0f, 10.0f}, {50.0f, 50.0f});
+        gobject_iptr fl2 = create_fixed_layout(al_node, {100.0f, 100.0f}, {100.0f, 100.0f});
+        node_iptr fl1_node = fl1->get_component<actor>().get().node();
+        node_iptr fl2_node = fl2->get_component<actor>().get().node();
+        fl1_node->scale({1.2f, 2.1f, 1.0f});
+        fl2_node->scale({1.0f, 1.5f, 1.0f});
+        fl2_node->rotation(math::make_quat_from_axis_angle(make_deg(45.0f), v3f::unit_z()));
+
+        ui_layout_system system;
+        for ( u32 i = 0; i < 9; ++i ) {
+            system.process(the<world>().registry());
+        
+            REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
+            REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
+            REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
+        
+            REQUIRE(math::approximately(get_region(fl1), b2f(0.0f, 0.0f, 60.0f, 105.0f), 0.1f));
+            REQUIRE(math::approximately(get_region(fl2), b2f(43.9f, 90.0f, 176.7f, 176.7f), 0.1f));
+            REQUIRE(math::approximately(get_region(al), b2f(-50.0f, 10.0f, 220.7f, 266.7f), 0.1f));
         }
     }
     SECTION("dock_layout - fill") {
@@ -509,12 +574,11 @@ TEST_CASE("ui_layout") {
             REQUIRE(get_region(il) == b2f(600.0f, 500.0f));
         }
     }
-    /*SECTION("image_layout - pivot") {
+    SECTION("image_layout - pivot") {
         gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 500.0f});
         node_iptr root_node = root->get_component<actor>().get().node();
 
         sprite_asset::ptr sprite_res = sprite_asset::create(sprite()
-            .set_pivot({12.0f, 12.0f})
             .set_texrect(b2f(24.0f, 24.0f)));
         
         gobject_iptr il = the<world>().instantiate();
@@ -524,6 +588,8 @@ TEST_CASE("ui_layout") {
                 .preserve_aspect(false))
             .component<image_layout::dirty>()
             .component<sprite_renderer>(sprite_res);
+        node_iptr il_node = il->get_component<actor>().get().node();
+        il_node->rotation(math::make_quat_from_axis_angle(make_deg(50.0f), v3f::unit_z()));
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
@@ -531,7 +597,7 @@ TEST_CASE("ui_layout") {
         
             REQUIRE_FALSE(il->get_component<image_layout::dirty>().exists());
 
-            REQUIRE(get_region(il) == b2f(300.0f, 250.0f, 600.0f, 500.0f));
+            REQUIRE(math::approximately(get_region(il), b2f(54.4f, 0.0f, 545.6f, 554.4f), 0.1f));
         }
     }
     SECTION("image_layout - preserve_aspect") {
@@ -557,7 +623,7 @@ TEST_CASE("ui_layout") {
 
             REQUIRE(get_region(il) == b2f(500.0f, 500.0f));
         }
-    }*/
+    }
     SECTION("auto_layout + fixed_layout + image_layout") {
         gobject_iptr al = the<world>().instantiate();
         al->entity_filler()
@@ -632,6 +698,31 @@ TEST_CASE("ui_layout") {
         
             REQUIRE(get_region(ml) == b2f(204.0f, 306.0f));
             REQUIRE(get_region(fl) == b2f(1.0f, 2.0f, 200.0f, 300.0f));
+        }
+    }
+    SECTION("margin_layout - scale+rotation") {
+        gobject_iptr ml = the<world>().instantiate();
+        ml->entity_filler()
+            .component<actor>(node::create(ml, initializer.scene_r))
+            .component<margin_layout>(1.0f, 2.0f, 3.0f, 4.0f)
+            .component<margin_layout::dirty>();
+        node_iptr ml_node = ml->get_component<actor>().get().node();
+        
+        gobject_iptr fl = create_fixed_layout(ml_node, {}, {200.0f, 300.0f});
+        node_iptr fl_node = fl->get_component<actor>().get().node();
+        fl_node->scale(v3f(0.75f));
+        fl_node->rotation(math::make_quat_from_axis_angle(make_deg(30.0f), v3f::unit_z()));
+        fl_node->pivot({0.2f, 0.8f});
+
+        ui_layout_system system;
+        for ( u32 i = 0; i < 9; ++i ) {
+            system.process(the<world>().registry());
+        
+            REQUIRE_FALSE(ml->get_component<margin_layout::dirty>().exists());
+            REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
+        
+            REQUIRE(math::approximately(get_region(ml), b2f(246.4f, 275.8f), 0.1f));
+            REQUIRE(math::approximately(get_region(fl), b2f(1.0f, 2.0f, 242.4f, 269.8f), 0.1f));
         }
     }
     SECTION("anchor_layout") {
