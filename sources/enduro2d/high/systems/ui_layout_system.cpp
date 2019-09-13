@@ -176,9 +176,6 @@ namespace
                 region.size = al.min_size();
             }
             region.size = math::minimized(region.size, al.max_size());
-
-            // update layout size and node position
-            node->translation(node->translation() + v3f(region.position, 0.0f));
             node->size(region.size);
 
             // update child transformation
@@ -407,12 +404,10 @@ namespace
         const node_iptr& node,
         std::vector<ui_layout::layout_state>&)
     {
+        auto& lbl = e.get_component<label>();
         const v2f old_size = node->size();
-        const v2f base_size(10.0f);
-        const b2f region = project_to_parent(node, b2f(base_size));
-        const v2f new_size = base_size * (parent_rect.size / region.size);
 
-        node->size(new_size);
+        node->size(lbl.preferred_size());
 
         if ( !math::approximately(old_size, node->size(), 0.01f) ) {
             e.assign_component<label::dirty>();
@@ -700,7 +695,7 @@ namespace
         owner.remove_all_components<image_layout::dirty>();
         
         owner.for_joined_components<label_layout::dirty, label_layout, label>(
-        [](ecs::entity e, label_layout::dirty, label_layout& lbl_layout, const label& lbl) {
+        [](ecs::entity e, label_layout::dirty, label_layout& lbl_layout, const label&) {
             auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_label_layout);
             layout.depends_on_parent(true);

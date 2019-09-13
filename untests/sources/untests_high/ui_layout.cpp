@@ -280,7 +280,7 @@ TEST_CASE("ui_layout") {
             REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
             REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
         
-            REQUIRE(get_region(al) == b2f(-50.0f, 10.0f, 250.0f, 870.0f));
+            REQUIRE(get_region(al) == b2f(0.0f, 0.0f, 250.0f, 870.0f));
             REQUIRE(get_region(fl1) == b2f(50.0f, 50.0f) + v2f(0.0f, 0.0f));
             REQUIRE(get_region(fl2) == b2f(100.0f, 100.0f) + v2f(150.0f, 90.0f));
             REQUIRE(get_region(fl3) == b2f(120.0f, 700.0f) + v2f(100.0f, 170.0f));
@@ -307,7 +307,7 @@ TEST_CASE("ui_layout") {
             REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
             REQUIRE_FALSE(fl3->get_component<fixed_layout::dirty>().exists());
         
-            REQUIRE(get_region(al) == b2f(-50.0f, 10.0f, 300.0f, 670.0f));
+            REQUIRE(get_region(al) == b2f(0.0f, 0.0f, 300.0f, 670.0f));
             REQUIRE(get_region(fl1) == b2f(50.0f, 50.0f) + v2f(0.0f, 0.0f));
             REQUIRE(get_region(fl2) == b2f(150.0f, 200.0f) + v2f(150.0f, 90.0f));
             REQUIRE(get_region(fl3) == b2f(120.0f, 500.0f) + v2f(100.0f, 170.0f));
@@ -397,7 +397,7 @@ TEST_CASE("ui_layout") {
         
             REQUIRE(math::approximately(get_region(fl1), b2f(0.0f, 0.0f, 60.0f, 105.0f), 0.1f));
             REQUIRE(math::approximately(get_region(fl2), b2f(43.9f, 90.0f, 176.7f, 176.7f), 0.1f));
-            REQUIRE(math::approximately(get_region(al), b2f(-50.0f, 10.0f, 220.7f, 266.7f), 0.1f));
+            REQUIRE(math::approximately(get_region(al), b2f(0.0f, 0.0f, 220.7f, 266.7f), 0.1f));
         }
     }
     SECTION("dock_layout - fill") {

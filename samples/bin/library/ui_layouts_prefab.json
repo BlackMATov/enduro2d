@@ -188,12 +188,12 @@
             "anchor_layout" : {
                 "left_bottom" : {
                     "position" : [0,1],
-                    "offset" : [0.1, -0.4],
+                    "offset" : [0.1, -0.2],
                     "relative_offset" : true
                 },
                 "right_top" : {
                     "position" : [0,1],
-                    "offset" : [0.5, -0.1],
+                    "offset" : [0.2, -0.1],
                     "relative_offset" : true
                 }
             },
@@ -205,8 +205,28 @@
                 "sprite" : "rect_sprite.json",
                 "tint" : [0, 255, 255, 255]
             }
+        }
+    }, {
+        "components" : {
+            "actor" : {
+                "translation" : [350, 300, 0]
+            },
+            "margin_layout" : {
+                "left" : 8,
+                "bottom" : 8,
+                "right" : 8,
+                "top" : 8
+            },
+            "margin_layout.dirty" : {},
+            "renderer" : {
+                "materials" : ["sprite_material.json"]
+            },
+            "sprite_renderer" : {
+                "sprite" : "rect_sprite.json",
+                "tint" : [200, 200, 0, 255]
+            }
         },
-        "children" : [{
+        "children" : [{    
             "prototype" : "label_sdf_prefab.json",
             "components" : {
                 "actor" : {},
