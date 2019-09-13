@@ -85,11 +85,105 @@ namespace
     gobject_iptr create_fixed_layout(const node_iptr& root, const v2f& pos, const v2f& size) {
         return create_fixed_layout(root, pos, size, v2f(1.0f));
     }
+    
+    b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
+        const m4f m = n->local_matrix();
+        const v4f points[] = {
+            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * m,
+            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * m,
+            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * m,
+            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * m
+        };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        return b2f(min, max - min);
+    }
+
+    b2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
+        const auto inv_opt = math::inversed(n->local_matrix(), 0.0f);
+        const m4f inv = inv_opt.second
+            ? inv_opt.first
+            : m4f::identity();
+        const v4f points[] = {
+            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * inv,
+            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * inv,
+            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * inv
+        };
+        return b2f({
+            math::length(points[2] - points[0]),
+            math::length(points[1] - points[0])});
+    }
+
+    b2f project_to_parent_opt(const node_iptr& n, const b2f& r) noexcept {
+        const v3f off = v3f(n->size() * n->pivot(), 0.0f);
+        const auto tr = [&n, off](const v2f& p) {
+            return v2f(
+                ((v3f(p, 0.0f) - off) * n->transform().scale)
+                * n->transform().rotation
+                + off);
+        };
+        const v2f points[] = {
+            tr(v2f(r.position.x,            r.position.y           )),
+            tr(v2f(r.position.x,            r.position.y + r.size.y)),
+            tr(v2f(r.position.x + r.size.x, r.position.y + r.size.y)),
+            tr(v2f(r.position.x + r.size.x, r.position.y           ))
+        };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        return b2f(min, max - min);
+    }
+
+    b2f project_to_local_opt(const node_iptr& n, const b2f& r) noexcept {
+        const v3f off = v3f(n->size() * n->pivot(), 0.0f);
+        const auto tr = [&n, off](const v2f& p) {
+            return v2f(
+                ((v3f(p, 0.0f) - off) * math::inversed(n->transform().rotation))
+                / n->transform().scale
+                + off);
+        };
+        const v2f points[] = {
+            tr(v2f(r.position.x,            r.position.y           )),
+            tr(v2f(r.position.x,            r.position.y + r.size.y)),
+            tr(v2f(r.position.x + r.size.x, r.position.y           ))
+        };
+        return b2f({
+            math::length(points[2] - points[0]),
+            math::length(points[1] - points[0])});
+    }
 }
 
 TEST_CASE("ui_layout") {
     safe_world_initializer initializer;
     
+    SECTION("projection") {
+        node_iptr n = node::create();
+
+        n->size({10.0f, 10.0f});
+        n->pivot({0.2f, 0.8f});
+        n->rotation(math::make_quat_from_axis_angle(make_deg(45.0f), v3f::unit_z()));
+        
+        auto r0 = project_to_local(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        auto r1 = project_to_local_opt(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        REQUIRE(math::approximately(r0, r1, 0.01f));
+
+        n->scale({1.2f, 2.3f, 1.0f});
+        
+        auto r2 = project_to_local(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        auto r3 = project_to_local_opt(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        REQUIRE(math::approximately(r2, r3, 0.01f));
+    }
     SECTION("fixed_layout") {
         gobject_iptr fl1 = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
         gobject_iptr fl2 = create_fixed_layout(initializer.scene_r, {40.0f, 50.0f}, {200.0f, 300.0f});

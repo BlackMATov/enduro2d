@@ -27,26 +27,19 @@ namespace
         l.size.y = ay - l.position.y;
     }
 
-#if 0
-    t3f inverse_pos_scale(const t3f& v) noexcept {
-        E2D_ASSERT(math::approximately(v.rotation, q4f::identity()));
-        t3f result;
-        result.scale = 1.0f / v.scale;
-        result.translation = -v.translation * result.scale;
-        return result;
-    }
-
-    v3f trnasform(const t3f& t, const v3f& v) noexcept {
-        return v * t.scale + t.translation;
-    }
-
     b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
-        const t3f tr = n->transform();
-        const v3f points[] = {
-            trnasform(tr, v3f(r.position.x,            r.position.y,            0.0f)),
-            trnasform(tr, v3f(r.position.x,            r.position.y + r.size.y, 0.0f)),
-            trnasform(tr, v3f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f)),
-            trnasform(tr, v3f(r.position.x + r.size.x, r.position.y,            0.0f))
+        const v3f off = v3f(n->size() * n->pivot(), 0.0f);
+        const auto tr = [&n, off](const v2f& p) {
+            return v2f(
+                ((v3f(p, 0.0f) - off) * n->transform().scale)
+                * n->transform().rotation
+                + off);
+        };
+        const v2f points[] = {
+            tr(v2f(r.position.x,            r.position.y           )),
+            tr(v2f(r.position.x,            r.position.y + r.size.y)),
+            tr(v2f(r.position.x + r.size.x, r.position.y + r.size.y)),
+            tr(v2f(r.position.x + r.size.x, r.position.y           ))
         };
         v2f min = v2f(points[0]);
         v2f max = min;
@@ -57,96 +50,25 @@ namespace
             max.y = math::max(max.y, points[i].y);
         }
         return b2f(min, max - min);
-    }
-
-    v2f project_to_parent(const node_iptr& n, const v2f& p) noexcept {
-        const t3f tr = n->transform();
-        return v2f(trnasform(tr, v3f(p.x, p.y, 0.0f)));
     }
 
     b2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
-        // TODO:
-        // - rotation is not supported
-        const t3f tr = inverse_pos_scale(n->transform());
-        const v3f points[] = {
-            trnasform(tr, v3f(r.position.x,            r.position.y,            0.0f)),
-            trnasform(tr, v3f(r.position.x,            r.position.y + r.size.y, 0.0f)),
-            trnasform(tr, v3f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f)),
-            trnasform(tr, v3f(r.position.x + r.size.x, r.position.y,            0.0f))
+        const v3f off = v3f(n->size() * n->pivot(), 0.0f);
+        const auto tr = [&n, off](const v2f& p) {
+            return v2f(
+                ((v3f(p, 0.0f) - off) * math::inversed(n->transform().rotation))
+                / n->transform().scale
+                + off);
         };
-        v2f min = v2f(points[0]);
-        v2f max = min;
-        for ( size_t i = 1; i < std::size(points); ++i ) {
-            min.x = math::min(min.x, points[i].x);
-            min.y = math::min(min.y, points[i].y);
-            max.x = math::max(max.x, points[i].x);
-            max.y = math::max(max.y, points[i].y);
-        }
-        return b2f(min, max - min);
-    }
-
-    v2f project_to_local(const node_iptr& n, const v2f& p) noexcept {
-        const t3f tr = inverse_pos_scale(n->transform());
-        return v2f(trnasform(tr, v3f(p.x, p.y, 0.0f)));
-    }
-#else
-
-    b2f project_to_parent(const node_iptr& n, const b2f& r) noexcept {
-        const m4f m = n->local_matrix();
-        const v4f points[] = {
-            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * m,
-            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * m,
-            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * m,
-            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * m
+        const v2f points[] = {
+            tr(v2f(r.position.x,            r.position.y           )),
+            tr(v2f(r.position.x,            r.position.y + r.size.y)),
+            tr(v2f(r.position.x + r.size.x, r.position.y           ))
         };
-        v2f min = v2f(points[0]);
-        v2f max = min;
-        for ( size_t i = 1; i < std::size(points); ++i ) {
-            min.x = math::min(min.x, points[i].x);
-            min.y = math::min(min.y, points[i].y);
-            max.x = math::max(max.x, points[i].x);
-            max.y = math::max(max.y, points[i].y);
-        }
-        return b2f(min, max - min);
+        return b2f({
+            math::length(points[2] - points[0]),
+            math::length(points[1] - points[0])});
     }
-
-    v2f project_to_parent(const node_iptr& n, const v2f& p) noexcept {
-        const m4f m = n->local_matrix();
-        return v2f(v4f(p.x, p.y, 0.0f, 1.0f) * m);
-    }
-
-    b2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
-        // TODO:
-        // - rotation is not supported
-        const auto inv_opt = math::inversed(n->local_matrix(), 0.0f);
-        const m4f inv = inv_opt.second
-            ? inv_opt.first
-            : m4f::identity();
-        const v4f points[] = {
-            v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * inv,
-            v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * inv,
-            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * inv,
-            v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * inv
-        };
-        v2f min = v2f(points[0]);
-        v2f max = min;
-        for ( size_t i = 1; i < std::size(points); ++i ) {
-            min.x = math::min(min.x, points[i].x);
-            min.y = math::min(min.y, points[i].y);
-            max.x = math::max(max.x, points[i].x);
-            max.y = math::max(max.y, points[i].y);
-        }
-        return b2f(min, max - min);
-    }
-
-    v2f project_to_local(const node_iptr& n, const v2f& p) noexcept {
-        const auto inv_opt = math::inversed(n->local_matrix(), 0.0f);
-        const m4f inv = inv_opt.second
-            ? inv_opt.first
-            : m4f::identity();
-        return v2f(v4f(p.x, p.y, 0.0f, 1.0f) * inv);
-    }
-#endif
     
     void update_auto_layout2(
         ecs::entity& e,
@@ -164,7 +86,8 @@ namespace
                 if ( c.depends_on_parent ) {
                     continue;
                 }
-                b2f r = project_to_parent(c.node, b2f(c.node->size()));
+                b2f r = project_to_parent(c.node, b2f(c.node->size()))
+                    + v2f(c.node->translation());
                 if ( !first ) {
                     join_rect(region, r);
                 } else {
@@ -180,8 +103,7 @@ namespace
 
             // update child transformation
             for ( auto& c : childs ) {
-                v2f off = -region.position;
-                c.node->translation(c.node->translation() + v3f(off, 0.0f));
+                c.node->translation(c.node->translation() + v3f(-region.position, c.node->translation().z));
                 c.parent_rect = b2f(region.size);
             }
         } else {
@@ -224,7 +146,6 @@ namespace
         v2f max_size;
         std::vector<b2f> projected(childs.size());
         for ( size_t i = 0; i < childs.size(); ++i ) {
-            childs[i].node->translation(v3f());
             b2f r = project_to_parent(childs[i].node, b2f(childs[i].node->size()));
             projected[i] = r;
             max_size += r.size;
@@ -255,7 +176,7 @@ namespace
                     offset.y += item_r.size.y;
                     break;
             }
-            c.node->translation(v3f(item_r.position - projected[i].position, 0.0f));
+            c.node->translation(v3f(item_r.position - projected[i].position, c.node->translation().z));
 
             if ( &c != childs.data() ) {
                 join_rect(local_r, item_r);
@@ -380,13 +301,12 @@ namespace
         const b2f& parent_rect,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>&)
-    {
-        node->translation(v3f(0.0f, 0.0f, node->translation().z));
-        node->scale(v3f(1.0f));
-        
+    {   
         if ( math::approximately(parent_rect.size, v2f()) ) {
             return;
         }
+        
+        node->scale(v3f(1.0f));
 
         auto& il = e.get_component<image_layout>();
         const b2f region = project_to_parent(node, b2f(il.size()));
@@ -394,7 +314,7 @@ namespace
             ? v3f(math::minimum(parent_rect.size / region.size))
             : v3f(parent_rect.size / region.size, 1.0f);
 
-        node->translation(v3f(-region.position, 0.0f) * scale);
+        node->translation(v3f(-region.position * v2f(scale), node->translation().z));
         node->scale(scale);
     }
 
@@ -427,14 +347,12 @@ namespace
         E2D_ASSERT(childs.size() == 1);
         auto& child = childs.front();
         const auto& ml = e.get_component<margin_layout>();
-        
-        child.node->translation(v3f());
 
-        b2f region = project_to_parent(child.node, b2f(child.node->size()));
-        v2f off = v2f(ml.left(), ml.bottom()) - region.position;
+        const b2f region = project_to_parent(child.node, b2f(child.node->size()));
+        const v2f off = v2f(ml.left(), ml.bottom()) - region.position;
 
         node->size(region.size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
-        child.node->translation(v3f(off, 0.0f));
+        child.node->translation(v3f(off, child.node->translation().z));
     }
 
     void update_margin_layout(
