@@ -9,8 +9,6 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
-#include <enduro2d/high/components/pivot_2d.hpp>
-#include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/node.hpp>
 
 using namespace e2d;
@@ -155,18 +153,18 @@ namespace
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<ui_layout>();
         auto& al = e.get_component<auto_layout>();
         b2f region;
 
         if ( !childs.empty() ) {
             // project childs into auto-layout space and join regions
             bool first = true;
+            b2f region;
             for ( auto& c : childs ) {
-                if ( c.layout->depends_on_parent() ) {
+                if ( c.depends_on_parent ) {
                     continue;
                 }
-                b2f r = project_to_parent(c.node, b2f(c.layout->size()));
+                b2f r = project_to_parent(c.node, b2f(c.node->size()));
                 if ( !first ) {
                     join_rect(region, r);
                 } else {
@@ -181,7 +179,7 @@ namespace
 
             // update layout size and node position
             node->translation(node->translation() + v3f(region.position, 0.0f));
-            layout.size(region.size);
+            node->size(region.size);
 
             // update child transformation
             for ( auto& c : childs ) {
@@ -190,7 +188,7 @@ namespace
                 c.parent_rect = b2f(region.size);
             }
         } else {
-            layout.size(al.min_size());
+            node->size(al.min_size());
         }
     }
 
@@ -211,9 +209,10 @@ namespace
             e.id(),
             &update_auto_layout2,
             node,
-            &layout,
             parent_rect,
-            true});
+            true,
+            layout.depends_on_childs(),
+            layout.depends_on_parent()});
     }
     
     void update_stack_layout2(
@@ -223,13 +222,12 @@ namespace
         std::vector<ui_layout::layout_state>& childs)
     {
         auto& sl = e.get_component<stack_layout>();
-        auto& layout = e.get_component<ui_layout>();
         
         // project childs into stack layout and calculate max size
         v2f max_size;
         std::vector<v2f> projected(childs.size());
         for ( size_t i = 0; i < childs.size(); ++i ) {
-            v2f p = project_to_parent(childs[i].node, b2f(childs[i].layout->size())).size;
+            v2f p = project_to_parent(childs[i].node, b2f(childs[i].node->size())).size;
             projected[i] = p;
             max_size += p;
         }
@@ -270,7 +268,7 @@ namespace
             }
         }
         
-        layout.size(local_r.size);
+        node->size(local_r.size);
     }
 
     void update_stack_layout(
@@ -281,7 +279,7 @@ namespace
     {
         bool post_update = false;
         for (auto& c : childs ) {
-            post_update |= c.layout->depends_on_childs();
+            post_update |= c.depends_on_childs;
         }
 
         if ( post_update ) {
@@ -290,9 +288,10 @@ namespace
                 e.id(),
                 &update_stack_layout2,
                 node,
-                &layout,
                 parent_rect,
-                true});
+                true,
+                layout.depends_on_childs(),
+                layout.depends_on_parent()});
             return;
         }
 
@@ -308,12 +307,11 @@ namespace
         v2f size;
         if ( childs.size() ) {
             E2D_ASSERT(childs.size() == 1);
-            size = project_to_parent(childs.front().node, b2f(childs.front().layout->size())).size;
+            size = project_to_parent(childs.front().node, b2f(childs.front().node->size())).size;
         }
 
         using dock = dock_layout::dock_type;
         auto& dl = e.get_component<dock_layout>();
-        auto& layout = e.get_component<ui_layout>();
         const b2f local = project_to_local(node, parent_rect);
         b2f region;
 
@@ -352,7 +350,7 @@ namespace
         }
         
         node->translation(v3f(region.position, node->translation().z));
-        layout.size(region.size);
+        node->size(region.size);
     }
 
     void update_dock_layout(
@@ -363,7 +361,7 @@ namespace
     {
         bool post_update = false;
         for (auto& c : childs ) {
-            post_update |= c.layout->depends_on_childs();
+            post_update |= c.depends_on_childs;
         }
         auto& layout = e.get_component<ui_layout>();
 
@@ -372,9 +370,10 @@ namespace
                 e.id(),
                 &update_dock_layout2,
                 node,
-                &layout,
                 parent_rect,
-                true});
+                true,
+                layout.depends_on_childs(),
+                layout.depends_on_parent()});
             return;
         }
         update_dock_layout2(e, parent_rect, node, childs);
@@ -390,7 +389,6 @@ namespace
         node->scale(v3f(1.0f));
 
         const b2f local = project_to_local(node, parent_rect);
-        auto& layout = e.get_component<ui_layout>();
         auto& il = e.get_component<image_layout>();
 
         if ( math::approximately(local.size, v2f()) ) {
@@ -420,12 +418,11 @@ namespace
         E2D_ASSERT(childs.size() == 1);
         auto& child = childs.front();
         const auto& ml = e.get_component<margin_layout>();
-        auto& layout = e.get_component<ui_layout>();
 
-        v2f size = project_to_parent(child.node, b2f(child.layout->size())).size;
+        v2f size = project_to_parent(child.node, b2f(child.node->size())).size;
         v2f off = project_to_local(child.node, v2f(ml.left(), ml.bottom()));
 
-        layout.size(size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
+        node->size(size + v2f(ml.left() + ml.right(), ml.top() + ml.bottom()));
         child.node->translation(child.node->translation() + v3f(off, 0.0f));
     }
 
@@ -437,7 +434,7 @@ namespace
     {
         bool post_update = false;
         for (auto& c : childs ) {
-            post_update |= c.layout->depends_on_childs();
+            post_update |= c.depends_on_childs;
         }
         auto& layout = e.get_component<ui_layout>();
 
@@ -446,9 +443,10 @@ namespace
                 e.id(),
                 &update_margin_layout2,
                 node,
-                &layout,
                 parent_rect,
-                true});
+                true,
+                layout.depends_on_childs(),
+                layout.depends_on_parent()});
             return;
         }
         update_margin_layout2(e, parent_rect, node, childs);
@@ -460,35 +458,43 @@ namespace
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<ui_layout>();
         const auto& pl = e.get_component<padding_layout>();
         const b2f local = project_to_local(node, parent_rect);
         const v2f pad_size = v2f(pl.left() + pl.right(), pl.bottom() + pl.top());
 
         if ( local.size.x > pad_size.x && local.size.y > pad_size.y ) {
             node->translation(v3f(pl.left(), pl.bottom(), node->translation().z));
-            layout.size(local.size - pad_size);
+            node->size(local.size - pad_size);
         } else {
             node->translation(v3f(0.0f, 0.0f, node->translation().z));
-            layout.size(v2f());
+            node->size(v2f());
         }
 
         for ( auto& c : childs ) {
-            c.parent_rect = b2f(layout.size());
+            c.parent_rect = b2f(node->size());
         }
     }
-    
-    void update_label_layout(
+
+    void update_anchor_layout(
         ecs::entity& e,
         const b2f& parent_rect,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        auto& layout = e.get_component<ui_layout>();
-        const auto& ll = e.get_component<label_layout>();
-        const label& lbl = e.get_component<label>();
+        auto& al = e.get_component<anchor_layout>();
+        const b2f local = project_to_local(node, parent_rect);
 
-        layout.size(lbl.bounds().size);
+        const v2f lb = local.size * al.left_bottom().position +
+            (al.left_bottom().relative_offset
+                ? local.size * al.left_bottom().offset
+                : al.left_bottom().offset);
+        const v2f rt = local.size * al.right_top().position +
+            (al.right_top().relative_offset
+                ? local.size * al.right_top().offset
+                : al.right_top().offset);
+
+        node->translation(v3f(lb, node->translation().z));
+        node->size(math::maximized(rt - lb, v2f(0.0f)));
     }
 }
 
@@ -580,17 +586,18 @@ namespace
             const m4f mvp = root->world_matrix() * std::get<0>(vp_and_viewport);
             const b2f bbox = unproject(mvp, std::get<1>(vp_and_viewport));
             ecs::entity e = root->owner()->entity();
-            ui_layout& layout = e.get_component<ui_layout>();
-            layout.size(bbox.size);
+            const ui_layout* layout = e.find_component<ui_layout>();
+            root->size(bbox.size);
             root->translation(root->translation() + v3f(bbox.position, 0.0f));
 
             pending.push_back({
                 e.id(),
-                layout.update_fn(),
+                layout ? layout->update_fn() : nullptr,
                 root,
-                &layout,
                 bbox,
-                false});
+                false,
+                layout ? layout->depends_on_childs() : false,
+                layout ? layout->depends_on_parent() : false});
         }
 
         for (; !pending.empty(); ) {
@@ -598,8 +605,8 @@ namespace
             pending.pop_back();
 
             ecs::entity e(owner, curr.id);
-            const b2f parent_rect(curr.layout->size());
-            const bool is_post_update = curr.is_post_update && !curr.layout->depends_on_childs();
+            const b2f parent_rect(curr.node->size());
+            const bool is_post_update = curr.is_post_update && !curr.depends_on_childs;
             
             curr.node->for_each_child([&temp_layouts, &parent_rect, is_post_update](const node_iptr& n) {
                 ecs::entity e = n->owner()->entity();
@@ -612,9 +619,10 @@ namespace
                     e.id(),
                     layout->update_fn(),
                     n,
-                    layout,
                     parent_rect,
-                    is_post_update});
+                    is_post_update,
+                    layout->depends_on_childs(),
+                    layout->depends_on_parent()});
             });
 
             if ( curr.update ) {
@@ -629,65 +637,75 @@ namespace
     }
 
     void register_update_fn(ecs::registry& owner) {
-        owner.for_joined_components<fixed_layout::dirty, fixed_layout, ui_layout>(
-        [](const ecs::entity&, fixed_layout::dirty, const fixed_layout& fl, ui_layout& layout) {
-            layout.size(fl.size());
+        owner.for_joined_components<fixed_layout::dirty, fixed_layout, actor>(
+        [](ecs::entity e, fixed_layout::dirty, const fixed_layout& fl, actor& act) {
+            e.assign_component<ui_layout>();
+            if ( act.node() ) {
+                act.node()->size(fl.size());
+            }
         });
         owner.remove_all_components<fixed_layout::dirty>();
         
-        owner.for_joined_components<auto_layout::dirty, auto_layout, ui_layout>(
-        [](const ecs::entity&, auto_layout::dirty, const auto_layout&, ui_layout& layout) {
+        owner.for_joined_components<auto_layout::dirty, auto_layout>(
+        [](ecs::entity e, auto_layout::dirty, const auto_layout&) {
+            auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_auto_layout);
             layout.depends_on_childs(true);
         });
         owner.remove_all_components<auto_layout::dirty>();
         
-        owner.for_joined_components<stack_layout::dirty, stack_layout, ui_layout>(
-        [](const ecs::entity&, stack_layout::dirty, const stack_layout& sl, ui_layout& layout) {
+        owner.for_joined_components<stack_layout::dirty, stack_layout>(
+        [](ecs::entity e, stack_layout::dirty, const stack_layout& sl) {
+            auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_stack_layout);
             layout.depends_on_childs(true);
         });
         owner.remove_all_components<stack_layout::dirty>();
         
-        owner.for_joined_components<dock_layout::dirty, dock_layout, ui_layout>(
-        [](const ecs::entity&, dock_layout::dirty, const dock_layout&, ui_layout& layout) {
+        owner.for_joined_components<dock_layout::dirty, dock_layout>(
+        [](ecs::entity e, dock_layout::dirty, const dock_layout&) {
+            auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_dock_layout);
             layout.depends_on_childs(true);
             layout.depends_on_parent(true);
         });
         owner.remove_all_components<dock_layout::dirty>();
         
-        owner.for_joined_components<image_layout::dirty, image_layout, ui_layout, sprite_renderer>(
-        [](const ecs::entity&, image_layout::dirty, image_layout& img_layout,
-           ui_layout& layout, const sprite_renderer& spr)
-        {
+        owner.for_joined_components<image_layout::dirty, image_layout, sprite_renderer, actor>(
+        [](ecs::entity e, image_layout::dirty, image_layout& img_layout, const sprite_renderer& spr, actor& act) {
+            auto& layout = e.assign_component<ui_layout>();
             img_layout.size(spr.sprite()->content().texrect().size);
             layout.update_fn(&update_image_layout);
             layout.depends_on_parent(true);
-            layout.size(img_layout.size());
+            if ( act.node() ) {
+                act.node()->size(img_layout.size());
+            }
         });
         owner.remove_all_components<image_layout::dirty>();
         
-        owner.for_joined_components<margin_layout::dirty, margin_layout, ui_layout>(
-        [](const ecs::entity&, margin_layout::dirty, const margin_layout&, ui_layout& layout) {
+        owner.for_joined_components<margin_layout::dirty, margin_layout>(
+        [](ecs::entity e, margin_layout::dirty, const margin_layout&) {
+            auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_margin_layout);
             layout.depends_on_childs(true);
         });
         owner.remove_all_components<margin_layout::dirty>();
         
-        owner.for_joined_components<padding_layout::dirty, padding_layout, ui_layout>(
-        [](const ecs::entity&, padding_layout::dirty, const padding_layout&, ui_layout& layout) {
+        owner.for_joined_components<padding_layout::dirty, padding_layout>(
+        [](ecs::entity e, padding_layout::dirty, const padding_layout&) {
+            auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_padding_layout);
             layout.depends_on_parent(true);
         });
         owner.remove_all_components<padding_layout::dirty>();
 
-        owner.for_joined_components<label_layout::dirty, label_layout, ui_layout>(
-        [](const ecs::entity&, label_layout::dirty, const label_layout&, ui_layout& layout) {
-            layout.update_fn(&update_label_layout);
+        owner.for_joined_components<anchor_layout::dirty, anchor_layout>(
+        [](ecs::entity e, anchor_layout::dirty, const anchor_layout&) {
+            auto& layout = e.assign_component<ui_layout>();
+            layout.update_fn(&update_anchor_layout);
             layout.depends_on_parent(true);
         });
-        owner.remove_all_components<label_layout::dirty>();
+        owner.remove_all_components<anchor_layout::dirty>();
     }
 }
 

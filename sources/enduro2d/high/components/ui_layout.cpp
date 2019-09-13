@@ -17,15 +17,6 @@ namespace e2d
         return update_;
     }
 
-    ui_layout& ui_layout::size(const v2f& value) noexcept {
-        size_ = value;
-        return *this;
-    }
-
-    const v2f& ui_layout::size() const noexcept {
-        return size_;
-    }
-
     ui_layout& ui_layout::depends_on_childs(bool enable) noexcept {
         depends_on_childs_ = enable;
         return *this;
@@ -42,37 +33,6 @@ namespace e2d
 
     bool ui_layout::depends_on_parent() const noexcept {
         return depends_on_parent_;
-    }
-    
-    const char* factory_loader<ui_layout>::schema_source = R"json({
-        "type" : "object",
-        "required" : [],
-        "additionalProperties" : false,
-        "properties" : {
-            "size" : { "$ref": "#/common_definitions/v2" }
-        }
-    })json";
-
-    bool factory_loader<ui_layout>::operator()(
-        ui_layout& component,
-        const fill_context& ctx) const
-    {
-        if ( ctx.root.HasMember("size") ) {
-            v2f size;
-            if ( !json_utils::try_parse_value(ctx.root["size"], size) ) {
-                the<debug>().error("UI_LAYOUT: Incorrect formatting of 'size' property");
-            }
-            component.size(size);
-        }
-        return true;
-    }
-
-    bool factory_loader<ui_layout>::operator()(
-        asset_dependencies& dependencies,
-        const collect_context& ctx) const
-    {
-        E2D_UNUSED(dependencies, ctx);
-        return true;
     }
     
     const char* factory_loader<ui_layout::root_tag>::schema_source = R"json({
@@ -722,7 +682,7 @@ namespace e2d
         return true;
     }
 
-    bool factory_loader<padding_layout >::operator()(
+    bool factory_loader<padding_layout>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
@@ -756,35 +716,89 @@ namespace e2d
 
 namespace e2d
 {
-    label_layout& label_layout::auto_scale(bool value) noexcept {
-        auto_scale_ = value;
+    anchor_layout& anchor_layout::left_bottom(const anchor& value) noexcept {
+        left_bottom_ = value;
         return *this;
     }
 
-    bool label_layout::auto_scale() const noexcept {
-        return auto_scale_;
+    const anchor_layout::anchor& anchor_layout::left_bottom() const noexcept {
+        return left_bottom_;
     }
-        
-    const char* factory_loader<label_layout>::schema_source = R"json({
+
+    anchor_layout& anchor_layout::right_top(const anchor& value) noexcept {
+        right_top_ = value;
+        return *this;
+    }
+
+    const anchor_layout::anchor& anchor_layout::right_top() const noexcept {
+        return right_top_;
+    }
+
+    const char* factory_loader<anchor_layout>::schema_source = R"json({
         "type" : "object",
-        "required" : [],
+        "required" : [ "left_bottom", "right_top" ],
         "additionalProperties" : false,
         "properties" : {
-            "auto_scale" : { "type" : "boolean" }
+            "left_bottom" : { "$ref": "#/definitions/anchor" },
+            "right_top" : { "$ref": "#/definitions/anchor" }
+        },
+        "definitions" : {
+            "anchor" : {
+                "type" : "object",
+                "required" : [ "position", "offset", "relative_offset" ],
+                "additionalProperties" : false,
+                "properties" : {
+                    "position" : { "$ref": "#/common_definitions/v2" },
+                    "offset" : { "$ref": "#/common_definitions/v2" },
+                    "relative_offset" : { "type" : "boolean" }
+                }
+            }
         }
     })json";
 
-    bool factory_loader<label_layout>::operator()(
-        label_layout& component,
-        const fill_context& ctx) const
-    {
-        if ( ctx.root.HasMember("auto_scale") ) {
-            component.auto_scale(ctx.root["auto_scale"].GetBool());
+    bool parse_anchor(const rapidjson::Value& root, anchor_layout::anchor& a) {
+        E2D_ASSERT(root.HasMember("position"));
+        E2D_ASSERT(root.HasMember("offset"));
+        E2D_ASSERT(root.HasMember("relative_offset"));
+
+        if ( !json_utils::try_parse_value(root["position"], a.position) ) {
+            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'anchor.position' property");
+            return false;
         }
+
+        if ( !json_utils::try_parse_value(root["offset"], a.offset) ) {
+            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'anchor.offset' property");
+            return false;
+        }
+
+        a.relative_offset = root["relative_offset"].GetBool();
         return true;
     }
 
-    bool factory_loader<label_layout >::operator()(
+    bool factory_loader<anchor_layout>::operator()(
+        anchor_layout& component,
+        const fill_context& ctx) const
+    {
+        E2D_ASSERT(ctx.root.HasMember("left_bottom"));
+        E2D_ASSERT(ctx.root.HasMember("right_top"));
+
+        anchor_layout::anchor a;
+        if ( !parse_anchor(ctx.root["left_bottom"], a) ) {
+            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'left_bottom' property");
+            return false;
+        }
+        component.left_bottom(a);
+
+        if ( !parse_anchor(ctx.root["right_top"], a) ) {
+            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'right_top' property");
+            return false;
+        }
+        component.right_top(a);
+
+        return true;
+    }
+
+    bool factory_loader<anchor_layout>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
@@ -792,22 +806,22 @@ namespace e2d
         return true;
     }
     
-    const char* factory_loader<label_layout::dirty>::schema_source = R"json({
+    const char* factory_loader<anchor_layout::dirty>::schema_source = R"json({
         "type" : "object",
         "required" : [],
         "additionalProperties" : false,
         "properties" : {}
     })json";
 
-    bool factory_loader<label_layout::dirty>::operator()(
-        label_layout::dirty& component,
+    bool factory_loader<anchor_layout::dirty>::operator()(
+        anchor_layout::dirty& component,
         const fill_context& ctx) const
     {
         E2D_UNUSED(component, ctx);
         return true;
     }
 
-    bool factory_loader<label_layout::dirty>::operator()(
+    bool factory_loader<anchor_layout::dirty>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {

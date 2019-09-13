@@ -22,9 +22,6 @@ namespace e2d
         ui_layout& update_fn(update_fn_t fn) noexcept;
         update_fn_t update_fn() const noexcept;
 
-        ui_layout& size(const v2f& value) noexcept;
-        const v2f& size() const noexcept;
-
         ui_layout& depends_on_childs(bool enable) noexcept;
         bool depends_on_childs() const noexcept;
         
@@ -32,7 +29,6 @@ namespace e2d
         bool depends_on_parent() const noexcept;
     private:
         update_fn_t update_ = nullptr;
-        v2f size_; // layout size in local space
         bool depends_on_childs_ = false; // set true if size depends on child sizes
         bool depends_on_parent_ = false; // set true if size depends on parent size
     };
@@ -41,23 +37,10 @@ namespace e2d
         ecs::entity_id id;
         update_fn_t update;
         node_iptr node; // node contains left bottom coordinate of layout
-        const ui_layout* layout;
         b2f parent_rect; // region that can be allocated (in parent space)
         bool is_post_update;
-    };
-    
-    template <>
-    class factory_loader<ui_layout> final : factory_loader<> {
-    public:
-        static const char* schema_source;
-
-        bool operator()(
-            ui_layout& component,
-            const fill_context& ctx) const;
-            
-        bool operator()(
-            asset_dependencies& dependencies,
-            const collect_context& ctx) const;
+        bool depends_on_childs;
+        bool depends_on_parent;
     };
     
     template <>
@@ -433,25 +416,34 @@ namespace e2d
 
 namespace e2d
 {
-    class label_layout final {
+    class anchor_layout final {
     public:
         class dirty final {};
+        struct anchor {
+            v2f position; // in unorm coords
+            v2f offset; // in unorm or in local space coords
+            bool relative_offset = false;
+        };
     public:
-        label_layout() = default;
+        anchor_layout() = default;
         
-        label_layout& auto_scale(bool value) noexcept;
-        bool auto_scale() const noexcept;
+        anchor_layout& left_bottom(const anchor& value) noexcept;
+        const anchor& left_bottom() const noexcept;
+
+        anchor_layout& right_top(const anchor& value) noexcept;
+        const anchor& right_top() const noexcept;
     private:
-        bool auto_scale_ = false;
+        anchor left_bottom_;
+        anchor right_top_;
     };
     
     template <>
-    class factory_loader<label_layout> final : factory_loader<> {
+    class factory_loader<anchor_layout> final : factory_loader<> {
     public:
         static const char* schema_source;
 
         bool operator()(
-            label_layout& component,
+            anchor_layout& component,
             const fill_context& ctx) const;
             
         bool operator()(
@@ -460,12 +452,12 @@ namespace e2d
     };
 
     template <>
-    class factory_loader<label_layout::dirty> final : factory_loader<> {
+    class factory_loader<anchor_layout::dirty> final : factory_loader<> {
     public:
         static const char* schema_source;
 
         bool operator()(
-            label_layout::dirty& component,
+            anchor_layout::dirty& component,
             const fill_context& ctx) const;
             
         bool operator()(

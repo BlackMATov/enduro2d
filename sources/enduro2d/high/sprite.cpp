@@ -71,9 +71,9 @@ namespace e2d
         return *this;
     }
 
-    const v2f& sprite::pivot() const noexcept {
-        return pivot_;
-    }
+    //const v2f& sprite::pivot() const noexcept {
+    //    return pivot_;
+    //}
 
     const b2f& sprite::texrect() const noexcept {
         return texrect_;
@@ -91,8 +91,8 @@ namespace e2d
     }
 
     bool operator==(const sprite& l, const sprite& r) noexcept {
-        return l.pivot() == r.pivot()
-            && l.texrect() == r.texrect()
+        return /*l.pivot() == r.pivot()
+            &&*/ l.texrect() == r.texrect()
             && l.texture() == r.texture();
     }
 

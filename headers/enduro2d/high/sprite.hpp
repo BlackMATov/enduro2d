@@ -33,7 +33,7 @@ namespace e2d
         sprite& set_texrect(const b2f& texrect) noexcept;
         sprite& set_texture(const texture_asset::ptr& texture) noexcept;
 
-        const v2f& pivot() const noexcept; // deprecated, use pivot_2d component
+        //const v2f& pivot() const noexcept;
         const b2f& texrect() const noexcept;
         const texture_asset::ptr& texture() const noexcept;
     private:

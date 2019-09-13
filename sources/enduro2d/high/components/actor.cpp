@@ -15,7 +15,9 @@ namespace e2d
         "properties" : {
             "translation" : { "$ref": "#/common_definitions/v3" },
             "rotation" : { "$ref": "#/common_definitions/q4" },
-            "scale" : { "$ref": "#/common_definitions/v3" }
+            "scale" : { "$ref": "#/common_definitions/v3" },
+            "size" : { "$ref": "#/common_definitions/v2" },
+            "pivot" : { "$ref": "#/common_definitions/v2" }
         }
     })json";
 
@@ -44,7 +46,7 @@ namespace e2d
             }
             component.node()->rotation(rotation);
         }
-
+        
         if ( ctx.root.HasMember("scale") ) {
             auto scale = component.node()->scale();
             if ( !json_utils::try_parse_value(ctx.root["scale"], scale) ) {
@@ -52,6 +54,24 @@ namespace e2d
                 return false;
             }
             component.node()->scale(scale);
+        }
+
+        if ( ctx.root.HasMember("size") ) {
+            auto size = component.node()->size();
+            if ( !json_utils::try_parse_value(ctx.root["size"], size) ) {
+                the<debug>().error("ACTOR: Incorrect formatting of 'size' property");
+                return false;
+            }
+            component.node()->size(size);
+        }
+        
+        if ( ctx.root.HasMember("pivot") ) {
+            auto pivot = component.node()->pivot();
+            if ( !json_utils::try_parse_value(ctx.root["pivot"], pivot) ) {
+                the<debug>().error("ACTOR: Incorrect formatting of 'pivot' property");
+                return false;
+            }
+            component.node()->pivot(pivot);
         }
 
         return true;
