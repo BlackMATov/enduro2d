@@ -184,18 +184,42 @@
         }]
     }, {
         "components" : {
-            "actor" : {
-                "translation" : [200, 200, 0]
+            "actor" : {},
+            "anchor_layout" : {
+                "left_bottom" : {
+                    "position" : [0,1],
+                    "offset" : [0.1, -0.4],
+                    "relative_offset" : true
+                },
+                "right_top" : {
+                    "position" : [0,1],
+                    "offset" : [0.5, -0.1],
+                    "relative_offset" : true
+                }
             },
-            "auto_layout" : {},
-            "auto_layout.dirty" : {},
+            "anchor_layout.dirty" : {},
             "renderer" : {
                 "materials" : ["sprite_material.json"]
             },
             "sprite_renderer" : {
                 "sprite" : "rect_sprite.json",
-                "tint" : [0, 0, 255, 255]
+                "tint" : [0, 255, 255, 255]
             }
-        }
+        },
+        "children" : [{
+            "prototype" : "label_sdf_prefab.json",
+            "components" : {
+                "actor" : {},
+                "label_layout" : {},
+                "label_layout.dirty" : {},
+                "label" : {
+                    "text" : "button",
+                    "halign" : "center",
+                    "valign" : "center",
+                    "outline_width" : 0.5,
+                    "outline_color" : [0,0,0,255]
+                }
+            }
+        }]
     }]
 }

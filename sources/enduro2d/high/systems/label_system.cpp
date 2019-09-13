@@ -9,6 +9,7 @@
 #include <enduro2d/high/assets/font_asset.hpp>
 #include <enduro2d/high/assets/texture_asset.hpp>
 
+#include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/model_renderer.hpp>
@@ -26,7 +27,7 @@ namespace
             const b2f& texrect,
             const color32& color)
         {
-            const std::size_t start_vertex = vertices_.size();
+            const u32 start_vertex = math::numeric_cast<u32>(vertices_.size());
 
             // Y
             // ^
@@ -110,15 +111,16 @@ namespace
 
     f32 calculate_halign_offset(
         label::haligns halign,
-        f32 string_width) noexcept
+        f32 string_width,
+        f32 region_width) noexcept
     {
         switch ( halign ) {
         case label::haligns::left:
             return 0.0f;
         case label::haligns::center:
-            return -0.5f * string_width;
+            return (region_width - string_width) * 0.5f;
         case label::haligns::right:
-            return -1.0f * string_width;
+            return region_width - string_width;
         default:
             E2D_ASSERT_MSG(false, "unexpected label halign");
             return 0.f;
@@ -130,7 +132,8 @@ namespace
         f32 leading,
         u32 glyph_ascent,
         u32 line_height,
-        std::size_t string_count) noexcept
+        std::size_t string_count,
+        f32 region_height) noexcept
     {
         const f32 label_height = string_count > 1u
             ? line_height + line_height * leading * (string_count - 1u)
@@ -138,13 +141,13 @@ namespace
 
         switch ( valign ) {
         case label::valigns::top:
-            return 0.f;
+            return region_height;
         case label::valigns::center:
-            return 0.5f * label_height;
+            return (region_height + label_height) * 0.5f;
         case label::valigns::bottom:
-            return 1.0f * label_height;
+            return label_height;
         case label::valigns::baseline:
-            return 1.0f * glyph_ascent;
+            return f32(glyph_ascent);
         default:
             E2D_ASSERT_MSG(false, "unexpected label valign");
             return 0.f;
@@ -189,7 +192,12 @@ namespace
             .property("u_outline_color", outline_color));
     }
 
-    void update_label_geometry(label& l, model_renderer& mr, geometry_builder& gb) {
+    void update_label_geometry(
+        const v2f& region_size,
+        label& l,
+        model_renderer& mr,
+        geometry_builder& gb)
+    {
         if ( !l.font() || l.font()->content().empty() || l.text().empty() ) {
             gb.update_model(mr);
             return;
@@ -302,18 +310,19 @@ namespace
         // update geometry
         //
 
-        v2f cursor = v2f::unit_y() * calculate_valign_offset(
+        const f32 max_y = calculate_valign_offset(
             l.valign(),
             l.leading(),
             f.info().glyph_ascent,
             f.info().line_height,
-            strings.size());
-        v2f min_pos(std::numeric_limits<f32>::max());
-        v2f max_pos(-std::numeric_limits<f32>::max());
+            strings.size(),
+            region_size.y);
+        v2f cursor = v2f::unit_y() * max_y;
+        v2f x_range = v2f(1.0f, -1.0f) * std::numeric_limits<f32>::max();
 
         for ( std::size_t i = 0, ie = strings.size(); i < ie; ++i ) {
-            cursor.x = calculate_halign_offset(l.halign(), strings[i].width);
-            min_pos = math::minimized(min_pos, cursor);
+            cursor.x = calculate_halign_offset(l.halign(), strings[i].width, region_size.x);
+            x_range[0] = math::min(x_range[0], cursor.x);
             for ( std::size_t j = strings[i].start, je = strings[i].start + strings[i].length; j < je; ++j ) {
                 const glyph_desc& glyph = glyphs[j];
                 if ( !glyph.glyph ) {
@@ -333,10 +342,9 @@ namespace
                 cursor.x += glyph.glyph->advance + tracking_width;
             }
             cursor.y -= f.info().line_height * l.leading();
-            max_pos = math::maximized(max_pos, cursor);
+            x_range[1] = math::max(x_range[1], cursor.x);
         }
-
-        l.set_bounds(max_pos - min_pos);
+        l.set_preferred_size({x_range[1] - x_range[0], max_y - cursor.y});
 
         //
         // update model
@@ -347,15 +355,17 @@ namespace
 
     void update_dirty_labels(ecs::registry& owner) {
         geometry_builder gb;
-        owner.for_joined_components<label::dirty, label, renderer, model_renderer>([&gb](
+        owner.for_joined_components<label::dirty, label, renderer, model_renderer, actor>([&gb](
             const ecs::const_entity&,
             const label::dirty&,
             label& l,
             renderer& r,
-            model_renderer& mr
+            model_renderer& mr,
+            const actor& act
         ){
             update_label_material(l, r);
-            update_label_geometry(l, mr, gb);
+            v2f size = act.node() ? act.node()->size() : v2f();
+            update_label_geometry(size, l, mr, gb);
             gb.clear();
         });
         owner.remove_all_components<label::dirty>();

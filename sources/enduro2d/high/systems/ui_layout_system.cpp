@@ -9,6 +9,7 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
+#include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/node.hpp>
 
 using namespace e2d;
@@ -399,6 +400,24 @@ namespace
         node->translation(v3f(-region.position, 0.0f) * scale);
         node->scale(scale);
     }
+
+    void update_label_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>&)
+    {
+        const v2f old_size = node->size();
+        const v2f base_size(10.0f);
+        const b2f region = project_to_parent(node, b2f(base_size));
+        const v2f new_size = base_size * (parent_rect.size / region.size);
+
+        node->size(new_size);
+
+        if ( !math::approximately(old_size, node->size(), 0.01f) ) {
+            e.assign_component<label::dirty>();
+        }
+    }
     
     void update_margin_layout2(
         ecs::entity& e,
@@ -680,6 +699,14 @@ namespace
         });
         owner.remove_all_components<image_layout::dirty>();
         
+        owner.for_joined_components<label_layout::dirty, label_layout, label>(
+        [](ecs::entity e, label_layout::dirty, label_layout& lbl_layout, const label& lbl) {
+            auto& layout = e.assign_component<ui_layout>();
+            layout.update_fn(&update_label_layout);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<label_layout::dirty>();
+
         owner.for_joined_components<margin_layout::dirty, margin_layout>(
         [](ecs::entity e, margin_layout::dirty, const margin_layout&) {
             auto& layout = e.assign_component<ui_layout>();
