@@ -460,9 +460,11 @@ namespace e2d
     }
 
     void node::update_local_matrix_() const noexcept {
-        local_matrix_ = 
-            math::make_translation_matrix4(-v3f(size_ * pivot_, 0.0f)) *
-            math::make_trs_matrix4(transform_);
+        const v3f off = v3f(size_ * pivot_, 0.0f);
+        local_matrix_ = math::make_translation_matrix4(-off)
+            * math::make_scale_matrix4(transform_.scale)
+            * math::make_rotation_matrix4(transform_.rotation)
+            * math::make_translation_matrix4(transform_.translation + off);
     }
 
     void node::update_world_matrix_() const noexcept {
