@@ -164,8 +164,7 @@
                                 "materials" : ["sprite_material.json"]
                             },
                             "sprite_renderer" : {
-                                "sprite" : "rect_sprite.json",
-                                "tint" : [255, 0, 0, 255]
+                                "sprite" : "cube_0_sprite.json"
                             }
                         }
                     }]

@@ -35,6 +35,8 @@ namespace e2d
         static node_iptr create(const gobject_iptr& owner);
         static node_iptr create(const gobject_iptr& owner, const node_iptr& parent);
 
+        static node_iptr create_copy(const gobject_iptr& owner, const const_node_iptr& other);
+
         void owner(const gobject_iptr& owner) noexcept;
 
         gobject_iptr owner() noexcept;

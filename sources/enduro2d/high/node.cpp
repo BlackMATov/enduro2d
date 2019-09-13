@@ -40,6 +40,16 @@ namespace e2d
         }
         return child;
     }
+    
+    node_iptr node::create_copy(const gobject_iptr& owner, const const_node_iptr& other) {
+        node_iptr n = create(owner);
+        if ( other ) {
+            n->transform(other->transform());
+            n->size(other->size());
+            n->pivot(other->pivot());
+        }
+        return n;
+    }
 
     void node::owner(const gobject_iptr& owner) noexcept {
         owner_ = owner;
@@ -91,6 +101,7 @@ namespace e2d
     
     void node::size(const v2f& size) noexcept {
         size_ = size;
+        mark_dirty_local_matrix_();
     }
 
     const v2f& node::size() const noexcept {
@@ -99,6 +110,7 @@ namespace e2d
 
     void node::pivot(const v2f& pivot) noexcept {
         pivot_ = pivot;
+        mark_dirty_local_matrix_();
     }
 
     const v2f& node::pivot() const noexcept {

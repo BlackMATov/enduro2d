@@ -387,22 +387,19 @@ namespace
     {
         node->translation(v3f(0.0f, 0.0f, node->translation().z));
         node->scale(v3f(1.0f));
-
-        const b2f local = project_to_local(node, parent_rect);
-        auto& il = e.get_component<image_layout>();
-
-        if ( math::approximately(local.size, v2f()) ) {
+        
+        if ( math::approximately(parent_rect.size, v2f()) ) {
             return;
         }
 
-        if ( il.preserve_aspect() ) {
-            f32 scale = math::min(local.size.x / il.size().x, local.size.y / il.size().y);
-            node->scale(v3f(scale));
-        } else {
-            node->scale(v3f(local.size / il.size(), 1.0f));
-        }
+        auto& il = e.get_component<image_layout>();
+        const b2f region = project_to_parent(node, b2f(il.size()));
+        const v3f scale = il.preserve_aspect()
+            ? v3f(math::minimum(parent_rect.size / region.size))
+            : v3f(parent_rect.size / region.size, 1.0f);
 
-        //node->translation(v3f(pv ? pv->pivot() : v2f(), 0.0f) * node->scale());
+        node->translation(v3f(-region.position, 0.0f) * scale);
+        node->scale(scale);
     }
     
     void update_margin_layout2(

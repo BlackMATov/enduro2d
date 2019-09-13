@@ -49,11 +49,8 @@ namespace e2d
         gobjects_.emplace(inst->entity().id(), inst);
 
         try {
-            auto inst_n = node::create(inst);
             auto inst_a = inst->get_component<actor>();
-            if ( inst_a && inst_a->node() ) {
-                inst_n->transform(inst_a->node()->transform());
-            }
+            auto inst_n = node::create_copy(inst, inst_a ? inst_a->node() : nullptr);
             inst_a.assign(inst_n);
         } catch (...) {
             destroy_instance(inst);
