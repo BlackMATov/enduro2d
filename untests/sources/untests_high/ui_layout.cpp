@@ -113,11 +113,27 @@ namespace
         const v4f points[] = {
             v4f(r.position.x,            r.position.y,            0.0f, 1.0f) * inv,
             v4f(r.position.x,            r.position.y + r.size.y, 0.0f, 1.0f) * inv,
+            v4f(r.position.x + r.size.x, r.position.y + r.size.y, 0.0f, 1.0f) * inv,
             v4f(r.position.x + r.size.x, r.position.y,            0.0f, 1.0f) * inv
         };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        v2f aabb_size = max - min;
+        f32 scale = 1.0f;
+        if ( !math::is_near_zero(aabb_size.x) && !math::is_near_zero(aabb_size.y) ) {
+            scale = math::min(
+                math::abs(r.size.x / aabb_size.x),
+                math::abs(r.size.y / aabb_size.y));
+        }
         return b2f({
-            math::length(points[2] - points[0]),
-            math::length(points[1] - points[0])});
+            math::length(points[3] - points[0]) * scale,
+            math::length(points[1] - points[0]) * scale});
     }
 
     b2f project_to_parent_opt(const node_iptr& n, const b2f& r) noexcept {
@@ -147,27 +163,62 @@ namespace
 
     b2f project_to_local_opt(const node_iptr& n, const b2f& r) noexcept {
         const v3f off = v3f(n->size() * n->pivot(), 0.0f);
-        const auto tr = [&n, off](const v2f& p) {
+        const q4f inv_rot = math::inversed(n->transform().rotation);
+        const v3f inv_scale = 1.0f / n->transform().scale;
+
+        const auto tr = [inv_rot, inv_scale, off](const v2f& p) {
             return v2f(
-                ((v3f(p, 0.0f) - off) * math::inversed(n->transform().rotation))
-                / n->transform().scale
+                ((v3f(p, 0.0f) - off) * inv_rot)
+                * inv_scale
                 + off);
         };
         const v2f points[] = {
             tr(v2f(r.position.x,            r.position.y           )),
             tr(v2f(r.position.x,            r.position.y + r.size.y)),
+            tr(v2f(r.position.x + r.size.x, r.position.y + r.size.y)),
             tr(v2f(r.position.x + r.size.x, r.position.y           ))
         };
+        v2f min = points[0];
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        v2f aabb_size = max - min;
+        f32 scale = 1.0f;
+        if ( !math::is_near_zero(aabb_size.x) && !math::is_near_zero(aabb_size.y) ) {
+            scale = math::min(
+                math::abs(r.size.x / aabb_size.x),
+                math::abs(r.size.y / aabb_size.y));
+        }
         return b2f({
-            math::length(points[2] - points[0]),
-            math::length(points[1] - points[0])});
+            math::length(points[3] - points[0]) * scale,
+            math::length(points[1] - points[0]) * scale});
     }
 }
 
 TEST_CASE("ui_layout") {
     safe_world_initializer initializer;
     
-    SECTION("projection") {
+    SECTION("project_to_local") {
+        node_iptr n = node::create();
+        
+        n->size({10.0f, 10.0f});
+        n->rotation(math::make_quat_from_axis_angle(make_deg(90.0f), v3f::unit_z()));
+
+        auto r0 = project_to_local(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        auto r1 = b2f(0.0f, 0.0f, 5.0f, 10.0f);
+        REQUIRE(math::approximately(r0, r1, 0.01f));
+        
+        n->rotation(math::make_quat_from_axis_angle(make_deg(45.0f), v3f::unit_z()));
+
+        auto r2 = project_to_local(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        auto r3 = b2f(0.0f, 0.0f, 4.71f, 9.42f);
+        REQUIRE(math::approximately(r2, r3, 0.01f));
+    }
+    SECTION("optimized projection") {
         node_iptr n = node::create();
 
         n->size({10.0f, 10.0f});
@@ -177,12 +228,20 @@ TEST_CASE("ui_layout") {
         auto r0 = project_to_local(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
         auto r1 = project_to_local_opt(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
         REQUIRE(math::approximately(r0, r1, 0.01f));
+        
+        auto r2 = project_to_parent(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        auto r3 = project_to_parent_opt(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        REQUIRE(math::approximately(r2, r3, 0.01f));
 
         n->scale({1.2f, 2.3f, 1.0f});
         
-        auto r2 = project_to_local(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
-        auto r3 = project_to_local_opt(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
-        REQUIRE(math::approximately(r2, r3, 0.01f));
+        auto r4 = project_to_local(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        auto r5 = project_to_local_opt(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        REQUIRE(math::approximately(r4, r5, 0.01f));
+        
+        auto r6 = project_to_parent(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        auto r7 = project_to_parent_opt(n, b2f(4.0f, 5.0f, 10.0f, 20.0f));
+        REQUIRE(math::approximately(r6, r7, 0.01f));
     }
     SECTION("fixed_layout") {
         gobject_iptr fl1 = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
@@ -642,6 +701,27 @@ TEST_CASE("ui_layout") {
         
             REQUIRE(get_region(fl) == b2f(60.0f, -20.0f, 100.0f, 100.0f));
             REQUIRE(get_region(dl) == b2f(100.0f, 100.0f) + v2f(0.0f, 500.0f));
+        }
+    }
+    SECTION("dock_layout - rotation") {
+        gobject_iptr root = create_fixed_layout(initializer.scene_r, {}, {600.0f, 400.0f});
+        node_iptr root_node = root->get_component<actor>().get().node();
+        
+        gobject_iptr dl = the<world>().instantiate();
+        dl->entity_filler()
+            .component<actor>(node::create(dl, root_node))
+            .component<dock_layout>(dock_layout::dock_type::fill)
+            .component<dock_layout::dirty>();
+        node_iptr dl_node = dl->get_component<actor>().get().node();
+        dl_node->rotation(math::make_quat_from_axis_angle(make_deg(75.0f), v3f::unit_z()));
+        
+        ui_layout_system system;
+        for ( u32 i = 0; i < 9; ++i ) {
+            system.process(the<world>().registry());
+        
+            REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
+        
+            REQUIRE(math::approximately(get_region(dl), b2f(317.2f, 400.0f), 0.1f));
         }
     }
     SECTION("image_layout") {

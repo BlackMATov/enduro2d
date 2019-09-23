@@ -54,20 +54,39 @@ namespace
 
     b2f project_to_local(const node_iptr& n, const b2f& r) noexcept {
         const v3f off = v3f(n->size() * n->pivot(), 0.0f);
-        const auto tr = [&n, off](const v2f& p) {
+        const q4f inv_rot = math::inversed(n->transform().rotation);
+        const v3f inv_scale = 1.0f / n->transform().scale;
+
+        const auto tr = [inv_rot, inv_scale, off](const v2f& p) {
             return v2f(
-                ((v3f(p, 0.0f) - off) * math::inversed(n->transform().rotation))
-                / n->transform().scale
+                ((v3f(p, 0.0f) - off) * inv_rot)
+                * inv_scale
                 + off);
         };
         const v2f points[] = {
             tr(v2f(r.position.x,            r.position.y           )),
             tr(v2f(r.position.x,            r.position.y + r.size.y)),
+            tr(v2f(r.position.x + r.size.x, r.position.y + r.size.y)),
             tr(v2f(r.position.x + r.size.x, r.position.y           ))
         };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        v2f aabb_size = max - min;
+        f32 scale = 1.0f;
+        if ( !math::is_near_zero(aabb_size.x) && !math::is_near_zero(aabb_size.y) ) {
+            scale = math::min(
+                math::abs(r.size.x / aabb_size.x),
+                math::abs(r.size.y / aabb_size.y));
+        }
         return b2f({
-            math::length(points[2] - points[0]),
-            math::length(points[1] - points[0])});
+            math::length(points[3] - points[0]) * scale,
+            math::length(points[1] - points[0]) * scale});
     }
     
     void update_auto_layout2(
@@ -266,7 +285,9 @@ namespace
             E2D_ASSERT_MSG(false, "undefined vertical docking");
         }
         
-        node->translation(v3f(region.position, node->translation().z));
+        v2f off = project_to_parent(node, b2f(region.size)).position;
+
+        node->translation(v3f(region.position - off, node->translation().z));
         node->size(region.size);
     }
 
@@ -277,8 +298,11 @@ namespace
         std::vector<ui_layout::layout_state>& childs)
     {
         bool post_update = false;
+        const b2f local = project_to_local(node, parent_rect);
+
         for (auto& c : childs ) {
             post_update |= c.depends_on_childs;
+            c.parent_rect = local;
         }
         auto& layout = e.get_component<ui_layout>();
 
