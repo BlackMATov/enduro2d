@@ -15,6 +15,7 @@ namespace e2d
     class ui_layout final {
     public:
         class root_tag final {};
+        class shape2d_update_size_tag final {};
         
         struct layout_state;
         using update_fn_t = void(*)(ecs::entity&, const b2f&, const node_iptr&, std::vector<layout_state>&);
@@ -50,6 +51,20 @@ namespace e2d
 
         bool operator()(
             ui_layout::root_tag& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+    
+    template <>
+    class factory_loader<ui_layout::shape2d_update_size_tag> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            ui_layout::shape2d_update_size_tag& component,
             const fill_context& ctx) const;
             
         bool operator()(

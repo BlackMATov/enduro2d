@@ -54,7 +54,7 @@ namespace e2d
     class flipbook_system;
     class label_system;
     class render_system;
-    class convex_hull_screenspace_raycast_system;
+    class screenspace_raycast_system;
     class input_event_system_per_update;
     class input_event_system_post_update;
     class ui_layout_system;

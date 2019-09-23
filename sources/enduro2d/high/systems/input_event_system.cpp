@@ -159,7 +159,7 @@ namespace e2d
         owner.remove_all_components<touchable::capture>();
 
         if ( !ev_data ) {
-            // for move_move only
+            // for mouse_move only
             owner.for_each_component<input_event>(
             [&ev_data](const ecs::entity&, const input_event& input) {
                 if ( input.data()->type == input_event_type::mouse_move ) {

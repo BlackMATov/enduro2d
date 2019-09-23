@@ -57,6 +57,29 @@ namespace e2d
         E2D_UNUSED(dependencies, ctx);
         return true;
     }
+
+    const char* factory_loader<ui_layout::shape2d_update_size_tag>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<ui_layout::shape2d_update_size_tag>::operator()(
+        ui_layout::shape2d_update_size_tag& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<ui_layout::shape2d_update_size_tag>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
 }
 
 namespace e2d

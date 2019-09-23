@@ -10,6 +10,7 @@
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/label.hpp>
+#include <enduro2d/high/components/shape2d.hpp>
 #include <enduro2d/high/node.hpp>
 
 using namespace e2d;
@@ -668,6 +669,22 @@ namespace
         });
         owner.remove_all_components<anchor_layout::dirty>();
     }
+
+    void update_shape_size(ecs::registry& owner) {
+        owner.for_joined_components<ui_layout::shape2d_update_size_tag, rectangle_shape, ui_layout, actor>(
+        [](const ecs::const_entity&, ui_layout::shape2d_update_size_tag, rectangle_shape& rshape, const ui_layout&, const actor& act) {
+            if ( act.node() ) {
+                rshape.rectangle(b2f(act.node()->size()));
+            }
+        });
+
+        owner.for_joined_components<ui_layout::shape2d_update_size_tag, circle_shape, ui_layout, actor>(
+        [](const ecs::const_entity&, ui_layout::shape2d_update_size_tag, circle_shape& cshape, const ui_layout&, const actor& act) {
+            if ( act.node() ) {
+                cshape.radius(math::minimum(act.node()->size()));
+            }
+        });
+    }
 }
 
 namespace e2d
@@ -679,5 +696,6 @@ namespace e2d
     void ui_layout_system::process(ecs::registry& owner) {
         register_update_fn(owner);
         update_layouts(owner);
+        update_shape_size(owner);
     }
 }

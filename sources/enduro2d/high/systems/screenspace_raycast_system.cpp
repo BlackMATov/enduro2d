@@ -64,11 +64,11 @@ namespace
 
 namespace e2d
 {
-    convex_hull_screenspace_raycast_system::convex_hull_screenspace_raycast_system() = default;
+    screenspace_raycast_system::screenspace_raycast_system() = default;
 
-    convex_hull_screenspace_raycast_system::~convex_hull_screenspace_raycast_system() noexcept = default;
+    screenspace_raycast_system::~screenspace_raycast_system() noexcept = default;
 
-    void convex_hull_screenspace_raycast_system::process(ecs::registry& owner) {
+    void screenspace_raycast_system::process(ecs::registry& owner) {
         owner.for_joined_components<input_event, camera::input_handler_tag, camera>(
         [&owner](const ecs::const_entity&, const input_event& input_ev, camera::input_handler_tag, const camera&) {
             if ( input_ev.data()->type != input_event::event_type::mouse_move &&

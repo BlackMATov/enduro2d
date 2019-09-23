@@ -53,7 +53,7 @@ namespace
                 .system<render_system>(world::priority_render)
                 .system<input_event_system_pre_update>(world::priority_pre_update)
                 .system<shape_projection_system>(world::priority_pre_update + 1)
-                .system<convex_hull_screenspace_raycast_system>(world::priority_pre_update + 2)
+                .system<screenspace_raycast_system>(world::priority_pre_update + 2)
                 .system<input_event_system_post_update>(world::priority_pre_update + 3)
                 .system<ui_layout_system>(world::priority_update);
             return !application_ || application_->initialize();
@@ -151,6 +151,7 @@ namespace e2d
             .register_component<scene>("scene")
             .register_component<sprite_renderer>("sprite_renderer")
             .register_component<ui_layout::root_tag>("ui_layout.root_tag")
+            .register_component<ui_layout::shape2d_update_size_tag>("ui_layout.shape2d_update_size_tag")
             .register_component<fixed_layout>("fixed_layout")
             .register_component<fixed_layout::dirty>("fixed_layout.dirty")
             .register_component<auto_layout>("auto_layout")
@@ -168,7 +169,10 @@ namespace e2d
             .register_component<anchor_layout>("anchor_layout")
             .register_component<anchor_layout::dirty>("anchor_layout.dirty")
             .register_component<label_layout>("label_layout")
-            .register_component<label_layout::dirty>("label_layout.dirty");
+            .register_component<label_layout::dirty>("label_layout.dirty")
+            .register_component<rectangle_shape>("rectangle_shape")
+            .register_component<circle_shape>("circle_shape")
+            .register_component<polygon_shape>("polygon_shape");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }

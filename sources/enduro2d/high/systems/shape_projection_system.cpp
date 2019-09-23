@@ -73,12 +73,13 @@ namespace
             ? act.node()->world_matrix()
             : m4f::identity();
         const m4f mvp = m * view_proj;
+        const v2f center = shape.center() + shape.radius();
 
         constexpr u32 cnt = circle_shape::detail_level;
         std::array<v3f, cnt> projected;
         for ( size_t i = 0; i < cnt; ++i ) {
             rad<f32> a = 2.0f * math::pi<f32>() * f32(i) / f32(cnt);
-            v2f p = shape.center() + shape.radius() * v2f(math::cos(a), math::sin(a));
+            v2f p = center + shape.radius() * v2f(math::cos(a), math::sin(a));
             projected[i] = math::project(v3f(p, 0.0f), mvp, viewport);
         }
 
@@ -112,10 +113,10 @@ namespace
             : m4f::identity();
         const m4f mvp = m * view_proj;
 
-        screenspace_shape.triangles.resize(shape.triangles.size());
+        screenspace_shape.triangles.resize(shape.triangles().size());
 
-        for ( size_t i = 0; i < shape.triangles.size(); ++i ) {
-            const auto& src = shape.triangles[i];
+        for ( size_t i = 0; i < shape.triangles().size(); ++i ) {
+            const auto& src = shape.triangles()[i];
             auto& dst = screenspace_shape.triangles[i];
 
             const std::array<v3f, 3> projected = {{
@@ -144,8 +145,7 @@ namespace
 
     void create_rectangle_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<rectangle_shape, actor>(
-        [&owner, &input_ev](ecs::entity_id id, const rectangle_shape& shape, const actor& act) {
-            ecs::entity e(owner, id);
+        [&owner, &input_ev](ecs::entity e, const rectangle_shape& shape, const actor& act) {
             if ( !e.find_component<rectangle_screenspace_collider>() ) {
                 project_rectangle(
                     e.assign_component<rectangle_screenspace_collider>(),
@@ -158,8 +158,7 @@ namespace
     
     void create_circle_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<circle_shape, actor>(
-        [&owner, &input_ev](ecs::entity_id id, const circle_shape& shape, const actor& act) {
-            ecs::entity e(owner, id);
+        [&owner, &input_ev](ecs::entity e, const circle_shape& shape, const actor& act) {
             if ( !e.find_component<circle_screenspace_collider>() ) {
                 project_circle(
                     e.assign_component<circle_screenspace_collider>(),
@@ -172,8 +171,7 @@ namespace
     
     void create_polygon_shapes(ecs::registry& owner, const input_event& input_ev) {
         owner.for_joined_components<polygon_shape, actor>(
-        [&owner, &input_ev](ecs::entity_id id, const polygon_shape& shape, const actor& act) {
-            ecs::entity e(owner, id);
+        [&owner, &input_ev](ecs::entity e, const polygon_shape& shape, const actor& act) {
             if ( !e.find_component<polygon_screenspace_collider>() ) {
                 project_polygon(
                     e.assign_component<polygon_screenspace_collider>(),

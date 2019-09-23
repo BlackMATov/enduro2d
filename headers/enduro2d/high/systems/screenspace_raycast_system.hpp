@@ -10,10 +10,10 @@
 
 namespace e2d
 {
-    class convex_hull_screenspace_raycast_system final : public ecs::system {
+    class screenspace_raycast_system final : public ecs::system {
     public:
-        convex_hull_screenspace_raycast_system();
-        ~convex_hull_screenspace_raycast_system() noexcept final;
+        screenspace_raycast_system();
+        ~screenspace_raycast_system() noexcept final;
         void process(ecs::registry& owner) override;
     };
 }
