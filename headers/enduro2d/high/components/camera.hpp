@@ -14,8 +14,7 @@ namespace e2d
 {
     class camera final {
     public:
-        class input_handler_tag final {
-        };
+        class input_handler_tag final {};
     public:
         camera() = default;
 

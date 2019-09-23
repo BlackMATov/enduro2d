@@ -20,6 +20,7 @@
 #include <enduro2d/high/components/scene.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/shape2d.hpp>
+#include <enduro2d/high/components/touchable.hpp>
 #include <enduro2d/high/components/ui_layout.hpp>
 
 #include <enduro2d/high/systems/flipbook_system.hpp>
@@ -172,7 +173,8 @@ namespace e2d
             .register_component<label_layout::dirty>("label_layout.dirty")
             .register_component<rectangle_shape>("rectangle_shape")
             .register_component<circle_shape>("circle_shape")
-            .register_component<polygon_shape>("polygon_shape");
+            .register_component<polygon_shape>("polygon_shape")
+            .register_component<touchable>("touchable");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }

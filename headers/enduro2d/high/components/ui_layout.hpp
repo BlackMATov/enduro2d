@@ -14,7 +14,10 @@ namespace e2d
 {
     class ui_layout final {
     public:
+        // indicates root node of the UI tree
         class root_tag final {};
+
+        // indicates that rectangle_shape size should be same as node size
         class shape2d_update_size_tag final {};
         
         struct layout_state;

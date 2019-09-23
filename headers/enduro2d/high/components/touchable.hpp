@@ -7,6 +7,7 @@
 #pragma once
 
 #include "input_event.hpp"
+#include "../factory.hpp"
 
 namespace e2d
 {
@@ -28,35 +29,23 @@ namespace e2d
         touchable() = default;
         touchable(bool stop);
 
+        touchable& stop_propagation(bool value) noexcept;
         bool stop_propagation() const noexcept;
     private:
         bool stop_propagation_ = false;
     };
-}
+    
+    template <>
+    class factory_loader<touchable> final : factory_loader<> {
+    public:
+        static const char* schema_source;
 
-namespace e2d
-{
-    inline touchable::touchable(bool stop)
-    : stop_propagation_(stop) {}
-
-    inline bool touchable::stop_propagation() const noexcept {
-        return stop_propagation_;
-    }
-
-    inline touchable::capture::capture(u32 depth, bool stop, const input_event::data_ptr& ev_data)
-    : depth_(depth)
-    , stop_propagation_(stop)
-    , ev_data_(ev_data) {}
-        
-    inline bool touchable::capture::stop_propagation() const noexcept {
-        return stop_propagation_;
-    }
-
-    inline u32 touchable::capture::depth() const noexcept {
-        return depth_;
-    }
-
-    inline const input_event::data_ptr& touchable::capture::data() const noexcept {
-        return ev_data_;
-    }
+        bool operator()(
+            touchable& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }

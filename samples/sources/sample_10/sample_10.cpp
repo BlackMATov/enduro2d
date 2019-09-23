@@ -65,7 +65,8 @@ namespace
             camera_i->entity_filler()
                 .component<camera>(camera()
                     .background({0.f, 0.f, 0.f, 1.f}))
-                .component<actor>(node::create(camera_i));
+                .component<actor>(node::create(camera_i))
+                .component<camera::input_handler_tag>();
             return true;
         }
 
