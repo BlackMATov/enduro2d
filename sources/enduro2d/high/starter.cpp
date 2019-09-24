@@ -19,6 +19,7 @@
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/scene.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
+#include <enduro2d/high/components/sprite_9p_renderer.hpp>
 #include <enduro2d/high/components/shape2d.hpp>
 #include <enduro2d/high/components/touchable.hpp>
 #include <enduro2d/high/components/ui_layout.hpp>
@@ -151,6 +152,7 @@ namespace e2d
             .register_component<renderer>("renderer")
             .register_component<scene>("scene")
             .register_component<sprite_renderer>("sprite_renderer")
+            .register_component<sprite_9p_renderer>("sprite_9p_renderer")
             .register_component<ui_layout::root_tag>("ui_layout.root_tag")
             .register_component<ui_layout::shape2d_update_size_tag>("ui_layout.shape2d_update_size_tag")
             .register_component<fixed_layout>("fixed_layout")

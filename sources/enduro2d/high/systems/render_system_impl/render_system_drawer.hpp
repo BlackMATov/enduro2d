@@ -53,6 +53,12 @@ namespace e2d::render_system_impl
                 const v2f& size,
                 const renderer& node_r,
                 const sprite_renderer& spr_r);
+            
+            void draw(
+                const m4f& world_mat,
+                const v2f& size,
+                const renderer& node_r,
+                const sprite_9p_renderer& spr_r);
 
             void flush();
         private:
