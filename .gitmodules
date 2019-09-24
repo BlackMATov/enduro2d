@@ -37,3 +37,6 @@
 [submodule "modules/curly.hpp"]
 	path = modules/curly.hpp
 	url = https://github.com/BlackMATov/curly.hpp
+[submodule "modules/ecs.hpp"]
+	path = modules/ecs.hpp
+	url = https://github.com/azhirnov/ecs.hpp
