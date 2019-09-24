@@ -393,7 +393,7 @@ namespace
                     .component<sprite_renderer>(button_res)
                     .component<touchable>(false)
                     .component<rectangle_shape>(b2f(
-                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().position,
                         button_res->content().texrect().size))
                     .component<ui_style>(ui_style()
                         .propagate_all())
@@ -433,7 +433,7 @@ namespace
                     .component<sprite_renderer>(button_res)
                     .component<touchable>(true)
                     .component<rectangle_shape>(b2f(
-                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().position,
                         button_res->content().texrect().size))
                     .component<ui_style>()
                     .component<button>(button()
@@ -454,7 +454,7 @@ namespace
                     .component<sprite_renderer>(button_res)
                     .component<touchable>(true)
                     .component<rectangle_shape>(b2f(
-                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().position,
                         button_res->content().texrect().size))
                     .component<ui_style>()
                     .component<button>(button())
@@ -473,7 +473,7 @@ namespace
                     .component<sprite_renderer>(button_res)
                     .component<touchable>(true)
                     .component<circle_shape>(
-                        (button_res->content().texrect().position - button_res->content().pivot() +
+                        (button_res->content().texrect().position +
                          button_res->content().texrect().size * 0.5f),
                         math::max(button_res->content().texrect().size.x, button_res->content().texrect().size.y) * 0.5f)
                     .component<ui_style>()

@@ -71,10 +71,6 @@ namespace e2d
         return *this;
     }
 
-    //const v2f& sprite::pivot() const noexcept {
-    //    return pivot_;
-    //}
-
     const b2f& sprite::texrect() const noexcept {
         return texrect_;
     }
