@@ -7,6 +7,7 @@
 #include <enduro2d/high/starter.hpp>
 
 #include <enduro2d/high/world.hpp>
+#include <enduro2d/high/world_ev.hpp>
 #include <enduro2d/high/factory.hpp>
 #include <enduro2d/high/library.hpp>
 
@@ -26,7 +27,6 @@
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
 #include <enduro2d/high/systems/render_system.hpp>
-#include <enduro2d/high/systems/screenspace_raycast_system.hpp>
 #include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
 #include <enduro2d/high/systems/ui_layout_system.hpp>
@@ -49,14 +49,20 @@ namespace
 
         bool initialize() final {
             ecs::registry_filler(the<world>().registry())
-                .system<flipbook_system>(world::priority_update)
-                .system<label_system>(world::priority_update)
-                .system<render_system>(world::priority_render)
-                .system<input_event_system_pre_update>(world::priority_pre_update)
-                .system<shape_projection_system>(world::priority_pre_update + 1)
-                .system<screenspace_raycast_system>(world::priority_pre_update + 2)
-                .system<input_event_system_post_update>(world::priority_pre_update + 3)
-                .system<ui_layout_system>(world::priority_update);
+                .system<flipbook_system>()
+                .system<label_system>()
+                .system<render_system>()
+                .system<ui_layout_system>()
+                .system<input_event_system>()
+                .system<shape_projection_system>()
+                .listener<flipbook_system, world_ev::update_frame>(&flipbook_system::process)
+                .listener<label_system, world_ev::update_frame>(&label_system::process)
+                .listener<ui_layout_system, world_ev::update_frame>(&ui_layout_system::process)
+                .listener<input_event_system, ecs::after_system_ev<ui_layout_system, world_ev::update_frame>>(&input_event_system::pre_update)
+                .listener<shape_projection_system, ecs::before_event_ev<world_ev::input_event_raycast>>(&shape_projection_system::process)
+                .listener<input_event_system, world_ev::input_event_raycast>(&input_event_system::raycast)
+                .listener<input_event_system, world_ev::input_event_post_update>(&input_event_system::post_update)
+                .listener<render_system, world_ev::render_frame>(&render_system::process);
             return !application_ || application_->initialize();
         }
 
@@ -67,17 +73,13 @@ namespace
         }
 
         bool frame_tick() final {
-            the<world>().registry().process_systems_in_range(
-                world::priority_update_section_begin,
-                world::priority_update_section_end);
+            the<world>().registry().process_systems(world_ev::update_frame());
             return !the<window>().should_close()
                 || (application_ && !application_->on_should_close());
         }
 
         void frame_render() final {
-            the<world>().registry().process_systems_in_range(
-                world::priority_render_section_begin,
-                world::priority_render_section_end);
+            the<world>().registry().process_systems(world_ev::render_frame());
         }
     private:
         starter::application_uptr application_;

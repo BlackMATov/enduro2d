@@ -10,18 +10,14 @@
 
 namespace e2d
 {
-    class input_event_system_pre_update final : public ecs::system {
+    class input_event_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override;
+        void pre_update(ecs::registry& owner);
+        void raycast(ecs::registry& owner);
+        void post_update(ecs::registry& owner);
     private:
         v2f mouse_delta_;
         v2f last_cursor_pos_ {-1.0e10f};
-    };
-    
-    class input_event_system_post_update final : public ecs::system {
-    public:
-        void process(ecs::registry& owner) override;
-    private:
         u32 frame_id_ = 0;
     };
 }

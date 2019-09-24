@@ -5,10 +5,12 @@
  ******************************************************************************/
 
 #include <enduro2d/high/systems/input_event_system.hpp>
+#include <enduro2d/high/components/screenspace_collider.hpp>
 #include <enduro2d/high/components/input_event.hpp>
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/touchable.hpp>
+#include <enduro2d/high/world_ev.hpp>
 
 namespace
 {
@@ -34,11 +36,57 @@ namespace
     }
     
     using input_event_type = input_event::event_type;
+    
+    template < typename Collider >
+    void raycast_on_convex_hull(ecs::registry& owner, const input_event::data_ptr& ev_data) {
+        owner.for_joined_components<Collider, touchable, actor>(
+        [&owner, &ev_data]
+        (const ecs::entity& e, const Collider& shape, const touchable& t, const actor& act) {
+            const v2f touch_center = ev_data->center;
+            const f32 touch_radius = ev_data->radius;
+
+            bool inside = true;
+            for ( auto& p : shape.planes ) {
+                const f32 d = math::dot(p.norm, touch_center) + p.dist;
+                inside &= (d > -touch_radius);
+            }
+            if ( inside ) {
+                u32 d = act.node()->render_order();
+                owner.assign_component<touchable::capture>(e, d, t.stop_propagation(), ev_data);
+            }
+        });
+    }
+
+    void raycast_on_polygon(ecs::registry& owner, const input_event::data_ptr& ev_data) {
+        owner.for_joined_components<polygon_screenspace_collider, touchable, actor>(
+        [&owner, &ev_data]
+        (const ecs::entity& e, const polygon_screenspace_collider& shape, const touchable& t, const actor& act) {
+            const v2f touch_center = ev_data->center;
+            const f32 touch_radius = ev_data->radius;
+            
+            bool intersects = false;
+            for ( auto& tri : shape.triangles ) {
+                bool inside = true;
+                for ( auto& p : tri.planes ) {
+                    const f32 d = math::dot(p.norm, touch_center) + p.dist;
+                    inside &= (d > -touch_radius);
+                }
+                if ( inside ) {
+                    intersects = true;
+                    break;
+                }
+            }
+            if ( intersects ) {
+                u32 d = act.node()->render_order();
+                owner.assign_component<touchable::capture>(e, d, t.stop_propagation(), ev_data);
+            }
+        });
+    }
 }
 
 namespace e2d
 {
-    void input_event_system_pre_update::process(ecs::registry& owner) {
+    void input_event_system::pre_update(ecs::registry& owner) {
         owner.remove_all_components<input_event>();
         owner.remove_all_components<touch_down_event>();
         owner.remove_all_components<touch_up_event>();
@@ -106,6 +154,7 @@ namespace e2d
             switch ( ev_type ) {
                 case input_event_type::mouse_move:
                 case input_event_type::touch_down:
+                    owner.add_event(world_ev::input_event_raycast());
                     break;
 
                 case input_event_type::touch_up:
@@ -125,9 +174,25 @@ namespace e2d
                     break;
             }
         }
+        owner.add_event(world_ev::input_event_post_update());
+    }
+    
+    void input_event_system::raycast(ecs::registry& owner) {
+        owner.for_joined_components<input_event, camera::input_handler_tag, camera>(
+        [&owner](const ecs::const_entity&, const input_event& input_ev, camera::input_handler_tag, const camera&) {
+            if ( input_ev.data()->type != input_event::event_type::mouse_move &&
+                 input_ev.data()->type != input_event::event_type::touch_down )
+            {
+                return;
+            }
+
+            raycast_on_convex_hull<rectangle_screenspace_collider>(owner, input_ev.data());
+            raycast_on_convex_hull<circle_screenspace_collider>(owner, input_ev.data());
+            raycast_on_polygon(owner, input_ev.data());
+        });
     }
 
-    void input_event_system_post_update::process(ecs::registry& owner) {
+    void input_event_system::post_update(ecs::registry& owner) {
         const auto add_mouse_leave_events = [this, &owner](const input_event::data_ptr& ev_data) {
             owner.for_each_component<mouse_over_tag>(
             [&owner, ev_data, fid = frame_id_](ecs::entity_id id, const mouse_over_tag& tag) {

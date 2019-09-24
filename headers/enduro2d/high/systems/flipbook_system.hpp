@@ -13,8 +13,8 @@ namespace e2d
     class flipbook_system final : public ecs::system {
     public:
         flipbook_system();
-        ~flipbook_system() noexcept final;
-        void process(ecs::registry& owner) override;
+        ~flipbook_system() noexcept;
+        void process(ecs::registry& owner);
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;

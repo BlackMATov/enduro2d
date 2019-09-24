@@ -71,8 +71,8 @@ TEST_CASE("screenspace_collider") {
                 input_event::event_type::touch_down}));
 
         shape_projection_system().process(the<world>().registry());
-        screenspace_raycast_system().process(the<world>().registry());
-        input_event_system_post_update().process(the<world>().registry());
+        input_event_system().raycast(the<world>().registry());
+        input_event_system().post_update(the<world>().registry());
 
         REQUIRE(rshape->get_component<touched_tag>().find());
         REQUIRE(rshape->get_component<touch_down_event>().find());
@@ -96,10 +96,10 @@ TEST_CASE("screenspace_collider") {
                 v2f(),
                 4.0f,
                 input_event::event_type::touch_down}));
-
+        
         shape_projection_system().process(the<world>().registry());
-        screenspace_raycast_system().process(the<world>().registry());
-        input_event_system_post_update().process(the<world>().registry());
+        input_event_system().raycast(the<world>().registry());
+        input_event_system().post_update(the<world>().registry());
 
         REQUIRE(rshape->get_component<touched_tag>().find());
         REQUIRE(rshape->get_component<touch_down_event>().find());
@@ -123,10 +123,10 @@ TEST_CASE("screenspace_collider") {
                 v2f(),
                 4.0f,
                 input_event::event_type::touch_down}));
-
+        
         shape_projection_system().process(the<world>().registry());
-        screenspace_raycast_system().process(the<world>().registry());
-        input_event_system_post_update().process(the<world>().registry());
+        input_event_system().raycast(the<world>().registry());
+        input_event_system().post_update(the<world>().registry());
 
         REQUIRE(rshape->get_component<touched_tag>().find() == nullptr);
         REQUIRE(rshape->get_component<touch_down_event>().find() == nullptr);
@@ -151,10 +151,10 @@ TEST_CASE("screenspace_collider") {
                 v2f(),
                 4.0f,
                 input_event::event_type::touch_down}));
-
+        
         shape_projection_system().process(the<world>().registry());
-        screenspace_raycast_system().process(the<world>().registry());
-        input_event_system_post_update().process(the<world>().registry());
+        input_event_system().raycast(the<world>().registry());
+        input_event_system().post_update(the<world>().registry());
 
         REQUIRE(cshape->get_component<touched_tag>().find());
         REQUIRE(cshape->get_component<touch_down_event>().find());
@@ -178,10 +178,10 @@ TEST_CASE("screenspace_collider") {
                 v2f(),
                 4.0f,
                 input_event::event_type::touch_down}));
-
+        
         shape_projection_system().process(the<world>().registry());
-        screenspace_raycast_system().process(the<world>().registry());
-        input_event_system_post_update().process(the<world>().registry());
+        input_event_system().raycast(the<world>().registry());
+        input_event_system().post_update(the<world>().registry());
 
         REQUIRE(cshape->get_component<touched_tag>().find());
         REQUIRE(cshape->get_component<touch_down_event>().find());
@@ -205,10 +205,10 @@ TEST_CASE("screenspace_collider") {
                 v2f(),
                 4.0f,
                 input_event::event_type::touch_down}));
-
+        
         shape_projection_system().process(the<world>().registry());
-        screenspace_raycast_system().process(the<world>().registry());
-        input_event_system_post_update().process(the<world>().registry());
+        input_event_system().raycast(the<world>().registry());
+        input_event_system().post_update(the<world>().registry());
         
         REQUIRE(cshape->get_component<touched_tag>().find() == nullptr);
         REQUIRE(cshape->get_component<touch_down_event>().find() == nullptr);
@@ -234,10 +234,10 @@ TEST_CASE("screenspace_collider") {
                 v2f(),
                 4.0f,
                 input_event::event_type::touch_down}));
-
+        
         shape_projection_system().process(the<world>().registry());
-        screenspace_raycast_system().process(the<world>().registry());
-        input_event_system_post_update().process(the<world>().registry());
+        input_event_system().raycast(the<world>().registry());
+        input_event_system().post_update(the<world>().registry());
         
         REQUIRE(cshape->get_component<touched_tag>().find() == nullptr);
         REQUIRE(cshape->get_component<touch_down_event>().find() == nullptr);

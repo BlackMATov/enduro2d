@@ -12,7 +12,7 @@ namespace e2d
 {
     class shape_projection_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override;
+        void process(ecs::registry& owner);
     private:
         ecs::entity_id camera_entity_ = 0;
         m4f last_vp_matrix_;

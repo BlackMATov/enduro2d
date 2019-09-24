@@ -13,8 +13,8 @@ namespace e2d
     class label_system final : public ecs::system {
     public:
         label_system();
-        ~label_system() noexcept final;
-        void process(ecs::registry& owner) override;
+        ~label_system() noexcept;
+        void process(ecs::registry& owner);
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;

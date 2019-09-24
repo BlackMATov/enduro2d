@@ -13,7 +13,7 @@ namespace e2d
     class ui_layout_system final : public ecs::system {
     public:
         ui_layout_system();
-        ~ui_layout_system() noexcept final;
-        void process(ecs::registry& owner) override;
+        ~ui_layout_system() noexcept;
+        void process(ecs::registry& owner);
     };
 }

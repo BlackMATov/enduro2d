@@ -13,8 +13,8 @@ namespace e2d
     class render_system final : public ecs::system {
     public:
         render_system();
-        ~render_system() noexcept final;
-        void process(ecs::registry& owner) override;
+        ~render_system() noexcept;
+        void process(ecs::registry& owner);
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;

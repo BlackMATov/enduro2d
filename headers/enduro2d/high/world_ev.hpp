@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include "../_high.hpp"
+#include "_high.hpp"
 
-namespace e2d
+namespace e2d::world_ev
 {
-    class screenspace_raycast_system final : public ecs::system {
-    public:
-        screenspace_raycast_system();
-        ~screenspace_raycast_system() noexcept final;
-        void process(ecs::registry& owner) override;
-    };
+    struct update_frame {};
+    struct render_frame {};
+
+    struct input_event_raycast {};
+    struct input_event_post_update {};
 }
