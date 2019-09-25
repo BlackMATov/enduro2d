@@ -24,6 +24,8 @@
 #include <enduro2d/high/components/shape2d.hpp>
 #include <enduro2d/high/components/touchable.hpp>
 #include <enduro2d/high/components/ui_layout.hpp>
+#include <enduro2d/high/components/ui_controller.hpp>
+#include <enduro2d/high/components/ui_style.hpp>
 
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
@@ -31,6 +33,8 @@
 #include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
 #include <enduro2d/high/systems/ui_layout_system.hpp>
+#include <enduro2d/high/systems/ui_controller_system.hpp>
+#include <enduro2d/high/systems/ui_style_system.hpp>
 
 namespace
 {
@@ -54,6 +58,8 @@ namespace
                 .system<label_system>()
                 .system<render_system>()
                 .system<ui_layout_system>()
+                .system<ui_controller_system>()
+                .system<ui_style_system>()
                 .system<input_event_system>()
                 .system<shape_projection_system>()
                 .listener<flipbook_system, world_ev::update_frame>(&flipbook_system::process)
@@ -63,6 +69,9 @@ namespace
                 .listener<shape_projection_system, ecs::before_event_ev<world_ev::input_event_raycast>>(&shape_projection_system::process)
                 .listener<input_event_system, world_ev::input_event_raycast>(&input_event_system::raycast)
                 .listener<input_event_system, world_ev::input_event_post_update>(&input_event_system::post_update)
+                .listener<ui_controller_system, world_ev::update_ui_style>(&ui_controller_system::process)
+                .listener<ui_style_system, ecs::before_event_ev<world_ev::update_frame>>(&ui_style_system::before_update)
+                .listener<ui_style_system, ecs::after_event_ev<world_ev::update_ui_style>>(&ui_style_system::process)
                 .listener<render_system, world_ev::render_frame>(&render_system::process);
             return !application_ || application_->initialize();
         }
@@ -175,6 +184,12 @@ namespace e2d
             .register_component<anchor_layout::dirty>("anchor_layout.dirty")
             .register_component<label_layout>("label_layout")
             .register_component<label_layout::dirty>("label_layout.dirty")
+            .register_component<ui_button>("ui_button")
+            .register_component<ui_selectable>("ui_selectable")
+            .register_component<ui_draggable>("ui_draggable")
+            .register_component<ui_style>("ui_style")
+            .register_component<ui_style::style_changed_tag>("ui_style.style_changed_tag")
+            .register_component<ui_color_style_comp>("ui_color_style_comp")
             .register_component<rectangle_shape>("rectangle_shape")
             .register_component<circle_shape>("circle_shape")
             .register_component<polygon_shape>("polygon_shape")

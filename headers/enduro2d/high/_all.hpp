@@ -26,6 +26,9 @@
 #include "assets/text_asset.hpp"
 #include "assets/texture_asset.hpp"
 #include "assets/xml_asset.hpp"
+#include "assets/ui_color_style_asset.hpp"
+#include "assets/ui_image_style_asset.hpp"
+#include "assets/ui_font_style_asset.hpp"
 
 #include "components/actor.hpp"
 #include "components/camera.hpp"
@@ -42,13 +45,15 @@
 #include "components/screenspace_collider.hpp"
 #include "components/touchable.hpp"
 #include "components/ui_layout.hpp"
+#include "components/ui_controller.hpp"
 
 #include "systems/flipbook_system.hpp"
 #include "systems/label_system.hpp"
 #include "systems/render_system.hpp"
-#include "systems/ui_layout_system.hpp"
 #include "systems/shape_projection_system.hpp"
 #include "systems/input_event_system.hpp"
+#include "systems/ui_layout_system.hpp"
+#include "systems/ui_controller_system.hpp"
 
 #include "address.hpp"
 #include "asset.hpp"
@@ -69,3 +74,6 @@
 #include "starter.hpp"
 #include "world.hpp"
 #include "world_ev.hpp"
+#include "ui_color_style.hpp"
+#include "ui_image_style.hpp"
+#include "ui_font_style.hpp"

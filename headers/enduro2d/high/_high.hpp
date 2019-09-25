@@ -38,6 +38,9 @@ namespace e2d
     class text_asset;
     class texture_asset;
     class xml_asset;
+    class ui_color_style_asset;
+    class ui_image_style_asset;
+    class ui_font_style_asset;
 
     class actor;
     class camera;
@@ -52,12 +55,16 @@ namespace e2d
     class touchable;
     class input_event;
     class ui_layout;
+    class ui_button;
+    class ui_selectable;
+    class ui_draggable;
 
     class flipbook_system;
     class label_system;
     class render_system;
     class input_event_system;
     class ui_layout_system;
+    class ui_controller_system;
 
     template < typename Asset, typename Content >
     class content_asset;
@@ -78,5 +85,8 @@ namespace e2d
     class sprite;
     class sprite_9p;
     class starter;
+    class ui_color_style;
+    class ui_image_style;
+    class ui_font_style;
     class world;
 }
