@@ -53,7 +53,6 @@ namespace
 
     stdex::promise<ui_color_style> parse_ui_color_style(
         const library& library,
-        str_view parent_address,
         const rapidjson::Value& root)
     {
         ui_color_style style;
@@ -153,9 +152,9 @@ namespace e2d
 
                 throw ui_color_style_asset_loading_exception();
             })
-            .then([&library, parent_address, ui_color_style_data](){
+            .then([&library, ui_color_style_data](){
                 return parse_ui_color_style(
-                    library, parent_address, *ui_color_style_data->content());
+                    library, *ui_color_style_data->content());
             })
             .then([](auto&& content){
                 return ui_color_style_asset::create(

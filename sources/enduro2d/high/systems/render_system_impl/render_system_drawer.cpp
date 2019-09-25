@@ -591,7 +591,7 @@ namespace e2d::render_system_impl
 
         try {
             property_cache_
-                .sampler(sprite_texture_sampler_hash, render::sampler_state()
+                .sampler(texture_sampler_hash, render::sampler_state()
                     .texture(tex_a->content())
                     .min_filter(min_filter)
                     .mag_filter(mag_filter))
