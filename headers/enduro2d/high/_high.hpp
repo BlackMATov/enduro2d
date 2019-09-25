@@ -34,6 +34,7 @@ namespace e2d
     class shape_asset;
     class sound_asset;
     class sprite_asset;
+    class sprite_9p_asset;
     class text_asset;
     class texture_asset;
     class xml_asset;
@@ -47,6 +48,7 @@ namespace e2d
     class renderer;
     class scene;
     class sprite_renderer;
+    class sprite_9p_renderer;
     class touchable;
     class input_event;
     class ui_layout;
@@ -74,6 +76,7 @@ namespace e2d
     class node;
     class prefab;
     class sprite;
+    class sprite_9p;
     class starter;
     class world;
 }
