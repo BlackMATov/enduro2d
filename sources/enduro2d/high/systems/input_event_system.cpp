@@ -159,17 +159,17 @@ namespace e2d
 
                 case input_event_type::touch_up:
                     owner.for_each_component<touched_tag>(
-                    [&owner, ev_data](ecs::entity_id id, touched_tag) {
-                        ecs::entity(owner, id).assign_component<touch_up_event>(touch_up_event{ev_data});
+                    [&owner, ev_data](ecs::entity e, touched_tag) {
+                        e.assign_component<touch_up_event>(touch_up_event{ev_data});
                     });
                     owner.remove_all_components<touch_focus_tag>();
                     owner.remove_all_components<touched_tag>();
                     break;
 
                 case input_event_type::touch_move:
-                    owner.for_joined_components<touch_focus_tag>(
-                    [&owner, ev_data](ecs::entity_id id, touch_focus_tag) {
-                        ecs::entity(owner, id).assign_component<touch_move_event>(touch_move_event{ev_data});
+                    owner.for_each_component<touch_focus_tag>(
+                    [&owner, ev_data](ecs::entity e, touch_focus_tag) {
+                        e.assign_component<touch_move_event>(touch_move_event{ev_data});
                     });
                     break;
             }
@@ -196,15 +196,14 @@ namespace e2d
     void input_event_system::post_update(ecs::registry& owner) {
         const auto add_mouse_leave_events = [this, &owner](const input_event::data_ptr& ev_data) {
             owner.for_each_component<mouse_over_tag>(
-            [&owner, ev_data, fid = frame_id_](ecs::entity_id id, const mouse_over_tag& tag) {
-                ecs::entity e(owner, id);
+            [&owner, ev_data, fid = frame_id_](ecs::entity e, const mouse_over_tag& tag) {
                 if ( tag.frame_id != fid ) {
                     e.assign_component<mouse_leave_event>(mouse_leave_event{ev_data});
                 }
             });
             owner.for_each_component<mouse_leave_event>(
-            [&owner](ecs::entity_id id, const mouse_leave_event&) {
-                ecs::entity(owner, id).remove_component<mouse_over_tag>();
+            [&owner](ecs::entity e, const mouse_leave_event&) {
+                e.remove_component<mouse_over_tag>();
             });
         };
 
@@ -227,7 +226,7 @@ namespace e2d
         if ( !ev_data ) {
             // for mouse_move only
             owner.for_each_component<input_event>(
-            [&ev_data](const ecs::entity&, const input_event& input) {
+            [&ev_data](const ecs::const_entity&, const input_event& input) {
                 if ( input.data()->type == input_event_type::mouse_move ) {
                     ev_data = input.data();
                 }

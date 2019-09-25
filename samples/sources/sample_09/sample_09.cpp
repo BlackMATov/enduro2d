@@ -243,7 +243,7 @@ namespace
                 }
             });
             owner.for_joined_components<ui_style::style_changed_tag, ui_style, button_color_style_ref, label>(
-            [&owner](ecs::entity_id id,
+            [&owner](ecs::entity e,
                ui_style::style_changed_tag,
                const ui_style& state,
                const button_color_style_ref& color_style,
@@ -262,7 +262,7 @@ namespace
                 } else {
                     lbl.tint(color_style.ref->idle);
                 }
-                ecs::entity(owner, id).assign_component<label::dirty>();
+                e.assign_component<label::dirty>();
             });
         }
     };
@@ -488,9 +488,8 @@ namespace
             }
 
             the<world>().registry().for_each_component<ui_style>(
-            [](ecs::entity_id id, const ui_style&) {
-                ecs::entity(the<world>().registry(), id)
-                    .assign_component<ui_style::style_changed_tag>();
+            [](ecs::entity e, const ui_style&) {
+                e.assign_component<ui_style::style_changed_tag>();
             });
             return true;
         }
