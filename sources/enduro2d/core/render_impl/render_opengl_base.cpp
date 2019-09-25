@@ -1520,7 +1520,6 @@ namespace e2d::opengl
         GL_CHECK_CODE(debug, glLinkProgram(*id));
 
         return process_program_linking_result(debug, *id)
-            && process_program_validation_result(debug, *id)
             ? std::move(id)
             : gl_program_id(debug);
     }
