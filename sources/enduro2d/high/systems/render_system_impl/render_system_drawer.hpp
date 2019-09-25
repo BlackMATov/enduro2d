@@ -55,7 +55,7 @@ namespace e2d::render_system_impl
                 const sprite_renderer& spr_r);
             
             void draw(
-                const const_node_iptr& node,
+                const m4f& world_mat,
                 const renderer& node_r,
                 const spine_player& spine_r);
 

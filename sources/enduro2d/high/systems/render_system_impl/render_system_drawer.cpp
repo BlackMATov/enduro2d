@@ -147,16 +147,11 @@ namespace e2d::render_system_impl
 
     void drawer::context::draw(
         const m4f& world_mat,
-        const v2f& size,
         const renderer& node_r,
         const spine_player& spine_r)
     {
         static std::vector<float> temp_vertices(1000u, 0.f);
         static std::vector<batcher_type::vertex_type> batch_vertices(1000u);
-
-        if ( !node || !node_r.enabled() ) {
-            return;
-        }
 
         spSkeleton* skeleton = spine_r.skeleton().get();
         spSkeletonClipping* clipper = spine_r.clipper().get();
@@ -174,7 +169,6 @@ namespace e2d::render_system_impl
         material_asset::ptr multiply_mat_a;
         material_asset::ptr screen_mat_a;
 
-        const m4f& sm = node->world_matrix();
         unsigned short quad_indices[6] = { 0, 1, 2, 2, 3, 0 };
 
         for ( int i = 0; i < skeleton->slotsCount; ++i ) {
@@ -390,7 +384,7 @@ namespace e2d::render_system_impl
 
                 for ( std::size_t j = 0; j < batch_vertex_count; ++j ) {
                     batcher_type::vertex_type& vert = batch_vertices[j];
-                    vert.v = v3f(v4f(vertices[j * 2], vertices[j * 2 + 1], 0.f, 1.f) * sm);
+                    vert.v = v3f(v4f(vertices[j * 2], vertices[j * 2 + 1], 0.f, 1.f) * world_mat);
                     vert.t = v2f(uvs[j * 2], uvs[j * 2 + 1]);
                     vert.c = vert_color;
                 }
@@ -422,11 +416,12 @@ namespace e2d::render_system_impl
     }
 
     void drawer::context::draw(
-        const const_node_iptr& node,
+        const m4f& world_mat,
+        const v2f& size,
         const renderer& node_r,
         const sprite_renderer& spr_r)
     {
-        if ( !spr_r.sprite() || node_r.materials().empty() ) {
+        if ( !spr_r.sprite() ) {
             return;
         }
 

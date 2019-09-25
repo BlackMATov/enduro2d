@@ -5,15 +5,13 @@
         "ui_layout.root_tag" : {}
     },
     "children" : [{
+        "prototype" : "../prefabs/sprite_prefab.json",
         "components" : {
             "actor" : {},
             "auto_layout" : {},
             "auto_layout.dirty" : {},
-            "renderer" : {
-                "materials" : ["sprite_material.json"]
-            },
             "sprite_renderer" : {
-                "sprite" : "rect_sprite.json",
+                "sprite" : "../sprites/rect_sprite.json",
                 "tint" : [255, 255, 255, 255]
             }
         },
@@ -31,6 +29,7 @@
                 "margin_layout.dirty" : {}
             },
             "children" : [{
+                "prototype" : "../prefabs/sprite_prefab.json",
                 "components" : {
                     "actor" : {
                         "rotation" : {
@@ -43,15 +42,13 @@
                         "origin" : "left"
                     },
                     "stack_layout.dirty" : {},
-                    "renderer" : {
-                        "materials" : ["sprite_material.json"]
-                    },
                     "sprite_renderer" : {
-                        "sprite" : "rect_sprite.json",
+                        "sprite" : "../sprites/rect_sprite.json",
                         "tint" : [125, 125, 125, 255]
                     }
                 },
                 "children" : [{
+                    "prototype" : "../prefabs/sprite_prefab.json",
                     "components" : {
                         "actor" : {
                             "rotation" : {
@@ -63,15 +60,13 @@
                             "size" : [64, 64]
                         },
                         "fixed_layout.dirty" : {},
-                        "renderer" : {
-                            "materials" : ["sprite_material.json"]
-                        },
                         "sprite_renderer" : {
-                            "sprite" : "rect_sprite.json",
+                            "sprite" : "../sprites/rect_sprite.json",
                             "tint" : [0, 255, 0, 255]
                         }
                     }
                 }, {
+                    "prototype" : "../prefabs/sprite_prefab.json",
                     "components" : {
                         "actor" : {
                             "rotation" : {
@@ -84,15 +79,13 @@
                             "size" : [64, 64]
                         },
                         "fixed_layout.dirty" : {},
-                        "renderer" : {
-                            "materials" : ["sprite_material.json"]
-                        },
                         "sprite_renderer" : {
-                            "sprite" : "rect_sprite.json",
+                            "sprite" : "../sprites/rect_sprite.json",
                             "tint" : [255, 0, 0, 255]
                         }
                     }
                 }, {
+                    "prototype" : "../prefabs/sprite_prefab.json",
                     "components" : {
                         "actor" : {
                             "scale" : 1.5
@@ -101,11 +94,8 @@
                             "size" : [64, 64]
                         },
                         "fixed_layout.dirty" : {},
-                        "renderer" : {
-                            "materials" : ["sprite_material.json"]
-                        },
                         "sprite_renderer" : {
-                            "sprite" : "rect_sprite.json",
+                            "sprite" : "../sprites/rect_sprite.json",
                             "tint" : [0, 0, 255, 255]
                         }
                     }
@@ -122,21 +112,20 @@
             "dock_layout.dirty" : {}
         },
         "children" : [{
+            "prototype" : "../prefabs/sprite_prefab.json",
             "components" : {
                 "actor" : {},
                 "fixed_layout" : {
                     "size" : [64, 64]
                 },
                 "fixed_layout.dirty" : {},
-                "renderer" : {
-                    "materials" : ["sprite_material.json"]
-                },
                 "sprite_renderer" : {
-                    "sprite" : "rect_sprite.json",
+                    "sprite" : "../sprites/rect_sprite.json",
                     "tint" : [255, 0, 255, 255]
                 }
             },
             "children" : [{
+                "prototype" : "../prefabs/sprite_prefab.json",
                 "components" : {
                     "actor" : {
                         "translation" : [-20, -20, 0]
@@ -145,11 +134,8 @@
                         "size" : [64, 64]
                     },
                     "fixed_layout.dirty" : {},
-                    "renderer" : {
-                        "materials" : ["sprite_material.json"]
-                    },
                     "sprite_renderer" : {
-                        "sprite" : "rect_sprite.json",
+                        "sprite" : "../sprites/rect_sprite.json",
                         "tint" : [255, 255, 0, 255]
                     }
                 },
@@ -165,17 +151,15 @@
                         "padding_layout.dirty" : {}
                     },
                     "children" : [{
+                        "prototype" : "../prefabs/sprite_prefab.json",
                         "components" : {
                             "actor" : {},
                             "image_layout" : {
                                 "preserve_aspect" : true
                             },
                             "image_layout.dirty" : {},
-                            "renderer" : {
-                                "materials" : ["sprite_material.json"]
-                            },
                             "sprite_renderer" : {
-                                "sprite" : "cube_0_sprite.json"
+                                "sprite" : "../sprites/cube_0_sprite.json"
                             }
                         }
                     }]
@@ -183,6 +167,7 @@
             }]
         }]
     }, {
+        "prototype" : "../prefabs/sprite_prefab.json",
         "components" : {
             "actor" : {},
             "anchor_layout" : {
@@ -198,15 +183,13 @@
                 }
             },
             "anchor_layout.dirty" : {},
-            "renderer" : {
-                "materials" : ["sprite_material.json"]
-            },
             "sprite_renderer" : {
-                "sprite" : "rect_sprite.json",
+                "sprite" : "../sprites/rect_sprite.json",
                 "tint" : [0, 255, 255, 255]
             }
         }
     }, {
+        "prototype" : "../prefabs/sprite_prefab.json",
         "components" : {
             "actor" : {
                 "translation" : [350, 300, 0]
@@ -218,16 +201,13 @@
                 "top" : 8
             },
             "margin_layout.dirty" : {},
-            "renderer" : {
-                "materials" : ["sprite_material.json"]
-            },
             "sprite_renderer" : {
-                "sprite" : "rect_sprite.json",
+                "sprite" : "../sprites/rect_sprite.json",
                 "tint" : [200, 200, 0, 255]
             }
         },
         "children" : [{    
-            "prototype" : "label_sdf_prefab.json",
+            "prototype" : "../prefabs/label_sdf_prefab.json",
             "components" : {
                 "actor" : {},
                 "label_layout" : {},
