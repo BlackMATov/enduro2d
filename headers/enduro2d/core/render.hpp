@@ -588,7 +588,7 @@ namespace e2d
         public:
             sampler_state& texture(const texture_ptr& texture) noexcept;
 
-            sampler_state& wrap(sampler_wrap st) noexcept;
+            sampler_state& wrap(sampler_wrap s, sampler_wrap t) noexcept;
             sampler_state& s_wrap(sampler_wrap s) noexcept;
             sampler_state& t_wrap(sampler_wrap t) noexcept;
 
@@ -611,7 +611,7 @@ namespace e2d
             sampler_mag_filter mag_filter_ = sampler_mag_filter::linear;
         };
 
-        using property_value = stdex::variant<
+        using property_value = std::variant<
             i32, f32,
             v2i, v3i, v4i,
             v2f, v3f, v4f,
@@ -856,7 +856,7 @@ namespace e2d
             bool scissoring_ = false;
         };
 
-        using command_value = stdex::variant<
+        using command_value = std::variant<
             zero_command,
             draw_command,
             clear_command,

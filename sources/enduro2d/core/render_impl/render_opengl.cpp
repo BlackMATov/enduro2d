@@ -179,7 +179,7 @@ namespace
         pb.foreach_by_properties([&debug, &ps](str_hash name, const render::property_value& value) noexcept {
             ps->state().with_uniform_location(name, [&debug, &value](const uniform_info& ui) noexcept {
                 E2D_ASSERT(!value.valueless_by_exception());
-                stdex::visit(property_block_value_visitor(debug, ui), value);
+                std::visit(property_block_value_visitor(debug, ui), value);
             });
         });
         GLint unit = 0;
@@ -315,7 +315,7 @@ namespace
     {
         bind_property_block(debug, ps, pb);
         try {
-            stdex::invoke(
+            std::invoke(
                 std::forward<F>(f),
                 std::forward<Args>(args)...);
         } catch (...) {
@@ -340,7 +340,7 @@ namespace
             }
         }
         try {
-            stdex::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
             for ( std::size_t i = 0, e = geo.vertices_count(); i < e; ++i ) {
                 const vertex_buffer_ptr& vb = geo.vertices(i);
@@ -1114,6 +1114,7 @@ namespace e2d
 
         if ( tex->decl().is_compressed() ) {
             const v2u block_size = tex->decl().block_size();
+            E2D_UNUSED(block_size);
             E2D_ASSERT(region.position.x % block_size.x == 0 && region.position.y % block_size.y == 0);
             E2D_ASSERT(region.size.x % block_size.x == 0 && region.size.y % block_size.y == 0);
             opengl::with_gl_bind_texture(state_->dbg(), tex->state().id(),

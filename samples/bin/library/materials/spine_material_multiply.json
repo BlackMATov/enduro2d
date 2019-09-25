@@ -1,0 +1,14 @@
+{
+    "passes" : [{
+        "shader" : "../shaders/spine_shader.json",
+        "state_block" : {
+            "blending_state" : {
+                "src_factor" : "dst_color",
+                "dst_factor" : "one_minus_src_alpha"
+            },
+            "capabilities_state" : {
+                "blending" : true
+            }
+        }
+    }]
+}

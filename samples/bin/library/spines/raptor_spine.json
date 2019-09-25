@@ -1,0 +1,38 @@
+{
+    "atlas": "raptor/raptor.atlas",
+    "skeleton": "raptor/raptor-pro.json-large",
+    "skeleton_scale": 1.0,
+    "default_animation_mix" : 0.5,
+    "animation_mixes": [
+        {
+            "from": "walk",
+            "to": "roar",
+            "duration": 0.5
+        },
+        {
+            "from": "roar",
+            "to": "walk",
+            "duration": 0.5
+        },
+        {
+            "from": "walk",
+            "to": "jump",
+            "duration": 0.5
+        },
+        {
+            "from": "jump",
+            "to": "walk",
+            "duration": 0.5
+        },
+        {
+            "from": "roar",
+            "to": "jump",
+            "duration": 0.5
+        },
+        {
+            "from": "jump",
+            "to": "roar",
+            "duration": 0.5
+        }
+    ]
+}

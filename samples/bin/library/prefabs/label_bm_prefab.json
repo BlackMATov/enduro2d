@@ -1,0 +1,15 @@
+{
+    "components" : {
+        "renderer" : {
+            "materials" : [
+                "../materials/font_bm_material.json"
+            ]
+        },
+        "model_renderer" : {},
+        "label" : {
+            "font" : "../fonts/arial_bm.fnt",
+            "text" : "Hello World!"
+        },
+        "label.dirty" : {}
+    }
+}

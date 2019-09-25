@@ -1,0 +1,13 @@
+{
+    "prototype" : "model_prefab.json",
+    "components" : {
+        "renderer" : {
+            "materials" : [
+                "../models/gnome/gnome_material.json"
+            ]
+        },
+        "model_renderer" : {
+            "model" : "../models/gnome/gnome_model.json"
+        }
+    }
+}

@@ -1,0 +1,5 @@
+{
+    "atlas" : "dragon/dragon.atlas",
+    "skeleton" : "dragon/dragon-ess.skel",
+    "skeleton_scale" : 1.0
+}

@@ -553,12 +553,12 @@ namespace e2d::math
 
     template < typename T >
     T minimum(const vec4<T>& v) noexcept {
-        return math::min(math::min(math::min(v.x, v.y), v.z), v.w);
+        return math::min(v.x, v.y, v.z, v.w);
     }
 
     template < typename T >
     T maximum(const vec4<T>& v) noexcept {
-        return math::max(math::max(math::max(v.x, v.y), v.z), v.w);
+        return math::max(v.x, v.y, v.z, v.w);
     }
 
     //

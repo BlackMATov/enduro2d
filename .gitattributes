@@ -14,3 +14,6 @@
 *.pvr filter=lfs diff=lfs merge=lfs -text
 *.dds filter=lfs diff=lfs merge=lfs -text
 *.ogg filter=lfs diff=lfs merge=lfs -text
+*.skel filter=lfs diff=lfs merge=lfs -text
+*.atlas filter=lfs diff=lfs merge=lfs -text
+*.json-large filter=lfs diff=lfs merge=lfs -text

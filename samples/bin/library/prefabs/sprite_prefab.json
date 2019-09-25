@@ -1,0 +1,13 @@
+{
+    "components" : {
+        "renderer" : {},
+        "sprite_renderer" : {
+            "materials" : {
+                "additive" : "../materials/sprite_material_additive.json",
+                "multiply" : "../materials/sprite_material_multiply.json",
+                "normal" : "../materials/sprite_material_normal.json",
+                "screen" : "../materials/sprite_material_screen.json"
+            }
+        }
+    }
+}

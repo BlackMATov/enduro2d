@@ -570,13 +570,35 @@ namespace e2d::math
     }
 
     //
-    // min/max/minmax
+    // min
     //
+
+    template < typename T >
+    std::enable_if_t<std::is_arithmetic_v<T>, T>
+    min(T v) noexcept {
+        return v;
+    }
 
     template < typename T >
     std::enable_if_t<std::is_arithmetic_v<T>, T>
     min(T l, T r) noexcept {
         return l < r ? l : r;
+    }
+
+    template < typename T, typename... Ts >
+    std::enable_if_t<std::is_arithmetic_v<T>, T>
+    min(T a, T b, T c, Ts... ts) noexcept {
+        return min(a < b ? a : b, c, ts...);
+    }
+
+    //
+    // max
+    //
+
+    template < typename T >
+    std::enable_if_t<std::is_arithmetic_v<T>, T>
+    max(T v) noexcept {
+        return v;
     }
 
     template < typename T >
@@ -585,12 +607,36 @@ namespace e2d::math
         return l < r ? r : l;
     }
 
+    template < typename T, typename... Ts >
+    std::enable_if_t<std::is_arithmetic_v<T>, T>
+    max(T a, T b, T c, Ts... ts) noexcept {
+        return max(a < b ? b : a, c, ts...);
+    }
+
+    //
+    // minmax
+    //
+
+    template < typename T >
+    std::enable_if_t<std::is_arithmetic_v<T>, std::pair<T,T>>
+    minmax(T v) noexcept {
+        return std::make_pair(v, v);
+    }
+
     template < typename T >
     std::enable_if_t<std::is_arithmetic_v<T>, std::pair<T,T>>
     minmax(T l, T r) noexcept {
         return l < r
             ? std::make_pair(l, r)
             : std::make_pair(r, l);
+    }
+
+    template < typename T, typename... Ts >
+    std::enable_if_t<std::is_arithmetic_v<T>, std::pair<T,T>>
+    minmax(T a, T b, T c, Ts... ts) noexcept {
+        return std::make_pair(
+            min(a, b, c, ts...),
+            max(a, b, c, ts...));
     }
 
     //

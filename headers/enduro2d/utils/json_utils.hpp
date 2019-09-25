@@ -113,6 +113,13 @@ namespace e2d::json_utils
         v = math::numeric_cast<T>(root.GetFloat());
         return true;
     }
+
+    template < typename T, typename Tag >
+    std::enable_if_t<
+        std::is_arithmetic_v<T>, bool>
+    try_parse_value(const rapidjson::Value& root, unit<T, Tag>& v) noexcept {
+        return try_parse_value(root, v.value);
+    }
 }
 
 namespace e2d::json_utils

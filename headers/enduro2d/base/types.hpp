@@ -13,8 +13,6 @@
 #include <flat.hpp/flat_multiset.hpp>
 #include <flat.hpp/flat_multimap.hpp>
 
-#include <3rdparty/variant/variant.hpp>
-
 namespace e2d
 {
     using f32 = float;
@@ -99,9 +97,4 @@ namespace e2d
              , typename Compare = std::less<>
              , typename Container = vector<std::pair<Key, Value>> >
     using flat_multimap = flat_hpp::flat_multimap<Key, Value, Compare, Container>;
-}
-
-namespace e2d::stdex
-{
-    using namespace mpark;
 }

@@ -1,0 +1,44 @@
+{
+    "prototype" : "spine_prefab.json",
+    "components" : {
+        "spine_player" : {
+            "spine" : "../spines/raptor_spine.json"
+        },
+        "spine_player_cmd" : {
+            "commands" : [{
+                "type" : "add_anim_cmd",
+                "desc" : {
+                    "track" : 0,
+                    "name" : "walk"
+                }
+            }, {
+                "type" : "add_anim_cmd",
+                "desc" : {
+                    "track" : 0,
+                    "name" : "roar"
+                }
+            }, {
+                "type" : "add_anim_cmd",
+                "desc" : {
+                    "track" : 0,
+                    "name" : "walk",
+                    "loop" : true
+                }
+            }, {
+                "type" : "add_anim_cmd",
+                "desc" : {
+                    "track" : 1,
+                    "name" : "gun-grab",
+                    "delay" : 2
+                }
+            }, {
+                "type" : "add_anim_cmd",
+                "desc" : {
+                    "track" : 1,
+                    "name" : "gun-holster",
+                    "delay" : 3
+                }
+            }]
+        }
+    }
+}

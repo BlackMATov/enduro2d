@@ -127,5 +127,8 @@ TEST_CASE("color32") {
         REQUIRE(colors::pack_color32(color32(0x12,0x34,0x56,0x78)) == 0x78123456);
         REQUIRE(colors::unpack_color32(0x04010203) == color32(1,2,3,4));
         REQUIRE(colors::unpack_color32(0x78123456) == color32(0x12,0x34,0x56,0x78));
+
+        REQUIRE(colors::pack_color32(color32(0x01,0x01,0x01,0x01)) == 0x01010101);
+        REQUIRE(colors::pack_color32(color32(0xFE,0xFE,0xFE,0xFE)) == 0xFEFEFEFE);
     }
 }

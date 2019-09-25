@@ -14,11 +14,13 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/flipbook_player.hpp>
-#include <enduro2d/high/components/flipbook_source.hpp>
 #include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/components/model_renderer.hpp>
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/scene.hpp>
+#include <enduro2d/high/components/spine_player.hpp>
+#include <enduro2d/high/components/spine_player_cmd.hpp>
+#include <enduro2d/high/components/spine_player_evt.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/sprite_9p_renderer.hpp>
 #include <enduro2d/high/components/shape2d.hpp>
@@ -30,6 +32,7 @@
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
 #include <enduro2d/high/systems/render_system.hpp>
+#include <enduro2d/high/systems/spine_systems.hpp>
 #include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
 #include <enduro2d/high/systems/ui_layout_system.hpp>
@@ -62,6 +65,8 @@ namespace
                 .system<ui_style_system>()
                 .system<input_event_system>()
                 .system<shape_projection_system>()
+                .system<spine_pre_system>()
+                .system<spine_post_system>()
                 .listener<flipbook_system, world_ev::update_frame>(&flipbook_system::process)
                 .listener<label_system, world_ev::update_frame>(&label_system::process)
                 .listener<ui_layout_system, world_ev::update_frame>(&ui_layout_system::process)
@@ -72,7 +77,9 @@ namespace
                 .listener<ui_controller_system, world_ev::update_ui_style>(&ui_controller_system::process)
                 .listener<ui_style_system, ecs::before_event_ev<world_ev::update_frame>>(&ui_style_system::before_update)
                 .listener<ui_style_system, ecs::after_event_ev<world_ev::update_ui_style>>(&ui_style_system::process)
-                .listener<render_system, world_ev::render_frame>(&render_system::process);
+                .listener<render_system, world_ev::render_frame>(&render_system::process)
+                .listener<spine_pre_system, world_ev::update_frame>(&spine_pre_system::process)
+                .listener<spine_post_system, ecs::after_event_ev<world_ev::update_frame>>(&spine_post_system::process);
             return !application_ || application_->initialize();
         }
 
@@ -156,12 +163,14 @@ namespace e2d
             .register_component<actor>("actor")
             .register_component<camera>("camera")
             .register_component<flipbook_player>("flipbook_player")
-            .register_component<flipbook_source>("flipbook_source")
             .register_component<label>("label")
             .register_component<label::dirty>("label.dirty")
             .register_component<model_renderer>("model_renderer")
             .register_component<renderer>("renderer")
             .register_component<scene>("scene")
+            .register_component<spine_player>("spine_player")
+            .register_component<spine_player_cmd>("spine_player_cmd")
+            .register_component<spine_player_evt>("spine_player_evt")
             .register_component<sprite_renderer>("sprite_renderer")
             .register_component<sprite_9p_renderer>("sprite_9p_renderer")
             .register_component<ui_layout::root_tag>("ui_layout.root_tag")

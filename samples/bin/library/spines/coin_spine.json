@@ -1,0 +1,5 @@
+{
+    "atlas" : "coin/coin.atlas",
+    "skeleton" : "coin/coin-pro.skel",
+    "skeleton_scale" : 1.0
+}

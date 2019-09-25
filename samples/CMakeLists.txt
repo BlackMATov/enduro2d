@@ -36,6 +36,7 @@ add_e2d_sample(02)
 add_e2d_sample(03)
 add_e2d_sample(04)
 add_e2d_sample(05)
+add_e2d_sample(06)
 add_e2d_sample(09)
 add_e2d_sample(10)
 

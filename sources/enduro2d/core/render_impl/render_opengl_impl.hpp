@@ -43,7 +43,7 @@ namespace e2d
     void shader::internal_state::with_uniform_location(str_hash name, F&& f) const {
         const auto iter = uniforms_.find(name);
         if ( iter != uniforms_.end() ) {
-            stdex::invoke(std::forward<F>(f), iter->second);
+            std::invoke(std::forward<F>(f), iter->second);
         }
     }
 
@@ -51,7 +51,7 @@ namespace e2d
     void shader::internal_state::with_attribute_location(str_hash name, F&& f) const {
         const auto iter = attributes_.find(name);
         if ( iter != attributes_.end() ) {
-            stdex::invoke(std::forward<F>(f), iter->second);
+            std::invoke(std::forward<F>(f), iter->second);
         }
     }
 
@@ -178,10 +178,10 @@ namespace e2d
     public:
         internal_state& reset_states() noexcept;
         internal_state& set_states(const state_block& sb) noexcept;
-        
+
         internal_state& reset_shader_program() noexcept;
         internal_state& set_shader_program(const shader_ptr& sp) noexcept;
-        
+
         internal_state& reset_render_target() noexcept;
         internal_state& set_render_target(const render_target_ptr& rt) noexcept;
     private:

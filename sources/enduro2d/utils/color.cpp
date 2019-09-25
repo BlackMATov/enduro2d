@@ -271,11 +271,11 @@ namespace e2d::math
     //
 
     f32 minimum(const color& c) noexcept {
-        return math::min(math::min(math::min(c.r, c.g), c.b), c.a);
+        return math::min(c.r, c.g, c.b, c.a);
     }
 
     f32 maximum(const color& c) noexcept {
-        return math::max(math::max(math::max(c.r, c.g), c.b), c.a);
+        return math::max(c.r, c.g, c.b, c.a);
     }
 
     //
@@ -322,17 +322,17 @@ namespace e2d::colors
 {
     u32 pack_color(const color& c) noexcept {
         return
-            math::numeric_cast<u32>(math::round(math::saturate(c.a) * 255.f)) << 24 |
-            math::numeric_cast<u32>(math::round(math::saturate(c.r) * 255.f)) << 16 |
-            math::numeric_cast<u32>(math::round(math::saturate(c.g) * 255.f)) <<  8 |
-            math::numeric_cast<u32>(math::round(math::saturate(c.b) * 255.f)) <<  0;
+            static_cast<u32>(math::saturate(c.a) * 255.f + 0.5f) << 24 |
+            static_cast<u32>(math::saturate(c.r) * 255.f + 0.5f) << 16 |
+            static_cast<u32>(math::saturate(c.g) * 255.f + 0.5f) <<  8 |
+            static_cast<u32>(math::saturate(c.b) * 255.f + 0.5f) <<  0;
     }
 
     color unpack_color(u32 argb) noexcept {
         return color(
-            math::numeric_cast<u8>((argb >> 16) & 0xFF) / 255.f,
-            math::numeric_cast<u8>((argb >>  8) & 0xFF) / 255.f,
-            math::numeric_cast<u8>((argb >>  0) & 0xFF) / 255.f,
-            math::numeric_cast<u8>((argb >> 24) & 0xFF) / 255.f);
+            static_cast<u8>((argb >> 16) & 0xFF) / 255.f,
+            static_cast<u8>((argb >>  8) & 0xFF) / 255.f,
+            static_cast<u8>((argb >>  0) & 0xFF) / 255.f,
+            static_cast<u8>((argb >> 24) & 0xFF) / 255.f);
     }
 }

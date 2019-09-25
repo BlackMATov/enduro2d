@@ -18,7 +18,8 @@ namespace e2d
             "looped" : { "type" : "boolean" },
             "stopped" : { "type" : "boolean" },
             "playing" : { "type" : "boolean" },
-            "sequence" : { "$ref": "#/common_definitions/name" }
+            "sequence" : { "$ref": "#/common_definitions/name" },
+            "flipbook" : { "$ref": "#/common_definitions/address" }
         }
     })json";
 
@@ -27,7 +28,7 @@ namespace e2d
         const fill_context& ctx) const
     {
         if ( ctx.root.HasMember("time") ) {
-            auto time = component.time();
+            f32 time = component.time();
             if ( !json_utils::try_parse_value(ctx.root["time"], time) ) {
                 the<debug>().error("FLIPBOOK_PLAYER: Incorrect formatting of 'time' property");
                 return false;
@@ -36,7 +37,7 @@ namespace e2d
         }
 
         if ( ctx.root.HasMember("speed") ) {
-            auto speed = component.speed();
+            f32 speed = component.speed();
             if ( !json_utils::try_parse_value(ctx.root["speed"], speed) ) {
                 the<debug>().error("FLIPBOOK_PLAYER: Incorrect formatting of 'speed' property");
                 return false;
@@ -45,7 +46,7 @@ namespace e2d
         }
 
         if ( ctx.root.HasMember("looped") ) {
-            auto looped = component.looped();
+            bool looped = component.looped();
             if ( !json_utils::try_parse_value(ctx.root["looped"], looped) ) {
                 the<debug>().error("FLIPBOOK_PLAYER: Incorrect formatting of 'looped' property");
                 return false;
@@ -54,7 +55,7 @@ namespace e2d
         }
 
         if ( ctx.root.HasMember("stopped") ) {
-            auto stopped = component.stopped();
+            bool stopped = component.stopped();
             if ( !json_utils::try_parse_value(ctx.root["stopped"], stopped) ) {
                 the<debug>().error("FLIPBOOK_PLAYER: Incorrect formatting of 'stopped' property");
                 return false;
@@ -63,7 +64,7 @@ namespace e2d
         }
 
         if ( ctx.root.HasMember("playing") ) {
-            auto playing = component.playing();
+            bool playing = component.playing();
             if ( !json_utils::try_parse_value(ctx.root["playing"], playing) ) {
                 the<debug>().error("FLIPBOOK_PLAYER: Incorrect formatting of 'playing' property");
                 return false;
@@ -72,12 +73,26 @@ namespace e2d
         }
 
         if ( ctx.root.HasMember("sequence") ) {
-            auto sequence = component.sequence();
+            str_hash sequence = component.sequence();
             if ( !json_utils::try_parse_value(ctx.root["sequence"], sequence) ) {
                 the<debug>().error("FLIPBOOK_PLAYER: Incorrect formatting of 'sequence' property");
                 return false;
             }
             component.sequence(sequence);
+        }
+
+        if ( ctx.root.HasMember("flipbook") ) {
+            auto flipbook = ctx.dependencies.find_asset<flipbook_asset>(
+                path::combine(ctx.parent_address, ctx.root["flipbook"].GetString()));
+            if ( !flipbook ) {
+                the<debug>().error("FLIPBOOK_PLAYER: Dependency 'flipbook' is not found:\n"
+                    "--> Parent address: %0\n"
+                    "--> Dependency address: %1",
+                    ctx.parent_address,
+                    ctx.root["flipbook"].GetString());
+                return false;
+            }
+            component.flipbook(flipbook);
         }
 
         return true;
@@ -87,7 +102,11 @@ namespace e2d
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
-        E2D_UNUSED(dependencies, ctx);
+        if ( ctx.root.HasMember("flipbook") ) {
+            dependencies.add_dependency<flipbook_asset>(
+                path::combine(ctx.parent_address, ctx.root["flipbook"].GetString()));
+        }
+
         return true;
     }
 }
