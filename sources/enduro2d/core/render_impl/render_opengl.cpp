@@ -67,7 +67,6 @@ namespace
                 #version 410 core
                 #define texture2D texture
                 #define varying in
-                layout(location=0) out vec4 gl_FragColor; 
             )glsl";
         default:
             E2D_ASSERT_MSG(false, "unexpected render API profile");
