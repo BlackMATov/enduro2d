@@ -15,4 +15,6 @@ namespace e2d::world_ev
 
     struct input_event_raycast {};
     struct input_event_post_update {};
+
+    struct update_ui_style {};
 }

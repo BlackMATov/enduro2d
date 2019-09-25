@@ -175,6 +175,7 @@ namespace e2d
             }
         }
         owner.add_event(world_ev::input_event_post_update());
+        owner.add_event(world_ev::update_ui_style());
     }
     
     void input_event_system::raycast(ecs::registry& owner) {

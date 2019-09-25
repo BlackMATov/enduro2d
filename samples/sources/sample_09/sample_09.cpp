@@ -125,7 +125,7 @@ namespace
     
     class button_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override {
+        void operator()(ecs::registry& owner, world_ev::update_ui_style) {
             flat_map<ecs::entity_id, ui_style_state> changed;
 
             // process touch down event
@@ -216,7 +216,11 @@ namespace
 
     class ui_style_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override {
+        void operator()(ecs::registry& owner, ecs::before_event_ev<world_ev::update_frame>) {
+            owner.remove_all_components<ui_style::style_changed_tag>();
+        }
+
+        void operator()(ecs::registry& owner, ecs::after_event_ev<world_ev::update_ui_style>) {
             owner.for_joined_components<ui_style::style_changed_tag, ui_style, button_color_style_ref, sprite_renderer>(
             [](const ecs::const_entity&,
                ui_style::style_changed_tag,
@@ -260,13 +264,12 @@ namespace
                 }
                 ecs::entity(owner, id).assign_component<label::dirty>();
             });
-            owner.remove_all_components<ui_style::style_changed_tag>();
         }
     };
 
     class game_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override {
+        void operator()(ecs::registry& owner, world_ev::update_frame) {
             E2D_UNUSED(owner);
             const keyboard& k = the<input>().keyboard();
 
@@ -286,7 +289,7 @@ namespace
 
     class camera_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override {
+        void operator()(ecs::registry& owner, ecs::before_event_ev<world_ev::update_frame>) {
             owner.for_each_component<camera>(
             [](const ecs::const_entity&, camera& cam){
                 if ( !cam.target() ) {
@@ -393,7 +396,7 @@ namespace
                     .component<sprite_renderer>(button_res)
                     .component<touchable>(false)
                     .component<rectangle_shape>(b2f(
-                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().position,
                         button_res->content().texrect().size))
                     .component<ui_style>(ui_style()
                         .propagate_all())
@@ -433,7 +436,7 @@ namespace
                     .component<sprite_renderer>(button_res)
                     .component<touchable>(true)
                     .component<rectangle_shape>(b2f(
-                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().position,
                         button_res->content().texrect().size))
                     .component<ui_style>()
                     .component<button>(button()
@@ -454,7 +457,7 @@ namespace
                     .component<sprite_renderer>(button_res)
                     .component<touchable>(true)
                     .component<rectangle_shape>(b2f(
-                        button_res->content().texrect().position - button_res->content().pivot(),
+                        button_res->content().texrect().position,
                         button_res->content().texrect().size))
                     .component<ui_style>()
                     .component<button>(button())
@@ -473,8 +476,7 @@ namespace
                     .component<sprite_renderer>(button_res)
                     .component<touchable>(true)
                     .component<circle_shape>(
-                        (button_res->content().texrect().position - button_res->content().pivot() +
-                         button_res->content().texrect().size * 0.5f),
+                        (button_res->content().texrect().position + button_res->content().texrect().size * 0.5f),
                         math::max(button_res->content().texrect().size.x, button_res->content().texrect().size.y) * 0.5f)
                     .component<ui_style>()
                     .component<button>(button())
@@ -505,10 +507,15 @@ namespace
 
         bool create_systems() {
             ecs::registry_filler(the<world>().registry())
-                .system<game_system>(world::priority_update)
-                .system<button_system>(world::priority_update)
-                .system<ui_style_system>(world::priority_update + 100)
-                .system<camera_system>(world::priority_pre_render);
+                .system<game_system>()
+                .system<button_system>()
+                .system<ui_style_system>()
+                .system<camera_system>()
+                .listener<game_system, world_ev::update_frame>()
+                .listener<camera_system, ecs::before_event_ev<world_ev::update_frame>>()
+                .listener<button_system, world_ev::update_ui_style>()
+                .listener<ui_style_system, ecs::before_event_ev<world_ev::update_frame>>()
+                .listener<ui_style_system, ecs::after_event_ev<world_ev::update_ui_style>>();
             return true;
         }
     };
