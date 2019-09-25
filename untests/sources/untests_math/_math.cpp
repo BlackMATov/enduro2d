@@ -462,17 +462,58 @@ TEST_CASE("math") {
         REQUIRE(math::approximately(math::round(-0.6f), -1.f));
     }
     {
+        REQUIRE(math::min(1) == 1);
+
         REQUIRE(math::min(1,1) == 1);
         REQUIRE(math::min(1,2) == 1);
         REQUIRE(math::min(2,1) == 1);
+
+        REQUIRE(math::min(1,1,1) == 1);
+        REQUIRE(math::min(2,1,1) == 1);
+        REQUIRE(math::min(1,2,1) == 1);
+        REQUIRE(math::min(1,1,2) == 1);
+        REQUIRE(math::min(2,3,4) == 2);
+        REQUIRE(math::min(2,4,3) == 2);
+
+        REQUIRE(math::min(2,3,4,5) == 2);
+        REQUIRE(math::min(2,4,3,5) == 2);
+        REQUIRE(math::min(5,3,4,2) == 2);
+        REQUIRE(math::min(5,4,3,2) == 2);
+    }
+    {
+
+        REQUIRE(math::max(1) == 1);
 
         REQUIRE(math::max(1,1) == 1);
         REQUIRE(math::max(1,2) == 2);
         REQUIRE(math::max(2,1) == 2);
 
+        REQUIRE(math::max(1,1,1) == 1);
+        REQUIRE(math::max(2,1,1) == 2);
+        REQUIRE(math::max(1,2,1) == 2);
+        REQUIRE(math::max(1,1,2) == 2);
+        REQUIRE(math::max(2,3,4) == 4);
+
+        REQUIRE(math::max(2,3,4,5) == 5);
+        REQUIRE(math::max(2,4,3,5) == 5);
+        REQUIRE(math::max(5,3,4,2) == 5);
+        REQUIRE(math::max(5,4,3,2) == 5);
+    }
+    {
+        REQUIRE(math::minmax(1) == std::make_pair(1,1));
+
         REQUIRE(math::minmax(1,2) == std::make_pair(1,2));
         REQUIRE(math::minmax(2,1) == std::make_pair(1,2));
 
+        REQUIRE(math::minmax(1,2,3) == std::make_pair(1,3));
+        REQUIRE(math::minmax(3,2,1) == std::make_pair(1,3));
+
+        REQUIRE(math::minmax(1,2,3,4) == std::make_pair(1,4));
+        REQUIRE(math::minmax(1,3,2,4) == std::make_pair(1,4));
+        REQUIRE(math::minmax(4,2,3,1) == std::make_pair(1,4));
+        REQUIRE(math::minmax(4,3,2,1) == std::make_pair(1,4));
+    }
+    {
         REQUIRE(math::clamp(2,1,3) == 2);
         REQUIRE(math::clamp(3,1,3) == 3);
         REQUIRE(math::clamp(4,1,3) == 3);

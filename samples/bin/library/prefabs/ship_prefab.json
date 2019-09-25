@@ -1,0 +1,8 @@
+{
+    "prototype" : "sprite_prefab.json",
+    "components" : {
+        "sprite_renderer" : {
+            "sprite" : "../sprites/ship_sprite.json"
+        }
+    }
+}

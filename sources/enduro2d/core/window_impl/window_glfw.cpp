@@ -322,7 +322,7 @@ namespace e2d
             std::lock_guard<std::recursive_mutex> guard(rmutex);
             for ( const event_listener_uptr& listener : listeners ) {
                 if ( listener ) {
-                    stdex::invoke(f, *listener.get(), args...);
+                    std::invoke(f, *listener.get(), args...);
                 }
             }
         }

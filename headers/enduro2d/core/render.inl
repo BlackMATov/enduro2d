@@ -150,7 +150,7 @@ namespace e2d
     const T* render::property_block::property(str_hash name) const noexcept {
         const property_value* prop = properties_.find(name);
         return prop
-            ? stdex::get_if<T>(prop)
+            ? std::get_if<T>(prop)
             : nullptr;
     }
 

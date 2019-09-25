@@ -98,7 +98,7 @@ namespace e2d
             const auto resolved_url = resolve_url(url);
             const auto scheme_iter = schemes.find(resolved_url.scheme());
             return (scheme_iter != schemes.cend() && scheme_iter->second)
-                ? stdex::invoke(
+                ? std::invoke(
                     std::forward<F>(f),
                     scheme_iter->second,
                     resolved_url.path())

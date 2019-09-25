@@ -7,7 +7,6 @@
 #include <enduro2d/high/systems/flipbook_system.hpp>
 
 #include <enduro2d/high/components/flipbook_player.hpp>
-#include <enduro2d/high/components/flipbook_source.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
 
 namespace
@@ -15,15 +14,14 @@ namespace
     using namespace e2d;
 
     void update_flipbook_timers(f32 dt, ecs::registry& owner) {
-        owner.for_joined_components<flipbook_player, flipbook_source>([dt](
+        owner.for_joined_components<flipbook_player>([dt](
             const ecs::const_entity&,
-            flipbook_player& fp,
-            const flipbook_source& fs)
+            flipbook_player& fp)
         {
             if ( fp.speed() <= 0.f || fp.stopped() ) {
                 return;
             }
-            const flipbook_asset::ptr& flipbook_res = fs.flipbook();
+            const flipbook_asset::ptr& flipbook_res = fp.flipbook();
             if ( !flipbook_res ) {
                 return;
             }
@@ -47,13 +45,12 @@ namespace
     }
 
     void update_flipbook_sprites(ecs::registry& owner) {
-        owner.for_joined_components<flipbook_player, flipbook_source, sprite_renderer>([](
+        owner.for_joined_components<flipbook_player, sprite_renderer>([](
             const ecs::const_entity&,
             const flipbook_player& fp,
-            const flipbook_source& fs,
             sprite_renderer& sr)
         {
-            const flipbook_asset::ptr& flipbook_res = fs.flipbook();
+            const flipbook_asset::ptr& flipbook_res = fp.flipbook();
             if ( !flipbook_res ) {
                 sr.sprite(nullptr);
                 return;

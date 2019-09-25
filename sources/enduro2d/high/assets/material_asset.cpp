@@ -544,7 +544,7 @@ namespace
             } else if ( wrap_json.IsString() ) {
                 auto wrap = content.s_wrap();
                 if ( parse_sampler_wrap(wrap_json.GetString(), wrap) ) {
-                    content.wrap(wrap);
+                    content.wrap(wrap, wrap);
                 } else {
                     E2D_ASSERT_MSG(false, "unexpected sampler wrap");
                 }

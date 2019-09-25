@@ -13,11 +13,13 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/flipbook_player.hpp>
-#include <enduro2d/high/components/flipbook_source.hpp>
 #include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/components/model_renderer.hpp>
 #include <enduro2d/high/components/renderer.hpp>
 #include <enduro2d/high/components/scene.hpp>
+#include <enduro2d/high/components/spine_player.hpp>
+#include <enduro2d/high/components/spine_player_cmd.hpp>
+#include <enduro2d/high/components/spine_player_evt.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/shape2d.hpp>
 #include <enduro2d/high/components/touchable.hpp>
@@ -26,6 +28,7 @@
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
 #include <enduro2d/high/systems/render_system.hpp>
+#include <enduro2d/high/systems/spine_systems.hpp>
 #include <enduro2d/high/systems/screenspace_raycast_system.hpp>
 #include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
@@ -51,6 +54,8 @@ namespace
             ecs::registry_filler(the<world>().registry())
                 .system<flipbook_system>(world::priority_update)
                 .system<label_system>(world::priority_update)
+                .system<spine_pre_system>(world::priority_pre_update)
+                .system<spine_post_system>(world::priority_post_update)
                 .system<render_system>(world::priority_render)
                 .system<input_event_system_pre_update>(world::priority_pre_update)
                 .system<shape_projection_system>(world::priority_pre_update + 1)
@@ -144,12 +149,15 @@ namespace e2d
             .register_component<actor>("actor")
             .register_component<camera>("camera")
             .register_component<flipbook_player>("flipbook_player")
-            .register_component<flipbook_source>("flipbook_source")
             .register_component<label>("label")
             .register_component<label::dirty>("label.dirty")
             .register_component<model_renderer>("model_renderer")
             .register_component<renderer>("renderer")
             .register_component<scene>("scene")
+            .register_component<spine_player>("spine_player")
+            .register_component<spine_player_cmd>("spine_player_cmd")
+            .register_component<spine_player_evt>("spine_player_evt")
+            .register_component<sprite_renderer>("sprite_renderer");
             .register_component<sprite_renderer>("sprite_renderer")
             .register_component<ui_layout::root_tag>("ui_layout.root_tag")
             .register_component<ui_layout::shape2d_update_size_tag>("ui_layout.shape2d_update_size_tag")

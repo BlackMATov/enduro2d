@@ -72,11 +72,11 @@ namespace
         }
     private:
         bool create_scene() {
-            auto model_res = the<library>().load_asset<model_asset>("gnome_model.json");
-            auto model_mat = the<library>().load_asset<material_asset>("gnome_material.json");
-            auto sprite_res = the<library>().load_asset<sprite_asset>("ship_sprite.json");
-            auto sprite_mat = the<library>().load_asset<material_asset>("sprite_material.json");
-            auto flipbook_res = the<library>().load_asset<flipbook_asset>("cube_flipbook.json");
+            auto model_res = the<library>().load_asset<model_asset>("models/gnome/gnome_model.json");
+            auto model_mat = the<library>().load_asset<material_asset>("models/gnome/gnome_material.json");
+            auto sprite_res = the<library>().load_asset<sprite_asset>("sprites/ship_sprite.json");
+            auto sprite_mat = the<library>().load_asset<material_asset>("materials/sprite_material_normal.json");
+            auto flipbook_res = the<library>().load_asset<flipbook_asset>("sprites/cube_flipbook.json");
 
             if ( !model_res || !model_mat || !sprite_res || !sprite_mat || !flipbook_res ) {
                 return false;
@@ -111,9 +111,9 @@ namespace
                 sprite_i->entity_filler()
                     .component<rotator>(rotator{v3f::unit_z()})
                     .component<actor>(node::create(sprite_i, scene_r))
-                    .component<renderer>(renderer()
-                        .materials({sprite_mat}))
-                    .component<sprite_renderer>(sprite_res);
+                    .component<renderer>()
+                    .component<sprite_renderer>(sprite_renderer(sprite_res)
+                        .materials({{"normal", sprite_mat}}));
 
                 node_iptr sprite_n = sprite_i->get_component<actor>().get().node();
                 sprite_n->translation(v3f{0,-50.f,0});
@@ -126,12 +126,11 @@ namespace
 
                     flipbook_i->entity_filler()
                         .component<actor>(node::create(flipbook_i, scene_r))
-                        .component<renderer>(renderer()
-                            .materials({sprite_mat}))
+                        .component<renderer>()
                         .component<sprite_renderer>(sprite_renderer()
-                            .filtering(false))
-                        .component<flipbook_source>(flipbook_res)
-                        .component<flipbook_player>(flipbook_player()
+                            .filtering(false)
+                            .materials({{"normal", sprite_mat}}))
+                        .component<flipbook_player>(flipbook_player(flipbook_res)
                             .play("idle")
                             .looped(true));
 

@@ -215,7 +215,8 @@ namespace
             f32 kerning{0.f};
         };
 
-        vector<glyph_desc> glyphs;
+        static vector<glyph_desc> glyphs;
+        glyphs.clear();
         glyphs.reserve(text.size());
 
         for ( std::size_t i = 0, e = text.size(); i < e; ++i ) {
@@ -251,7 +252,8 @@ namespace
             : start(start) {}
         };
 
-        vector<string_desc> strings;
+        static vector<string_desc> strings;
+        strings.clear();
         strings.reserve(calculate_string_count(text));
 
         f32 last_space_width = 0.f;

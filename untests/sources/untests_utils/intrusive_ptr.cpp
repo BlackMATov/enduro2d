@@ -231,7 +231,7 @@ TEST_CASE("intrusive_ptr") {
         REQUIRE(obj_t::dtor_counter == 4u);
     }
     {
-        std::make_unique<obj_t>(10);
+        E2D_UNUSED(std::make_unique<obj_t>(10));
         intrusive_ptr<const obj_t> p1(new derived2_t());
         intrusive_ptr<const derived2_t> p2 = static_pointer_cast<const derived2_t>(p1);
         REQUIRE(p2->i == 21);

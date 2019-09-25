@@ -1,0 +1,15 @@
+{
+    "components" : {
+        "renderer" : {},
+        "spine_player" : {
+            "materials" : {
+                "additive" : "../materials/spine_material_additive.json",
+                "multiply" : "../materials/spine_material_multiply.json",
+                "normal" : "../materials/spine_material_normal.json",
+                "screen" : "../materials/spine_material_screen.json"
+            }
+        },
+        "spine_player_cmd" : {},
+        "spine_player_evt" : {}
+    }
+}

@@ -392,7 +392,7 @@ namespace e2d::opengl
         GL_CHECK_CODE(debug, glUseProgram(
             program));
         try {
-            stdex::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
             GL_CHECK_CODE(debug, glUseProgram(
                 math::numeric_cast<GLuint>(prev_program)));
@@ -419,7 +419,7 @@ namespace e2d::opengl
         GL_CHECK_CODE(debug, glBindBuffer(
             target, buffer));
         try {
-            stdex::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
             GL_CHECK_CODE(debug, glBindBuffer(
                 target, math::numeric_cast<GLuint>(prev_buffer)));
@@ -446,7 +446,7 @@ namespace e2d::opengl
         GL_CHECK_CODE(debug, glBindTexture(
             target, texture));
         try {
-            stdex::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
             GL_CHECK_CODE(debug, glBindTexture(
                 target, math::numeric_cast<GLuint>(prev_texture)));
@@ -473,7 +473,7 @@ namespace e2d::opengl
         GL_CHECK_CODE(debug, glBindFramebuffer(
             target, framebuffer));
         try {
-            stdex::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
             GL_CHECK_CODE(debug, glBindFramebuffer(
                 target, math::numeric_cast<GLuint>(prev_framebuffer)));
@@ -500,7 +500,7 @@ namespace e2d::opengl
         GL_CHECK_CODE(debug, glBindRenderbuffer(
             target, renderbuffer));
         try {
-            stdex::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
             GL_CHECK_CODE(debug, glBindRenderbuffer(
                 target, math::numeric_cast<GLuint>(prev_renderbuffer)));

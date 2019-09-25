@@ -16,6 +16,7 @@ namespace e2d
     class flipbook_player final {
     public:
         flipbook_player() = default;
+        flipbook_player(const flipbook_asset::ptr& flipbook);
 
         // data access
 
@@ -37,6 +38,9 @@ namespace e2d
         flipbook_player& sequence(str_hash value) noexcept;
         str_hash sequence() const noexcept;
 
+        flipbook_player& flipbook(const flipbook_asset::ptr& value) noexcept;
+        const flipbook_asset::ptr& flipbook() const noexcept;
+
         // helpers
 
         flipbook_player& stop(f32 ntime) noexcept;
@@ -50,6 +54,7 @@ namespace e2d
         bool looped_{false};
         bool playing_{false};
         str_hash sequence_;
+        flipbook_asset::ptr flipbook_;
     };
 
     template <>
@@ -69,6 +74,9 @@ namespace e2d
 
 namespace e2d
 {
+    inline flipbook_player::flipbook_player(const flipbook_asset::ptr& flipbook)
+    : flipbook_(flipbook) {}
+
     inline flipbook_player& flipbook_player::time(f32 value) noexcept {
         time_ = value;
         return *this;
@@ -121,6 +129,15 @@ namespace e2d
 
     inline str_hash flipbook_player::sequence() const noexcept {
         return sequence_;
+    }
+
+    inline flipbook_player& flipbook_player::flipbook(const flipbook_asset::ptr& value) noexcept {
+        flipbook_ = value;
+        return *this;
+    }
+
+    inline const flipbook_asset::ptr& flipbook_player::flipbook() const noexcept {
+        return flipbook_;
     }
 
     inline flipbook_player& flipbook_player::stop(f32 ntime) noexcept {

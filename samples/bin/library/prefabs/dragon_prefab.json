@@ -1,0 +1,18 @@
+{
+    "prototype" : "spine_prefab.json",
+    "components" : {
+        "spine_player" : {
+            "spine" : "../spines/dragon_spine.json"
+        },
+        "spine_player_cmd" : {
+            "commands" : [{
+                "type" : "set_anim_cmd",
+                "desc" : {
+                    "track" : 0,
+                    "name" : "flying",
+                    "loop" : true
+                }
+            }]
+        }
+    }
+}

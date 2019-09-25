@@ -52,7 +52,7 @@ namespace
         }
     private:
         bool create_scene() {
-            auto scene_prefab_res = the<library>().load_asset<prefab_asset>("scene_prefab.json");
+            auto scene_prefab_res = the<library>().load_asset<prefab_asset>("scenes/scene_prefab.json");
             auto scene_go = scene_prefab_res
                 ? the<world>().instantiate(scene_prefab_res->content())
                 : nullptr;
