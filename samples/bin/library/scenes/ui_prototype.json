@@ -1,0 +1,65 @@
+{
+    "components" : {
+        "scene" : {},
+        "actor" : {},
+        "ui_layout.root_tag" : {}
+    },
+    "children" : [{
+        "prototype" : "../prefabs/sprite_prefab.json",
+        "components" : {
+            "actor" : {},
+            "anchor_layout" : {
+                "left_bottom" : {
+                    "position" : [0,0],
+                    "offset" : [0.35, 0.4],
+                    "relative_offset" : true
+                },
+                "right_top" : {
+                    "position" : [1,1],
+                    "offset" : [-0.35, -0.4],
+                    "relative_offset" : true
+                }
+            },
+            "anchor_layout.dirty" : {},
+            "sprite_renderer" : {
+                "sprite" : "../sprites/rect_sprite.json"
+            },
+            "ui_button" : {},
+            "ui_style" : {
+                "propagate" : "disabled, mouse_over, touched"
+            },
+            "ui_style.style_changed_tag" : {},
+            "ui_color_style_comp" : {
+                "address" : "../styles/color_style_1.json"
+            },
+            "rectangle_shape" : {},
+            "ui_layout.shape2d_update_size_tag" : {},
+            "touchable" : {
+                "stop_propagation" : true
+            }
+        },
+        "children" : [{    
+            "prototype" : "../prefabs/label_sdf_prefab.json",
+            "components" : {
+                "actor" : {},
+                "label_autoscale_layout" : {
+                    "min_scale" : 0.5,
+                    "max_scale" : 1.0
+                },
+                "label_autoscale_layout.dirty" : {},
+                "label" : {
+                    "text" : "button",
+                    "halign" : "center",
+                    "valign" : "center",
+                    "outline_width" : 0.5,
+                    "outline_color" : [0,0,0,255]
+                },
+                "ui_style" : {},
+                "ui_style.style_changed_tag" : {},
+                "ui_color_style_comp" : {
+                    "address" : "../styles/color_style_2.json"
+                }
+            }
+        }]
+    }]
+}

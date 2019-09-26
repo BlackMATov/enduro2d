@@ -45,7 +45,7 @@ namespace e2d
 
         ui_style& propagate(type flag, bool value) noexcept;
         ui_style& propagate_all() noexcept;
-        ui_style& propagate(bits flags) noexcept;
+        ui_style& propagate(ui_style_state flags) noexcept;
 
         bool propagate(type flag) const noexcept;
         ui_style_state propagate() const noexcept;
@@ -185,8 +185,8 @@ namespace e2d
         return *this;
     }
         
-    inline ui_style& ui_style::propagate(bits flags) noexcept {
-        propagate_bits_.flags = flags;
+    inline ui_style& ui_style::propagate(ui_style_state flags) noexcept {
+        propagate_bits_ = flags;
         return *this;
     }
 

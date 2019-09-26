@@ -92,7 +92,7 @@ namespace
     
     void update_auto_layout2(
         ecs::entity& e,
-        const b2f& parent_rect,
+        const b2f&,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
@@ -156,7 +156,7 @@ namespace
     
     void update_stack_layout2(
         ecs::entity& e,
-        const b2f& parent_rect,
+        const b2f&,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
@@ -345,7 +345,7 @@ namespace
 
     void update_label_layout(
         ecs::entity& e,
-        const b2f& parent_rect,
+        const b2f&,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>&)
     {
@@ -359,9 +359,32 @@ namespace
         }
     }
     
-    void update_margin_layout2(
+    void update_label_autoscale_layout(
         ecs::entity& e,
         const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>&)
+    {
+        auto& lbl = e.get_component<label>();
+        auto& layout = e.get_component<label_autoscale_layout>();
+        const b2f local = project_to_local(node, parent_rect);
+
+        f32 scale = math::minimum(local.size / lbl.preferred_size());
+        scale = math::clamp(scale, layout.min_scale(), layout.max_scale());
+
+        const v2f old_size = node->size();
+
+        node->size(local.size / scale);
+        node->scale(v3f(scale));
+
+        if ( !math::approximately(old_size, node->size(), 0.01f) ) {
+            e.assign_component<label::dirty>();
+        }
+    }
+
+    void update_margin_layout2(
+        ecs::entity& e,
+        const b2f&,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
@@ -449,6 +472,10 @@ namespace
 
         node->translation(v3f(lb, node->translation().z));
         node->size(math::maximized(rt - lb, v2f(0.0f)));
+
+        for ( auto& c : childs ) {
+            c.parent_rect = b2f(node->size());
+        }
     }
 }
 
@@ -609,7 +636,7 @@ namespace
         owner.remove_all_components<auto_layout::dirty>();
         
         owner.for_joined_components<stack_layout::dirty, stack_layout>(
-        [](ecs::entity e, stack_layout::dirty, const stack_layout& sl) {
+        [](ecs::entity e, stack_layout::dirty, const stack_layout&) {
             auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_stack_layout);
             layout.depends_on_childs(true);
@@ -638,12 +665,19 @@ namespace
         owner.remove_all_components<image_layout::dirty>();
         
         owner.for_joined_components<label_layout::dirty, label_layout, label>(
-        [](ecs::entity e, label_layout::dirty, label_layout& lbl_layout, const label&) {
+        [](ecs::entity e, label_layout::dirty, const label_layout&, const label&) {
             auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_label_layout);
-            layout.depends_on_parent(true);
         });
         owner.remove_all_components<label_layout::dirty>();
+        
+        owner.for_joined_components<label_autoscale_layout::dirty, label_autoscale_layout, label>(
+        [](ecs::entity e, label_autoscale_layout::dirty, const label_autoscale_layout&, const label&) {
+            auto& layout = e.assign_component<ui_layout>();
+            layout.update_fn(&update_label_autoscale_layout);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<label_autoscale_layout::dirty>();
 
         owner.for_joined_components<margin_layout::dirty, margin_layout>(
         [](ecs::entity e, margin_layout::dirty, const margin_layout&) {

@@ -365,6 +365,53 @@ namespace e2d
 
 namespace e2d
 {
+    class label_autoscale_layout final {
+    public:
+        class dirty final {};
+    public:
+        label_autoscale_layout() = default;
+
+        label_autoscale_layout& max_scale(f32 value) noexcept;
+        label_autoscale_layout& min_scale(f32 value) noexcept;
+
+        f32 max_scale() const noexcept;
+        f32 min_scale() const noexcept;
+    private:
+        f32 max_scale_ = 1.0f;
+        f32 min_scale_ = 1.0f;
+    };
+    
+    template <>
+    class factory_loader<label_autoscale_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            label_autoscale_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+
+    template <>
+    class factory_loader<label_autoscale_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            label_autoscale_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}
+
+namespace e2d
+{
     class margin_layout final {
     public:
         class dirty final {};

@@ -20,7 +20,7 @@ namespace
     void process_buttons(ecs::registry& owner, changed_states& changed) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_button, ui_style>(
-        [&changed](ecs::entity_id id, const touch_up_event&, const ui_button& btn, ui_style& style) {
+        [&changed](ecs::entity_id id, const touch_up_event&, const ui_button&, ui_style& style) {
             changed[id].set(ui_style_state::touched);
             style.set(ui_style_state::touched, false);
         });
@@ -29,7 +29,7 @@ namespace
     void process_selectable(ecs::registry& owner, changed_states& changed) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_selectable, ui_style>(
-        [&changed](ecs::entity_id id, const touch_up_event&, const ui_selectable& btn, ui_style& style) {
+        [&changed](ecs::entity_id id, const touch_up_event&, const ui_selectable&, ui_style& style) {
             changed[id].set(ui_style_state::touched)
                 .set(ui_style_state::selected);
             style.set(ui_style_state::touched, false);
@@ -40,7 +40,7 @@ namespace
     void process_draggable(ecs::registry& owner, changed_states& changed) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_draggable, ui_style>(
-        [&changed](ecs::entity_id id, const touch_up_event&, const ui_draggable& btn, ui_style& style) {
+        [&changed](ecs::entity_id id, const touch_up_event&, const ui_draggable&, ui_style& style) {
             changed[id].set(ui_style_state::dragging)
                 .set(ui_style_state::touched);
             style.set(ui_style_state::dragging, false);
@@ -49,7 +49,7 @@ namespace
         
         // process touch move events
         owner.for_joined_components<touch_move_event, ui_draggable, ui_style, actor>(
-        [&changed](ecs::entity_id id, const touch_move_event& ev, const ui_draggable& btn, ui_style& style, actor& act) {
+        [&changed](ecs::entity_id id, const touch_move_event& ev, const ui_draggable&, ui_style& style, actor& act) {
             if ( !style[ui_style_state::dragging] ) {
                 style.set(ui_style_state::dragging, true);
                 changed[id].set(ui_style_state::dragging);

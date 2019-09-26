@@ -568,6 +568,81 @@ namespace e2d
 
 namespace e2d
 {
+    label_autoscale_layout& label_autoscale_layout::max_scale(f32 value) noexcept {
+        max_scale_ = value;
+        return *this;
+    }
+
+    label_autoscale_layout& label_autoscale_layout::min_scale(f32 value) noexcept {
+        min_scale_ = value;
+        return *this;
+    }
+
+    f32 label_autoscale_layout::max_scale() const noexcept {
+        return max_scale_;
+    }
+
+    f32 label_autoscale_layout::min_scale() const noexcept {
+        return min_scale_;
+    }
+
+    const char* factory_loader<label_autoscale_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {
+            "max_scale" : { "type" : "number" },
+            "min_scale" : { "type" : "number" }
+        }
+    })json";
+
+    bool factory_loader<label_autoscale_layout>::operator()(
+        label_autoscale_layout& component,
+        const fill_context& ctx) const
+    {
+        if ( ctx.root.HasMember("max_scale") ) {
+            component.max_scale(ctx.root["max_scale"].GetFloat());
+        }
+        if ( ctx.root.HasMember("min_scale") ) {
+            component.min_scale(ctx.root["min_scale"].GetFloat());
+        }
+        return true;
+    }
+
+    bool factory_loader<label_autoscale_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+
+    const char* factory_loader<label_autoscale_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<label_autoscale_layout::dirty>::operator()(
+        label_autoscale_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<label_autoscale_layout::dirty>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
+
+namespace e2d
+{
     margin_layout::margin_layout(f32 margin)
     : left_(margin)
     , bottom_(margin)

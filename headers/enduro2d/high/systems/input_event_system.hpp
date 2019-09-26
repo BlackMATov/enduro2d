@@ -12,12 +12,13 @@ namespace e2d
 {
     class input_event_system final : public ecs::system {
     public:
+        input_event_system();
+        ~input_event_system();
         void pre_update(ecs::registry& owner);
         void raycast(ecs::registry& owner);
         void post_update(ecs::registry& owner);
     private:
-        v2f mouse_delta_;
-        v2f last_cursor_pos_ {-1.0e10f};
-        u32 frame_id_ = 0;
+        class internal_state;
+        std::unique_ptr<internal_state> state_;
     };
 }

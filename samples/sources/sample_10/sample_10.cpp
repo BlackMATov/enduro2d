@@ -53,7 +53,7 @@ namespace
         }
     private:
         bool create_scene() {
-            auto scene_prefab_res = the<library>().load_asset<prefab_asset>("scenes/ui_layouts_prefab.json");
+            auto scene_prefab_res = the<library>().load_asset<prefab_asset>("scenes/ui_prototype.json");
             auto scene_go = scene_prefab_res
                 ? the<world>().instantiate(scene_prefab_res->content())
                 : nullptr;

@@ -52,7 +52,6 @@ namespace
     }
 
     stdex::promise<ui_color_style> parse_ui_color_style(
-        const library& library,
         const rapidjson::Value& root)
     {
         ui_color_style style;
@@ -152,9 +151,8 @@ namespace e2d
 
                 throw ui_color_style_asset_loading_exception();
             })
-            .then([&library, ui_color_style_data](){
-                return parse_ui_color_style(
-                    library, *ui_color_style_data->content());
+            .then([ui_color_style_data](){
+                return parse_ui_color_style(*ui_color_style_data->content());
             })
             .then([](auto&& content){
                 return ui_color_style_asset::create(

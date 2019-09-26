@@ -86,7 +86,25 @@ namespace
 
 namespace e2d
 {
-    void input_event_system::pre_update(ecs::registry& owner) {
+    //
+    // internal_state
+    //
+
+    class input_event_system::internal_state final {
+    public:
+        internal_state() = default;
+        ~internal_state() noexcept = default;
+        
+        void pre_update(ecs::registry& owner);
+        void raycast(ecs::registry& owner);
+        void post_update(ecs::registry& owner);
+    private:
+        v2f mouse_delta_;
+        v2f last_cursor_pos_ {-1.0e10f};
+        u32 frame_id_ = 0;
+    };
+
+    void input_event_system::internal_state::pre_update(ecs::registry& owner) {
         owner.remove_all_components<input_event>();
         owner.remove_all_components<touch_down_event>();
         owner.remove_all_components<touch_up_event>();
@@ -178,7 +196,7 @@ namespace e2d
         owner.add_event(world_ev::update_ui_style());
     }
     
-    void input_event_system::raycast(ecs::registry& owner) {
+    void input_event_system::internal_state::raycast(ecs::registry& owner) {
         owner.for_joined_components<input_event, camera::input_handler_tag, camera>(
         [&owner](const ecs::const_entity&, const input_event& input_ev, camera::input_handler_tag, const camera&) {
             if ( input_ev.data()->type != input_event::event_type::mouse_move &&
@@ -193,7 +211,7 @@ namespace e2d
         });
     }
 
-    void input_event_system::post_update(ecs::registry& owner) {
+    void input_event_system::internal_state::post_update(ecs::registry& owner) {
         const auto add_mouse_leave_events = [this, &owner](const input_event::data_ptr& ev_data) {
             owner.for_each_component<mouse_over_tag>(
             [&owner, ev_data, fid = frame_id_](ecs::entity e, const mouse_over_tag& tag) {
@@ -294,5 +312,26 @@ namespace e2d
         if ( ev_data->type == input_event_type::mouse_move ) {
             add_mouse_leave_events(ev_data);
         }
+    }
+    
+    //
+    // input_event_system
+    //
+
+    input_event_system::input_event_system()
+    : state_(std::make_unique<internal_state>()) {}
+
+    input_event_system::~input_event_system() = default;
+
+    void input_event_system::pre_update(ecs::registry& owner) {
+        state_->pre_update(owner);
+    }
+
+    void input_event_system::raycast(ecs::registry& owner) {
+        state_->raycast(owner);
+    }
+
+    void input_event_system::post_update(ecs::registry& owner) {
+        state_->post_update(owner);
     }
 }

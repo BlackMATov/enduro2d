@@ -8,6 +8,7 @@
 #include <enduro2d/high/components/ui_style.hpp>
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/sprite_9p_renderer.hpp>
+#include <enduro2d/high/components/label.hpp>
 
 namespace
 {
@@ -33,6 +34,43 @@ namespace
         }
         return style.idle();
     }
+
+    void update_sprite_color_style(ecs::registry& owner) {
+        owner.for_joined_components<ui_style::style_changed_tag, ui_style, ui_color_style_comp, sprite_renderer>(
+        [](const ecs::const_entity&,
+            ui_style::style_changed_tag,
+            const ui_style& state,
+            const ui_color_style_comp& color_style,
+            sprite_renderer& spr)
+        {
+            spr.tint(get_current_color(state, color_style.style()->content()));
+        });
+    }
+
+    void update_9patch_color_style(ecs::registry& owner) {
+        owner.for_joined_components<ui_style::style_changed_tag, ui_style, ui_color_style_comp, sprite_9p_renderer>(
+        [](const ecs::const_entity&,
+            ui_style::style_changed_tag,
+            const ui_style& state,
+            const ui_color_style_comp& color_style,
+            sprite_9p_renderer& spr)
+        {
+            spr.tint(get_current_color(state, color_style.style()->content()));
+        });
+    }
+
+    void update_label_color_style(ecs::registry& owner) {
+        owner.for_joined_components<ui_style::style_changed_tag, ui_style, ui_color_style_comp, label>(
+        [](ecs::entity e,
+            ui_style::style_changed_tag,
+            const ui_style& state,
+            const ui_color_style_comp& color_style,
+            label& lbl)
+        {
+            lbl.tint(get_current_color(state, color_style.style()->content()));
+            e.assign_component<label::dirty>();
+        });
+    }
 }
 
 namespace e2d
@@ -46,14 +84,8 @@ namespace e2d
     }
 
     void ui_style_system::process(ecs::registry& owner) {
-        owner.for_joined_components<ui_style::style_changed_tag, ui_style, ui_color_style_comp, sprite_renderer>(
-        [](const ecs::const_entity&,
-            ui_style::style_changed_tag,
-            const ui_style& state,
-            const ui_color_style_comp& color_style,
-            sprite_renderer& spr)
-        {
-            spr.tint(get_current_color(state, color_style.style()->content()));
-        });
+        update_sprite_color_style(owner);
+        update_9patch_color_style(owner);
+        update_label_color_style(owner);
     }
 }

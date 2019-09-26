@@ -21,23 +21,33 @@ namespace
         return false;
     }
 
-    bool parse_style_bits(str_view str, ui_style::bits& r) noexcept {
+    bool parse_style_bits(str_view str, ui_style::ui_style_state& r) noexcept {
+        if ( str == "all" ) {
+            r.set_all();
+            return true;
+        }
         size_t begin = 0;
-        for ( size_t i = 0; i < str.length(); ++i ) {
+        size_t i = 0;
+        ui_style::type t;
+        for (; i < str.length(); ++i ) {
             const char c = str[i];
             if ( c == ',' || c == '|' || c == ' ' || c == '\t' ) {
-                if ( i == begin+1 ) {
-                    begin = i;
+                if ( i == begin ) {
+                    begin = i+1;
                     continue;
                 }
-
-                ui_style::type t;
-                if ( !parse_bit_name(str.substr(), t) ) {
+                if ( !parse_bit_name(str.substr(begin, i-begin), t) ) {
                     return false;
                 }
                 r.set(t);
-                begin = i;
+                begin = i+1;
             }
+        }
+        if ( begin < str.length() ) {
+            if ( !parse_bit_name(str.substr(begin), t) ) {
+                return false;
+            }
+            r.set(t);
         }
         return true;
     }
@@ -59,7 +69,7 @@ namespace e2d
         const fill_context& ctx) const
     {
         if ( ctx.root.HasMember("propagate") ) {
-            ui_style::bits propagate;
+            ui_style::ui_style_state propagate;
             if ( !parse_style_bits(ctx.root["propagate"].GetString(), propagate) ) {
                 the<debug>().error("UI_STYLE: Incorrect formatting of 'propagate' property");
                 return false;
@@ -108,10 +118,10 @@ namespace e2d
 {
     const char* factory_loader<ui_color_style_comp>::schema_source = R"json({
         "type" : "object",
-        "required" : [ "style" ],
+        "required" : [ "address" ],
         "additionalProperties" : false,
         "properties" : {
-            "style" : { "$ref": "#/common_definitions/address" }
+            "address" : { "$ref": "#/common_definitions/address" }
         }
     })json";
 
@@ -119,15 +129,15 @@ namespace e2d
         ui_color_style_comp& component,
         const fill_context& ctx) const
     {
-        if ( ctx.root.HasMember("style") ) {
+        if ( ctx.root.HasMember("address") ) {
             auto style = ctx.dependencies.find_asset<ui_color_style_asset>(
-                path::combine(ctx.parent_address, ctx.root["style"].GetString()));
+                path::combine(ctx.parent_address, ctx.root["address"].GetString()));
             if ( !style ) {
-                the<debug>().error("UI_COLOR_STYLE_COMP: Dependency 'style' is not found:\n"
+                the<debug>().error("UI_COLOR_STYLE_COMP: Dependency 'address' is not found:\n"
                     "--> Parent address: %0\n"
                     "--> Dependency address: %1",
                     ctx.parent_address,
-                    ctx.root["style"].GetString());
+                    ctx.root["address"].GetString());
                 return false;
             }
             component.style(style);
@@ -140,9 +150,9 @@ namespace e2d
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {
-        if ( ctx.root.HasMember("style") ) {
+        if ( ctx.root.HasMember("address") ) {
             dependencies.add_dependency<ui_color_style_asset>(
-                path::combine(ctx.parent_address, ctx.root["style"].GetString()));
+                path::combine(ctx.parent_address, ctx.root["address"].GetString()));
         }
         return true;
     }
