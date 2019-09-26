@@ -60,18 +60,44 @@ namespace e2d
 
 namespace e2d
 {
+    ui_draggable& ui_draggable::lock_x(bool value) noexcept {
+        lock_x_ = value;
+        return *this;
+    }
+
+    ui_draggable& ui_draggable::lock_y(bool value) noexcept {
+        lock_y_ = value;
+        return *this;
+    }
+
+    bool ui_draggable::lock_x() const noexcept {
+        return lock_x_;
+    }
+
+    bool ui_draggable::lock_y() const noexcept {
+        return lock_y_;
+    }
+
     const char* factory_loader<ui_draggable>::schema_source = R"json({
         "type" : "object",
         "required" : [],
         "additionalProperties" : false,
-        "properties" : {}
+        "properties" : {
+            "lock_x" : { "type" : "boolean" },
+            "lock_y" : { "type" : "boolean" }
+        }
     })json";
 
     bool factory_loader<ui_draggable>::operator()(
         ui_draggable& component,
         const fill_context& ctx) const
     {
-        E2D_UNUSED(component, ctx);
+        if ( ctx.root.HasMember("lock_x") ) {
+            component.lock_x(ctx.root["lock_x"].GetBool());
+        }
+        if ( ctx.root.HasMember("lock_y") ) {
+            component.lock_y(ctx.root["lock_y"].GetBool());
+        }
         return true;
     }
 

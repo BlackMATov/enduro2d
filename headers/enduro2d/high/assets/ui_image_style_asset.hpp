@@ -12,9 +12,15 @@
 
 namespace e2d
 {
-    class ui_image_style_asset final : public content_asset<ui_image_style_asset, ui_image_style> {
+    class ui_sprite_style_asset final : public content_asset<ui_sprite_style_asset, ui_sprite_style> {
     public:
-        static const char* type_name() noexcept { return "ui_image_style_asset"; }
+        static const char* type_name() noexcept { return "ui_sprite_style_asset"; }
+        static load_async_result load_async(const library& library, str_view address);
+    };
+    
+    class ui_sprite_9p_style_asset final : public content_asset<ui_sprite_9p_style_asset, ui_sprite_9p_style> {
+    public:
+        static const char* type_name() noexcept { return "ui_sprite_9p_style_asset"; }
         static load_async_result load_async(const library& library, str_view address);
     };
 }

@@ -16,7 +16,8 @@ namespace
     
     using ui_style_state = ui_style::ui_style_state::type;
 
-    color32 get_current_color(const ui_style& state, const ui_color_style& style) noexcept {
+    template < typename T >
+    auto get_current_style(const ui_style& state, const T& style) noexcept {
         if ( state[ui_style_state::selected] ) {
             return style.selected();
         }
@@ -43,7 +44,7 @@ namespace
             const ui_color_style_comp& color_style,
             sprite_renderer& spr)
         {
-            spr.tint(get_current_color(state, color_style.style()->content()));
+            spr.tint(get_current_style(state, color_style.style()->content()));
         });
     }
 
@@ -55,7 +56,7 @@ namespace
             const ui_color_style_comp& color_style,
             sprite_9p_renderer& spr)
         {
-            spr.tint(get_current_color(state, color_style.style()->content()));
+            spr.tint(get_current_style(state, color_style.style()->content()));
         });
     }
 
@@ -67,8 +68,48 @@ namespace
             const ui_color_style_comp& color_style,
             label& lbl)
         {
-            lbl.tint(get_current_color(state, color_style.style()->content()));
+            lbl.tint(get_current_style(state, color_style.style()->content()));
             e.assign_component<label::dirty>();
+        });
+    }
+
+    void update_label_font_style(ecs::registry& owner) {
+        owner.for_joined_components<ui_style::style_changed_tag, ui_style, ui_font_style_comp, label>(
+        [](ecs::entity e,
+            ui_style::style_changed_tag,
+            const ui_style& state,
+            const ui_font_style_comp& font_style,
+            label& lbl)
+        {
+            auto style = get_current_style(state, font_style.style()->content());
+            lbl.tint(style.tint);
+            lbl.outline_color(style.outline_color);
+            lbl.outline_width(style.outline_width);
+            e.assign_component<label::dirty>();
+        });
+    }
+
+    void update_sprite_style(ecs::registry& owner) {
+        owner.for_joined_components<ui_style::style_changed_tag, ui_style, ui_sprite_style_comp, sprite_renderer>(
+        [](const ecs::const_entity&,
+            ui_style::style_changed_tag,
+            const ui_style& state,
+            const ui_sprite_style_comp& sprite_style,
+            sprite_renderer& spr)
+        {
+            spr.sprite(get_current_style(state, sprite_style.style()->content()));
+        });
+    }
+    
+    void update_sprite_9p_style(ecs::registry& owner) {
+        owner.for_joined_components<ui_style::style_changed_tag, ui_style, ui_sprite_9p_style_comp, sprite_9p_renderer>(
+        [](const ecs::const_entity&,
+            ui_style::style_changed_tag,
+            const ui_style& state,
+            const ui_sprite_9p_style_comp& sprite_style,
+            sprite_9p_renderer& spr)
+        {
+            spr.sprite(get_current_style(state, sprite_style.style()->content()));
         });
     }
 }
@@ -87,5 +128,8 @@ namespace e2d
         update_sprite_color_style(owner);
         update_9patch_color_style(owner);
         update_label_color_style(owner);
+        update_label_font_style(owner);
+        update_sprite_style(owner);
+        update_sprite_9p_style(owner);
     }
 }

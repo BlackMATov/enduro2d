@@ -116,6 +116,15 @@ namespace e2d
 
 namespace e2d
 {
+    ui_color_style_comp& ui_color_style_comp::style(const ui_color_style_asset::ptr& value) noexcept {
+        style_ = value;
+        return *this;
+    }
+
+    const ui_color_style_asset::ptr& ui_color_style_comp::style() const noexcept {
+        return style_;
+    }
+
     const char* factory_loader<ui_color_style_comp>::schema_source = R"json({
         "type" : "object",
         "required" : [ "address" ],
@@ -152,6 +161,165 @@ namespace e2d
     {
         if ( ctx.root.HasMember("address") ) {
             dependencies.add_dependency<ui_color_style_asset>(
+                path::combine(ctx.parent_address, ctx.root["address"].GetString()));
+        }
+        return true;
+    }
+}
+
+namespace e2d
+{
+    ui_sprite_style_comp& ui_sprite_style_comp::style(const ui_sprite_style_asset::ptr& value) noexcept {
+        style_ = value;
+        return *this;
+    }
+
+    const ui_sprite_style_asset::ptr& ui_sprite_style_comp::style() const noexcept {
+        return style_;
+    }
+
+    const char* factory_loader<ui_sprite_style_comp>::schema_source = R"json({
+        "type" : "object",
+        "required" : [ "address" ],
+        "additionalProperties" : false,
+        "properties" : {
+            "address" : { "$ref": "#/common_definitions/address" }
+        }
+    })json";
+
+    bool factory_loader<ui_sprite_style_comp>::operator()(
+        ui_sprite_style_comp& component,
+        const fill_context& ctx) const
+    {
+        if ( ctx.root.HasMember("address") ) {
+            auto style = ctx.dependencies.find_asset<ui_sprite_style_asset>(
+                path::combine(ctx.parent_address, ctx.root["address"].GetString()));
+            if ( !style ) {
+                the<debug>().error("UI_SPRITE_STYLE_COMP: Dependency 'address' is not found:\n"
+                    "--> Parent address: %0\n"
+                    "--> Dependency address: %1",
+                    ctx.parent_address,
+                    ctx.root["address"].GetString());
+                return false;
+            }
+            component.style(style);
+        }
+
+        return true;
+    }
+
+    bool factory_loader<ui_sprite_style_comp>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        if ( ctx.root.HasMember("address") ) {
+            dependencies.add_dependency<ui_sprite_style_asset>(
+                path::combine(ctx.parent_address, ctx.root["address"].GetString()));
+        }
+        return true;
+    }
+}
+
+namespace e2d
+{
+    ui_sprite_9p_style_comp& ui_sprite_9p_style_comp::style(const ui_sprite_9p_style_asset::ptr& value) noexcept {
+        style_ = value;
+        return *this;
+    }
+
+    const ui_sprite_9p_style_asset::ptr& ui_sprite_9p_style_comp::style() const noexcept {
+        return style_;
+    }
+
+    const char* factory_loader<ui_sprite_9p_style_comp>::schema_source = R"json({
+        "type" : "object",
+        "required" : [ "address" ],
+        "additionalProperties" : false,
+        "properties" : {
+            "address" : { "$ref": "#/common_definitions/address" }
+        }
+    })json";
+
+    bool factory_loader<ui_sprite_9p_style_comp>::operator()(
+        ui_sprite_9p_style_comp& component,
+        const fill_context& ctx) const
+    {
+        if ( ctx.root.HasMember("address") ) {
+            auto style = ctx.dependencies.find_asset<ui_sprite_9p_style_asset>(
+                path::combine(ctx.parent_address, ctx.root["address"].GetString()));
+            if ( !style ) {
+                the<debug>().error("UI_SPRITE_9P_STYLE_COMP: Dependency 'address' is not found:\n"
+                    "--> Parent address: %0\n"
+                    "--> Dependency address: %1",
+                    ctx.parent_address,
+                    ctx.root["address"].GetString());
+                return false;
+            }
+            component.style(style);
+        }
+
+        return true;
+    }
+
+    bool factory_loader<ui_sprite_9p_style_comp>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        if ( ctx.root.HasMember("address") ) {
+            dependencies.add_dependency<ui_sprite_9p_style_asset>(
+                path::combine(ctx.parent_address, ctx.root["address"].GetString()));
+        }
+        return true;
+    }
+}
+
+namespace e2d
+{
+    ui_font_style_comp& ui_font_style_comp::style(const ui_font_style_asset::ptr& value) noexcept {
+        style_ = value;
+        return *this;
+    }
+
+    const ui_font_style_asset::ptr& ui_font_style_comp::style() const noexcept {
+        return style_;
+    }
+
+    const char* factory_loader<ui_font_style_comp>::schema_source = R"json({
+        "type" : "object",
+        "required" : [ "address" ],
+        "additionalProperties" : false,
+        "properties" : {
+            "address" : { "$ref": "#/common_definitions/address" }
+        }
+    })json";
+
+    bool factory_loader<ui_font_style_comp>::operator()(
+        ui_font_style_comp& component,
+        const fill_context& ctx) const
+    {
+        if ( ctx.root.HasMember("address") ) {
+            auto style = ctx.dependencies.find_asset<ui_font_style_asset>(
+                path::combine(ctx.parent_address, ctx.root["address"].GetString()));
+            if ( !style ) {
+                the<debug>().error("UI_FONT_STYLE_COMP: Dependency 'address' is not found:\n"
+                    "--> Parent address: %0\n"
+                    "--> Dependency address: %1",
+                    ctx.parent_address,
+                    ctx.root["address"].GetString());
+                return false;
+            }
+            component.style(style);
+        }
+
+        return true;
+    }
+
+    bool factory_loader<ui_font_style_comp>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        if ( ctx.root.HasMember("address") ) {
+            dependencies.add_dependency<ui_font_style_asset>(
                 path::combine(ctx.parent_address, ctx.root["address"].GetString()));
         }
         return true;

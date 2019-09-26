@@ -1,0 +1,5 @@
+{
+    "disabled" : "../sprites/rect_sprite.json",
+    "idle" : "../sprites/cube_0_sprite.json",
+    "touched" : "../sprites/cube_1_sprite.json"
+}

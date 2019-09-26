@@ -117,16 +117,50 @@ namespace e2d
 
 namespace e2d
 {
-    class ui_image_style_comp final {
+    class ui_sprite_style_comp final {
+    public:
+        ui_sprite_style_comp() = default;
+
+        ui_sprite_style_comp& style(const ui_sprite_style_asset::ptr& value) noexcept;
+        const ui_sprite_style_asset::ptr& style() const noexcept;
+    private:
+        ui_sprite_style_asset::ptr style_;
     };
     
     template <>
-    class factory_loader<ui_image_style_comp> final : factory_loader<> {
+    class factory_loader<ui_sprite_style_comp> final : factory_loader<> {
     public:
         static const char* schema_source;
 
         bool operator()(
-            ui_image_style_comp& component,
+            ui_sprite_style_comp& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}
+
+namespace e2d
+{
+    class ui_sprite_9p_style_comp final {
+    public:
+        ui_sprite_9p_style_comp() = default;
+
+        ui_sprite_9p_style_comp& style(const ui_sprite_9p_style_asset::ptr& value) noexcept;
+        const ui_sprite_9p_style_asset::ptr& style() const noexcept;
+    private:
+        ui_sprite_9p_style_asset::ptr style_;
+    };
+    
+    template <>
+    class factory_loader<ui_sprite_9p_style_comp> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            ui_sprite_9p_style_comp& component,
             const fill_context& ctx) const;
             
         bool operator()(
@@ -138,6 +172,13 @@ namespace e2d
 namespace e2d
 {
     class ui_font_style_comp final {
+    public:
+        ui_font_style_comp() = default;
+
+        ui_font_style_comp& style(const ui_font_style_asset::ptr& value) noexcept;
+        const ui_font_style_asset::ptr& style() const noexcept;
+    private:
+        ui_font_style_asset::ptr style_;
     };
     
     template <>
@@ -209,17 +250,5 @@ namespace e2d
         
     inline ui_style::ui_style_state ui_style::current() const noexcept {
         return bits_;
-    }
-}
-
-namespace e2d
-{
-    inline ui_color_style_comp& ui_color_style_comp::style(const ui_color_style_asset::ptr& value) noexcept {
-        style_ = value;
-        return *this;
-    }
-
-    inline const ui_color_style_asset::ptr& ui_color_style_comp::style() const noexcept {
-        return style_;
     }
 }

@@ -51,9 +51,7 @@ namespace
         return *schema;
     }
 
-    stdex::promise<ui_color_style> parse_ui_color_style(
-        const rapidjson::Value& root)
-    {
+    stdex::promise<ui_color_style> parse_ui_color_style(const rapidjson::Value& root) {
         ui_color_style style;
         color32 color;
 

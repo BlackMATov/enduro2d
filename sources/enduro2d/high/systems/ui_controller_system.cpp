@@ -49,7 +49,7 @@ namespace
         
         // process touch move events
         owner.for_joined_components<touch_move_event, ui_draggable, ui_style, actor>(
-        [&changed](ecs::entity_id id, const touch_move_event& ev, const ui_draggable&, ui_style& style, actor& act) {
+        [&changed](ecs::entity_id id, const touch_move_event& ev, const ui_draggable& drg, ui_style& style, actor& act) {
             if ( !style[ui_style_state::dragging] ) {
                 style.set(ui_style_state::dragging, true);
                 changed[id].set(ui_style_state::dragging);
@@ -57,8 +57,9 @@ namespace
             auto m_model = act.node()->world_matrix();
             auto mvp_inv = math::inversed(m_model * ev.data->view_proj, 0.0f).first;
             const f32 z = 0.0f;
+            v2f pos_delta = ev.data->delta * v2f(drg.lock_x() ? 0.f : 1.f, drg.lock_y() ? 0.f : 1.f);
             v3f new_point = math::unproject(v3f(ev.data->center, z), mvp_inv, ev.data->viewport);
-            v3f old_point = math::unproject(v3f(ev.data->center + ev.data->delta, z), mvp_inv, ev.data->viewport);
+            v3f old_point = math::unproject(v3f(ev.data->center + pos_delta, z), mvp_inv, ev.data->viewport);
             v3f delta = (old_point - new_point) * act.node()->scale();
             act.node()->translation(act.node()->translation() + delta);
         });
