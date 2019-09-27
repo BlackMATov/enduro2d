@@ -38,7 +38,7 @@
                 "stop_propagation" : true
             }
         },
-        "children" : [{    
+        "children" : [{
             "prototype" : "../prefabs/label_sdf_prefab.json",
             "components" : {
                 "actor" : {},
@@ -60,32 +60,53 @@
             }
         }]
     }, {
-        "prototype" : "../prefabs/sprite_prefab.json",
         "components" : {
             "actor" : {
-                "translation" : [300, 200, 0]
+                "translation" : [200, 200, 0]
             },
             "fixed_layout" : {
-                "size" : [200, 200]
+                "size" : [400, 200]
             },
-            "fixed_layout.dirty" : {},
-            "sprite_renderer" : {
-                "sprite" : "../sprites/rect_sprite.json"
-            },
-            "ui_draggable" : {},
-            "ui_style" : {
-                "propagate" : "all"
-            },
-            "ui_style.style_changed_tag" : {},
-            "ui_color_style_comp" : {
-                "address" : "../styles/color_style_3.json"
-            },
-            "rectangle_shape" : {},
-            "ui_layout.shape2d_update_size_tag" : {},
-            "touchable" : {
-                "stop_propagation" : true
-            }
-        }
+            "fixed_layout.dirty" : {}
+        }, 
+        "children" : [{
+            "prototype" : "../prefabs/sprite_prefab.json",
+            "components" : {
+                "actor" : {},
+                "bounded_layout" : {},
+                "bounded_layout.dirty" : {},
+                "sprite_renderer" : {
+                    "sprite" : "../sprites/rect_sprite.json",
+                    "tint" : [255, 255, 255, 255]
+                }
+            }, 
+            "children" : [{
+                "prototype" : "../prefabs/sprite_prefab.json",
+                "components" : {
+                    "actor" : {},
+                    "fixed_layout" : {
+                        "size" : [100, 100]
+                    },
+                    "fixed_layout.dirty" : {},
+                    "sprite_renderer" : {
+                        "sprite" : "../sprites/rect_sprite.json"
+                    },
+                    "ui_draggable" : {},
+                    "ui_style" : {
+                        "propagate" : "all"
+                    },
+                    "ui_style.style_changed_tag" : {},
+                    "ui_color_style_comp" : {
+                        "address" : "../styles/color_style_3.json"
+                    },
+                    "rectangle_shape" : {},
+                    "ui_layout.shape2d_update_size_tag" : {},
+                    "touchable" : {
+                        "stop_propagation" : true
+                    }
+                }
+            }]
+        }]
     }, {
         "prototype" : "../prefabs/sprite_prefab.json",
         "components" : {

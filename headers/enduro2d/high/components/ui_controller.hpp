@@ -58,15 +58,6 @@ namespace e2d
     class ui_draggable final {
     public:
         ui_draggable() = default;
-
-        ui_draggable& lock_x(bool value) noexcept;
-        ui_draggable& lock_y(bool value) noexcept;
-
-        bool lock_x() const noexcept;
-        bool lock_y() const noexcept;
-    private:
-        bool lock_x_ = false;
-        bool lock_y_ = false;
     };
 
     template <>

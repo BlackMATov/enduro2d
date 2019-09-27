@@ -568,3 +568,41 @@ namespace e2d
             const collect_context& ctx) const;
     };
 }
+
+namespace e2d
+{
+    class bounded_layout final {
+    public:
+        class dirty final {};
+    public:
+        bounded_layout() = default;
+    };
+    
+    template <>
+    class factory_loader<bounded_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            bounded_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+
+    template <>
+    class factory_loader<bounded_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            bounded_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}

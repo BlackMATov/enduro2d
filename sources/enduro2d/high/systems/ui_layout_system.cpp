@@ -477,6 +477,53 @@ namespace
             c.parent_rect = b2f(node->size());
         }
     }
+    
+    void update_bounded_layout2(
+        ecs::entity&,
+        const b2f&,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        for ( auto& c : childs ) {
+            b2f r = project_to_parent(c.node, b2f(c.node->size())) + v2f(c.node->translation());
+
+            r.position = math::maximized(r.position, v2f(0.0f));
+            r.position = math::minimized(r.position + r.size, node->size()) - r.size;
+
+            c.node->translation(v3f(r.position, c.node->translation().z));
+        }
+    }
+
+    void update_bounded_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        b2f local = project_to_local(node, parent_rect);
+        node->size(local.size);
+
+        bool post_update = false;
+        for ( auto& c : childs ) {
+            c.parent_rect = b2f(node->size());
+            post_update |= c.depends_on_childs;
+        }
+
+        if ( post_update ) {
+            auto& layout = e.get_component<ui_layout>();
+            childs.push_back({
+                e.id(),
+                &update_bounded_layout2,
+                node,
+                parent_rect,
+                true,
+                layout.depends_on_childs(),
+                layout.depends_on_parent()});
+            return;
+        }
+
+        update_bounded_layout2(e, parent_rect, node, childs);
+    }
 }
 
 namespace
@@ -702,6 +749,14 @@ namespace
             layout.depends_on_parent(true);
         });
         owner.remove_all_components<anchor_layout::dirty>();
+        
+        owner.for_joined_components<bounded_layout::dirty, bounded_layout>(
+        [](ecs::entity e, bounded_layout::dirty, const bounded_layout&) {
+            auto& layout = e.assign_component<ui_layout>();
+            layout.update_fn(&update_bounded_layout);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<bounded_layout::dirty>();
     }
 
     void update_shape_size(ecs::registry& owner) {

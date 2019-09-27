@@ -195,6 +195,8 @@ namespace e2d
             .register_component<label_layout::dirty>("label_layout.dirty")
             .register_component<label_autoscale_layout>("label_autoscale_layout")
             .register_component<label_autoscale_layout::dirty>("label_autoscale_layout.dirty")
+            .register_component<bounded_layout>("bounded_layout")
+            .register_component<bounded_layout::dirty>("bounded_layout.dirty")
             .register_component<ui_button>("ui_button")
             .register_component<ui_selectable>("ui_selectable")
             .register_component<ui_draggable>("ui_draggable")
