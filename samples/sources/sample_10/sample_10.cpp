@@ -11,7 +11,7 @@ namespace
 {
     class game_system final : public ecs::system {
     public:
-        void operator()(ecs::registry& owner, world_ev::update_frame) {
+        void process(ecs::registry& owner, ecs::event_ref) override {
             E2D_UNUSED(owner);
             const keyboard& k = the<input>().keyboard();
 
@@ -31,7 +31,7 @@ namespace
 
     class camera_system final : public ecs::system {
     public:
-        void operator()(ecs::registry& owner, ecs::before_event_ev<world_ev::update_frame>) {
+        void process(ecs::registry& owner, ecs::event_ref) override {
             owner.for_each_component<camera>(
             [](const ecs::const_entity&, camera& cam){
                 if ( !cam.target() ) {
@@ -72,10 +72,8 @@ namespace
 
         bool create_systems() {
             ecs::registry_filler(the<world>().registry())
-                .system<game_system>()
-                .system<camera_system>()
-                .listener<camera_system, ecs::before_event_ev<world_ev::update_frame>>()
-                .listener<game_system, world_ev::update_frame>();
+                .system<game_system, world_ev::update>()
+                .system<camera_system, world_ev::pre_update>();
             return true;
         }
     };

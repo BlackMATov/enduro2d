@@ -6,36 +6,34 @@
 
 #pragma once
 
-#include "../_high.hpp"
+#include "../components/ui_style.hpp"
 
 namespace e2d
 {
-    class input_event_system final : public ecs::system {
+    class ui_system final : public ecs::system {
     public:
-        struct pre_update_evt {};
-        struct raycast_evt {};
-        struct post_update_evt {};
+        struct update_controllers_evt {
+            using changed_states = flat_map<ecs::entity_id, ui_style::ui_style_state>;
+            mutable changed_states changed;
+        };
+
+        struct update_layouts_evt {};
     public:
         void add_systems(ecs::registry& owner) const override;
         void process(ecs::registry& owner, ecs::event_ref event) override;
     };
 
-    class input_event_system_pre_update final : public ecs::system {
-    public:
-        input_event_system_pre_update();
-        ~input_event_system_pre_update() noexcept;
-        void process(ecs::registry& owner, ecs::event_ref event) override;
-    private:
-        class internal_state;
-        std::unique_ptr<internal_state> state_;
-    };
-    
-    class input_event_system_raycast final : public ecs::system {
+    class ui_style_system final : public ecs::system {
     public:
         void process(ecs::registry& owner, ecs::event_ref event) override;
     };
     
-    class input_event_system_post_update final : public ecs::system {
+    class ui_layout_system final : public ecs::system {
+    public:
+        void process(ecs::registry& owner, ecs::event_ref event) override;
+    };
+
+    class ui_controller_system final : public ecs::system {
     public:
         void process(ecs::registry& owner, ecs::event_ref event) override;
     };

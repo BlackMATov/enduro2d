@@ -10,11 +10,9 @@
 
 namespace e2d::world_ev
 {
-    struct update_frame {};
+    struct pre_update {};
+    struct update {};
+    struct post_update {};
+
     struct render_frame {};
-
-    struct input_event_raycast {};
-    struct input_event_post_update {};
-
-    struct update_ui_style {};
 }

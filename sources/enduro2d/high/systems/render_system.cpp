@@ -117,7 +117,7 @@ namespace e2d
     : state_(new internal_state()) {}
     render_system::~render_system() noexcept = default;
 
-    void render_system::process(ecs::registry& owner) {
+    void render_system::process(ecs::registry& owner, ecs::event_ref) {
         state_->process(owner);
     }
 }

@@ -4,7 +4,8 @@
  * Copyright (C) 2018-2019, by Matvey Cherevko (blackmatov@gmail.com)
  ******************************************************************************/
 
-#include <enduro2d/high/systems/ui_layout_system.hpp>
+#include <enduro2d/high/systems/ui_system.hpp>
+
 #include <enduro2d/high/components/ui_layout.hpp>
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
@@ -778,11 +779,7 @@ namespace
 
 namespace e2d
 {
-    ui_layout_system::ui_layout_system() = default;
-
-    ui_layout_system::~ui_layout_system() noexcept = default;
-
-    void ui_layout_system::process(ecs::registry& owner) {
+    void ui_layout_system::process(ecs::registry& owner, ecs::event_ref) {
         register_update_fn(owner);
         update_layouts(owner);
         update_shape_size(owner);

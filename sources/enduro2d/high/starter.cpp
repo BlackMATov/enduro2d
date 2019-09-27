@@ -35,9 +35,7 @@
 #include <enduro2d/high/systems/spine_systems.hpp>
 #include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
-#include <enduro2d/high/systems/ui_layout_system.hpp>
-#include <enduro2d/high/systems/ui_controller_system.hpp>
-#include <enduro2d/high/systems/ui_style_system.hpp>
+#include <enduro2d/high/systems/ui_system.hpp>
 
 namespace
 {
@@ -57,29 +55,13 @@ namespace
 
         bool initialize() final {
             ecs::registry_filler(the<world>().registry())
-                .system<flipbook_system>()
-                .system<label_system>()
-                .system<render_system>()
-                .system<ui_layout_system>()
-                .system<ui_controller_system>()
-                .system<ui_style_system>()
-                .system<input_event_system>()
-                .system<shape_projection_system>()
-                .system<spine_pre_system>()
-                .system<spine_post_system>()
-                .listener<world_ev::update_frame>(&flipbook_system::process)
-                .listener<world_ev::update_frame>(&label_system::process)
-                .listener<world_ev::update_frame>(&input_event_system::pre_update)
-                .listener<ecs::before_event_ev<world_ev::input_event_raycast>>(&shape_projection_system::process)
-                .listener<world_ev::input_event_raycast>(&input_event_system::raycast)
-                .listener<world_ev::input_event_post_update>(&input_event_system::post_update)
-                .listener<world_ev::update_ui_style>(&ui_controller_system::process)
-                .listener<ecs::before_event_ev<world_ev::update_frame>>(&ui_style_system::before_update)
-                .listener<world_ev::update_frame>(&ui_layout_system::process)
-                .listener<ecs::after_event_ev<world_ev::update_ui_style>>(&ui_style_system::process)
-                .listener<world_ev::render_frame>(&render_system::process)
-                .listener<world_ev::update_frame>(&spine_pre_system::process)
-                .listener<ecs::before_event_ev<world_ev::update_frame>>(&spine_post_system::process);
+                .system<spine_system, world_ev::update>()
+                .system<ui_system, world_ev::update>()
+                .system<input_event_system, world_ev::update>()
+                .system<spine_pre_system, world_ev::update>()
+                .system<flipbook_system, world_ev::update>()
+                .system<label_system, world_ev::post_update>()
+                .system<render_system, world_ev::render_frame>();
             return !application_ || application_->initialize();
         }
 
@@ -90,7 +72,9 @@ namespace
         }
 
         bool frame_tick() final {
-            the<world>().registry().process_systems(world_ev::update_frame());
+            the<world>().registry().process_systems(world_ev::pre_update());
+            the<world>().registry().process_systems(world_ev::update());
+            the<world>().registry().process_systems(world_ev::post_update());
             return !the<window>().should_close()
                 || (application_ && !application_->on_should_close());
         }

@@ -263,7 +263,7 @@ namespace
 
 namespace e2d
 {
-    void shape_projection_system::process(ecs::registry& owner) {
+    void shape_projection_system::process(ecs::registry& owner, ecs::event_ref) {
         owner.for_joined_components<input_event, camera::input_handler_tag, camera>(
         [&owner, this]
         (ecs::entity_id id, const input_event& input_ev, camera::input_handler_tag, const camera&) {

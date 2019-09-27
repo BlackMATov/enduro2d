@@ -56,7 +56,7 @@ namespace e2d
     : state_(new internal_state()) {}
     spine_pre_system::~spine_pre_system() noexcept = default;
 
-    void spine_pre_system::process(ecs::registry& owner) {
+    void spine_pre_system::process(ecs::registry& owner, ecs::event_ref) {
         state_->process(owner);
     }
 }

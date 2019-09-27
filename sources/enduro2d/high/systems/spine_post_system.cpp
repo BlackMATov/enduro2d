@@ -231,7 +231,7 @@ namespace e2d
         spAnimationState_disposeStatics();
     }
 
-    void spine_post_system::process(ecs::registry& owner) {
+    void spine_post_system::process(ecs::registry& owner, ecs::event_ref) {
         state_->process(owner);
     }
 }

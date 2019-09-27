@@ -4,7 +4,8 @@
  * Copyright (C) 2018-2019, by Matvey Cherevko (blackmatov@gmail.com)
  ******************************************************************************/
 
-#include <enduro2d/high/systems/ui_controller_system.hpp>
+#include <enduro2d/high/systems/ui_system.hpp>
+
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/input_event.hpp>
 #include <enduro2d/high/components/ui_controller.hpp>
@@ -15,7 +16,7 @@ namespace
     using namespace e2d;
 
     using ui_style_state = ui_style::ui_style_state;
-    using changed_states = flat_map<ecs::entity_id, ui_style_state>;
+    using changed_states = ui_system::update_controllers_evt::changed_states;
 
     void process_buttons(ecs::registry& owner, changed_states& changed) {
         // process touch up event
@@ -63,65 +64,12 @@ namespace
             act.node()->translation(act.node()->translation() + delta);
         });
     }
-    
-    bool copy_flags_to(ui_style_state& changed, const ui_style& src, ui_style& dst) noexcept {
-        changed.flags = ui_style::bits(changed.flags.to_ulong() & src.propagate().flags.to_ulong());
-        if ( changed.flags.to_ulong() == 0 ) {
-            return false;
-        }
-        for ( size_t i = 0; i < changed.flags.size(); ++i ) {
-            if ( changed.flags[i] ) {
-                dst.set(ui_style::type(i), src[ui_style::type(i)]);
-            }
-        }
-        return true;
-    }
-
-    bool should_propagate(const ui_style& style, ui_style_state changed) noexcept {
-        return changed.flags.to_ulong() & style.propagate().flags.to_ulong();
-    }
-
-    void propagate_new_style(ecs::registry& owner, const changed_states& changed) {
-        // propagate style flags to childs
-        struct child_visitor {
-            void operator()(const node_iptr& n) const {
-                if ( auto* dst_style = n->owner()->entity().find_component<ui_style>() ) {
-                    n->owner()->entity_filler().component<ui_style::style_changed_tag>();
-                    ui_style_state flags = changed;
-                    if ( copy_flags_to(flags, style, *dst_style) ) {
-                        child_visitor visitor{*dst_style, flags};
-                        n->for_each_child(visitor);
-                    }
-                } else {
-                    child_visitor visitor{style, changed};
-                    n->for_each_child(visitor);
-                }
-            }
-            ui_style const& style;
-            ui_style_state changed;
-        };
-
-        for ( auto&[id, flags] : changed ) {
-            ecs::entity e(owner, id);
-            e.assign_component<ui_style::style_changed_tag>();
-
-            auto[style, act] = e.find_components<ui_style, actor>();
-            if ( style && act && act->node() && should_propagate(*style, flags) ) {
-                child_visitor visitor{*style, flags};
-                act->node()->for_each_child(visitor);
-            }
-        }
-    }
 }
 
 namespace e2d
 {
-    ui_controller_system::ui_controller_system() = default;
-    
-    ui_controller_system::~ui_controller_system() noexcept = default;
-
-    void ui_controller_system::process(ecs::registry& owner) {
-        changed_states changed;
+    void ui_controller_system::process(ecs::registry& owner, ecs::event_ref event) {
+        auto& changed = event.cast<ui_system::update_controllers_evt>().changed;
 
         // process touch down event
         owner.for_joined_components<touch_down_event, ui_style>(
@@ -147,7 +95,5 @@ namespace e2d
         process_buttons(owner, changed);
         process_selectable(owner, changed);
         process_draggable(owner, changed);
-
-        propagate_new_style(owner, changed);
     }
 }

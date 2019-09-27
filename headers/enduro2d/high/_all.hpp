@@ -54,11 +54,9 @@
 #include "systems/label_system.hpp"
 #include "systems/render_system.hpp"
 #include "systems/spine_systems.hpp"
-#include "systems/ui_layout_system.hpp"
+#include "systems/ui_system.hpp"
 #include "systems/shape_projection_system.hpp"
 #include "systems/input_event_system.hpp"
-#include "systems/ui_layout_system.hpp"
-#include "systems/ui_controller_system.hpp"
 
 #include "address.hpp"
 #include "asset.hpp"
