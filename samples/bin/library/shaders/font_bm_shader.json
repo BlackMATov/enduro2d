@@ -1,4 +1,21 @@
 {
-    "vertex" : "font_bm_shader.vert",
-    "fragment" : "font_bm_shader.frag"
+	"attributes" : [
+		{ "name": "a_vertex", "index": 0, "type": "v3f" },
+		{ "name": "a_st0",    "index": 1, "type": "v2f" },
+		{ "name": "a_color0", "index": 2, "type": "v4f" }
+	],
+	"samplers" : [
+		{ "name": "u_texture", "unit": 0, "scope": "material" }
+	],
+	"render_pass_block" : "block/pass_1.json",
+    "material_block" : "block/font_material.json",
+    "draw_command_block" : "block/draw_1.json",
+	
+	"opengl" : [
+        {
+            "vertex" : "gles2/font_bm_shader.vert",
+            "fragment" : "gles2/font_bm_shader.frag",
+            "requires" : []
+        }
+    ]
 }

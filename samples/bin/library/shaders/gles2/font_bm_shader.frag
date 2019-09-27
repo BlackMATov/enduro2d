@@ -1,8 +1,9 @@
 uniform sampler2D u_texture;
 
-uniform float u_glyph_dilate;
-uniform float u_outline_width;
-uniform vec4 u_outline_color;
+uniform vec4 cb_material[2];
+#define u_glyph_dilate cb_material[0].x
+#define u_outline_width cb_material[0].y
+#define u_outline_color cb_material[1]
 
 varying vec2 v_st0;
 varying vec4 v_color0;

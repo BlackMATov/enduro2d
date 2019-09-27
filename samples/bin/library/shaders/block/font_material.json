@@ -1,0 +1,7 @@
+{
+	"uniforms" : [
+		{ "name": "u_glyph_dilate", "offset": 0, "type": "f32" },
+		{ "name": "u_outline_width", "offset": 1, "type": "f32" },
+		{ "name": "u_outline_color", "offset": 4, "type": "v4f" }
+	]
+}

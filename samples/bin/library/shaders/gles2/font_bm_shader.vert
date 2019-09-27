@@ -1,5 +1,9 @@
-uniform vec2 u_screen_s;
-uniform mat4 u_matrix_vp;
+uniform vec4 cb_pass[5];
+#define u_matrix_vp mat4(cb_pass[1], cb_pass[2], cb_pass[3], cb_pass[4])
+#define u_screen_s cb_pass[0].xy
+
+uniform vec4 cb_command[4];
+#define u_matrix_m mat4(cb_command[0], cb_command[1], cb_command[2], cb_command[3])
 
 attribute vec3 a_vertex;
 attribute vec2 a_st0;
@@ -7,6 +11,8 @@ attribute vec4 a_color0;
 
 varying vec2 v_st0;
 varying vec4 v_color0;
+
+#define VERTEX_SNAPPING_ON
 
 vec2 round(vec2 v) {
     return vec2(
@@ -22,7 +28,7 @@ vec4 pixel_snap(vec4 pos) {
 }
 
 vec4 vertex_to_homo(vec3 pos) {
-    return vec4(pos, 1.0) * u_matrix_vp;
+    return vec4(pos, 1.0) * u_matrix_m * u_matrix_vp;
 }
 
 void main() {

@@ -1,14 +1,8 @@
 {
-    "passes" : [{
-        "shader" : "../shaders/sprite_shader.json",
-        "state_block" : {
-            "blending_state" : {
-                "src_factor" : "one",
-                "dst_factor" : "one"
-            },
-            "capabilities_state" : {
-                "blending" : true
-            }
-        }
-    }]
+    "shader" : "../shaders/sprite_shader.json",
+    "blending_state" : {
+        "enable" : true,
+        "src_factor" : "one",
+        "dst_factor" : "one"
+    }
 }

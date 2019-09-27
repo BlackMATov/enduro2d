@@ -20,7 +20,7 @@ namespace
         };
     #else
         uniform vec4 cb_pass[4];
-        #define u_matrix_vp mat4(cb_pass[0], cb_pass[1], cb_pass[2], cb_pass[3]);
+        #define u_matrix_vp mat4(cb_pass[0], cb_pass[1], cb_pass[2], cb_pass[3])
     #endif
 
         varying vec4 v_color;
@@ -53,7 +53,7 @@ namespace
         };
     #else
         uniform vec4 cb_pass[4];
-        #define u_matrix_vp mat4(cb_pass[0], cb_pass[1], cb_pass[2], cb_pass[3]);
+        #define u_matrix_vp mat4(cb_pass[0], cb_pass[1], cb_pass[2], cb_pass[3])
     #endif
 
         varying vec4 v_color;
