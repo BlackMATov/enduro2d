@@ -748,7 +748,7 @@ namespace e2d::math
     //
 
     template < typename T, typename U >
-    std::enable_if_t<
+    constexpr std::enable_if_t<
         std::is_integral_v<T> && std::is_integral_v<U> &&
         std::is_convertible_v<U,T>,
         T>
@@ -760,7 +760,7 @@ namespace e2d::math
     }
 
     template < typename T, typename U >
-    std::enable_if_t<
+    constexpr std::enable_if_t<
         std::is_integral_v<T> && std::is_integral_v<U> &&
         std::is_convertible_v<U,T>,
         T>

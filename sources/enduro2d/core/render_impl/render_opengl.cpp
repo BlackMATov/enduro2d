@@ -1072,10 +1072,6 @@ namespace e2d
 
         return *this;
     }
-    
-    render::batchr& render::batcher() noexcept {
-        return state_->batcher();
-    }
 
     const render::device_caps& render::device_capabilities() const noexcept {
         E2D_ASSERT(is_in_main_thread());

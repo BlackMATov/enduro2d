@@ -431,11 +431,6 @@ namespace e2d
         E2D_UNUSED(decl);
         return false;
     }
-    
-    render::batchr& render::batcher() noexcept {
-        static batchr b(the<debug>(), *this);
-        return b;
-    }
 }
 
 #endif

@@ -22,6 +22,7 @@ namespace e2d
     class index_declaration;
     class vertex_declaration;
     class vertex_attribs;
+    class render_queue;
 
     using shader_ptr = std::shared_ptr<shader>;
     using texture_ptr = std::shared_ptr<texture>;
@@ -30,6 +31,7 @@ namespace e2d
     using vertex_attribs_ptr = std::shared_ptr<const vertex_attribs>;
     using const_buffer_ptr = std::shared_ptr<const_buffer>;
     using render_target_ptr = std::shared_ptr<render_target>;
+    using render_queue_ptr = std::shared_ptr<render_queue>;
     
     namespace render_cfg {
         constexpr static std::size_t max_attribute_count = 8;
@@ -1022,58 +1024,58 @@ namespace e2d
             u32 attachment_store_count = 0;
             u32 draw_calls = 0;
         };
-        
-        class batchr;
     public:
         render(debug& d, window& w);
         ~render() noexcept final;
 
-        shader_ptr create_shader(
+        [[nodiscard]] shader_ptr create_shader(
             const shader_source& source);
 
-        texture_ptr create_texture(
+        [[nodiscard]] texture_ptr create_texture(
             const image& image);
 
-        texture_ptr create_texture(
+        [[nodiscard]] texture_ptr create_texture(
             const input_stream_uptr& image_stream);
 
-        texture_ptr create_texture(
+        [[nodiscard]] texture_ptr create_texture(
             const v2u& size,
             const pixel_declaration& decl);
 
-        index_buffer_ptr create_index_buffer(
+        [[nodiscard]] index_buffer_ptr create_index_buffer(
             buffer_view indices,
             const index_declaration& decl,
             index_buffer::usage usage);
 
-        index_buffer_ptr create_index_buffer(
+        [[nodiscard]] index_buffer_ptr create_index_buffer(
             size_t size,
             const index_declaration& decl,
             index_buffer::usage usage);
 
-        vertex_buffer_ptr create_vertex_buffer(
+        [[nodiscard]] vertex_buffer_ptr create_vertex_buffer(
             buffer_view vertices,
             vertex_buffer::usage usage);
         
-        vertex_buffer_ptr create_vertex_buffer(
+        [[nodiscard]] vertex_buffer_ptr create_vertex_buffer(
             size_t size,
             vertex_buffer::usage usage);
 
-        vertex_attribs_ptr create_vertex_attribs(
+        [[nodiscard]] vertex_attribs_ptr create_vertex_attribs(
             const vertex_declaration& decl);
         
-        const_buffer_ptr create_const_buffer(
+        [[nodiscard]] const_buffer_ptr create_const_buffer(
             const shader_ptr& shader,
             const_buffer::scope scope);
-        const_buffer_ptr create_const_buffer(
+        [[nodiscard]] const_buffer_ptr create_const_buffer(
             const cbuffer_template_ptr& templ,
             const_buffer::scope scope);
 
-        render_target_ptr create_render_target(
+        [[nodiscard]] render_target_ptr create_render_target(
             const v2u& size,
             const pixel_declaration& color_decl,
             const pixel_declaration& depth_decl,
             render_target::external_texture external_texture);
+        
+        [[nodiscard]] render_queue_ptr create_render_queue();
 
         render& begin_pass(
             const renderpass_desc& desc,
@@ -1123,14 +1125,12 @@ namespace e2d
             buffer_view pixels,
             const b2u& region);
 
-        batchr& batcher() noexcept;
+        [[nodiscard]] const device_caps& device_capabilities() const noexcept;
+        [[nodiscard]] const statistics& frame_statistic() const noexcept;
 
-        const device_caps& device_capabilities() const noexcept;
-        const statistics& frame_statistic() const noexcept;
-
-        bool is_pixel_supported(const pixel_declaration& decl) const noexcept;
-        bool is_index_supported(const index_declaration& decl) const noexcept;
-        bool is_vertex_supported(const vertex_declaration& decl) const noexcept;
+        [[nodiscard]] bool is_pixel_supported(const pixel_declaration& decl) const noexcept;
+        [[nodiscard]] bool is_index_supported(const index_declaration& decl) const noexcept;
+        [[nodiscard]] bool is_vertex_supported(const vertex_declaration& decl) const noexcept;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;

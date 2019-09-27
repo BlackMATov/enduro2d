@@ -35,7 +35,9 @@ namespace e2d
             
             update_draw_order_(owner);
 
-            owner.set_event(render_system::render_with_camera_evt());
+            auto rq = the<render>().create_render_queue();
+
+            owner.set_event(render_system::render_with_camera_evt{rq});
         });
     }
     

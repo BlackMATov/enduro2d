@@ -13,6 +13,7 @@ namespace e2d
     class render_system final : public ecs::system {
     public:
         struct render_with_camera_evt {
+            render_queue_ptr rq;
         };
     public:
         render_system();

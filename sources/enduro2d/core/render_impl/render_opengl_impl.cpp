@@ -474,7 +474,6 @@ namespace e2d
     , window_(window)
     , default_sp_(gl_program_id::current(debug))
     , default_fb_(gl_framebuffer_id::current(debug, GL_FRAMEBUFFER))
-    , batcher_(debug, render)
     {
         //textures_.fill({0, 0});
 
@@ -515,10 +514,6 @@ namespace e2d
 
     window& render::internal_state::wnd() const noexcept {
         return window_;
-    }
-    
-    render::batchr& render::internal_state::batcher() noexcept {
-        return batcher_;
     }
 
     const render::device_caps& render::internal_state::device_capabilities() const noexcept {
