@@ -1,0 +1,5 @@
+{
+	"uniforms" : [
+		{ "name": "u_matrix_m", "offset": 0, "type": "m4f" }
+	]
+}

@@ -94,7 +94,7 @@ namespace e2d
         }
 
         void frame_tick() {
-            ImGuiIO& io = bind_context();
+            /*ImGuiIO& io = bind_context();
             const mouse& m = input_.mouse();
             const keyboard& k = input_.keyboard();
 
@@ -137,11 +137,11 @@ namespace e2d
                 ImGui::EndFrame();
             }
 
-            ImGui::NewFrame();
+            ImGui::NewFrame();*/
         }
 
         void frame_render() {
-            ImGui::Render();
+            /*ImGui::Render();
 
             ImDrawData* draw_data = ImGui::GetDrawData();
             if ( !draw_data ) {
@@ -204,7 +204,7 @@ namespace e2d
 
                     first_index += pcmd.ElemCount;
                 }
-            }
+            }*/
         }
     private:
         void setup_key_map_(ImGuiIO& io) noexcept {
@@ -248,7 +248,7 @@ namespace e2d
         }
 
         void setup_internal_resources_(ImGuiIO& io) {
-            {
+            /*{
                 shader_ = render_.create_shader(
                     dbgui_shaders::vertex_source_cstr(),
                     dbgui_shaders::fragment_source_cstr());
@@ -285,7 +285,7 @@ namespace e2d
                                 .src_factor(render::blending_factor::src_alpha)
                                 .dst_factor(render::blending_factor::one_minus_src_alpha)))
                         .shader(shader_));
-            }
+            }*/
         }
 
         static std::size_t calculate_new_buffer_size(
@@ -302,7 +302,7 @@ namespace e2d
         }
 
         void update_index_buffer(buffer_view indices) {
-            if ( index_buffer_ && index_buffer_->buffer_size() >= indices.size() ) {
+            /*if ( index_buffer_ && index_buffer_->buffer_size() >= indices.size() ) {
                 render_.update_buffer(index_buffer_, indices, 0u);
                 return;
             }
@@ -324,11 +324,11 @@ namespace e2d
                 debug_.error("DBGUI: Failed to create index buffer:\n"
                     "--> Size: %0",
                     new_buffer_size);
-            }
+            }*/
         }
 
         void update_vertex_buffer(buffer_view vertices) {
-            if ( vertex_buffer_ && vertex_buffer_->buffer_size() >= vertices.size() ) {
+            /*if ( vertex_buffer_ && vertex_buffer_->buffer_size() >= vertices.size() ) {
                 render_.update_buffer(vertex_buffer_, vertices, 0u);
                 return;
             }
@@ -353,7 +353,7 @@ namespace e2d
                 debug_.error("DBGUI: Failed to create vertex buffer:\n"
                     "--> Size: %0",
                     new_buffer_size);
-            }
+            }*/
         }
     private:
         debug& debug_;
@@ -364,10 +364,10 @@ namespace e2d
         ImGuiContext* context_{nullptr};
         window::event_listener& listener_;
     private:
-        shader_ptr shader_;
+        //shader_ptr shader_;
         texture_ptr texture_;
-        render::material material_;
-        render::property_block mprops_;
+        //render::material material_;
+        //render::property_block mprops_;
         index_buffer_ptr index_buffer_;
         vertex_buffer_ptr vertex_buffer_;
     };

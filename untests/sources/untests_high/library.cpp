@@ -342,7 +342,7 @@ TEST_CASE("library"){
                 REQUIRE(pass.states().stencil().sfail() == render::stencil_op::decr);
                 REQUIRE(pass.states().stencil().zfail() == render::stencil_op::invert);
 
-                REQUIRE(pass.states().culling().mode() == render::culling_mode::cw);
+                REQUIRE(pass.states().culling().front_face_ccw() == false);
                 REQUIRE(pass.states().culling().face() == render::culling_face::front);
 
                 REQUIRE(pass.states().capabilities().culling());

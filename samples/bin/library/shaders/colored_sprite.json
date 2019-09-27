@@ -1,0 +1,20 @@
+{
+	"attributes" : [
+		{ "name": "a_position", "index": 0, "type": "v3f" },
+		{ "name": "a_color",    "index": 1, "type": "v4f" }
+	],
+	"render_pass_block" : "block/pass_1.json",
+	
+	"opengl" : [
+        {
+            "vertex" : "gles3/colored_sprite.vert",
+            "fragment" : "gles3/colored_sprite.frag",
+            "requires" : [ "uniform_buffer" ]
+        },
+        {
+            "vertex" : "gles2/colored_sprite.vert",
+            "fragment" : "gles2/colored_sprite.frag",
+            "requires" : []
+        }
+    ]
+}

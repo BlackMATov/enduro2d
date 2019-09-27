@@ -20,8 +20,12 @@ namespace e2d
 
         model_renderer& model(const model_asset::ptr& value) noexcept;
         const model_asset::ptr& model() const noexcept;
+
+        model_renderer& constants(const const_buffer_ptr& value) noexcept;
+        const const_buffer_ptr& constants() const noexcept;
     private:
         model_asset::ptr model_;
+        const_buffer_ptr model_constants_;
     };
 
     template <>
@@ -51,5 +55,14 @@ namespace e2d
 
     inline const model_asset::ptr& model_renderer::model() const noexcept {
         return model_;
+    }
+
+    inline model_renderer& model_renderer::constants(const const_buffer_ptr& value) noexcept {
+        model_constants_ = value;
+        return *this;
+    }
+
+    inline const const_buffer_ptr& model_renderer::constants() const noexcept {
+        return model_constants_;
     }
 }

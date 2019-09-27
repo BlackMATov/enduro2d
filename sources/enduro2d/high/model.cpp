@@ -34,42 +34,55 @@ namespace
     const vertex_declaration bitangent_buffer_decl = vertex_declaration()
         .add_attribute<v3f>("a_bitangent");
 
-    render::geometry make_geometry(render& render, const mesh& mesh) {
-        render::geometry geo;
+    void create_index_buffer(
+        render& render,
+        const mesh& mesh,
+        index_buffer_ptr& index_buffer)
+    {
+        index_buffer = nullptr;
 
-        {
-            std::size_t index_count{0u};
-            for ( std::size_t i = 0; i < mesh.indices_submesh_count(); ++i ) {
-                index_count += mesh.indices(i).size();
-            }
-
-            if ( index_count > 0 ) {
-                vector<u32> indices;
-                indices.reserve(index_count);
-
-                for ( std::size_t i = 0; i < mesh.indices_submesh_count(); ++i ) {
-                    indices.insert(indices.end(), mesh.indices(i).begin(), mesh.indices(i).end());
-                }
-
-                const index_buffer_ptr index_buffer = render.create_index_buffer(
-                    indices,
-                    index_declaration::index_type::unsigned_int,
-                    index_buffer::usage::static_draw);
-
-                if ( index_buffer ) {
-                    geo.indices(index_buffer);
-                }
-            }
+        std::size_t index_count{0u};
+        for ( std::size_t i = 0; i < mesh.indices_submesh_count(); ++i ) {
+            index_count += mesh.indices(i).size();
         }
 
-        {
-            const vector<v3f>& vertices = mesh.vertices();
+        if ( index_count > 0 ) {
+            vector<u32> indices;
+            indices.reserve(index_count);
+
+            for ( std::size_t i = 0; i < mesh.indices_submesh_count(); ++i ) {
+                indices.insert(indices.end(), mesh.indices(i).begin(), mesh.indices(i).end());
+            }
+
+            index_buffer = render.create_index_buffer(
+                indices,
+                index_declaration::index_type::unsigned_int,
+                index_buffer::usage::static_draw);
+        }
+    }
+
+    void create_vertex_buffers(
+        render& render,
+        const mesh& mesh,
+        std::array<vertex_buffer_ptr, render_cfg::max_attribute_count>& buffers,
+        std::array<vertex_attribs_ptr, render_cfg::max_attribute_count>& attributes,
+        std::size_t& buffer_count)
+    {
+        buffer_count = 0;
+        std::size_t vert_count = 0;
+
+        if ( const vector<v3f>& vertices = mesh.vertices(); vertices.size() ) {
             const vertex_buffer_ptr vertex_buffer = render.create_vertex_buffer(
                 vertices,
-                vertex_buffer_decl,
                 vertex_buffer::usage::static_draw);
-            if ( vertex_buffer ) {
-                geo.add_vertices(vertex_buffer);
+            const vertex_attribs_ptr vertex_attribs = render.create_vertex_attribs(
+                vertex_buffer_decl);
+
+            if ( vertex_buffer && vertex_attribs ) {
+                vert_count = vertices.size();
+                buffers[buffer_count] = vertex_buffer;
+                attributes[buffer_count] = vertex_attribs;
+                ++buffer_count;
             }
         }
 
@@ -78,13 +91,23 @@ namespace
                 mesh.uvs_channel_count(),
                 std::size(uv_buffer_decls));
             for ( std::size_t i = 0; i < uv_count; ++i ) {
-                const vector<v2f>& uvs = mesh.uvs(i);
-                const vertex_buffer_ptr uv_buffer = render.create_vertex_buffer(
-                    uvs,
-                    uv_buffer_decls[i],
-                    vertex_buffer::usage::static_draw);
-                if ( uv_buffer ) {
-                    geo.add_vertices(uv_buffer);
+                if ( const vector<v2f>& uvs = mesh.uvs(i); uvs.size() ) {
+                    const vertex_buffer_ptr uv_buffer = render.create_vertex_buffer(
+                        uvs,
+                        vertex_buffer::usage::static_draw);
+                    const vertex_attribs_ptr uv_attribs = render.create_vertex_attribs(
+                        uv_buffer_decls[i]);
+
+                    if ( uv_buffer && uv_attribs ) {
+                        if ( vert_count ) {
+                            E2D_ASSERT(vert_count == uvs.size());
+                        } else {
+                            vert_count = uvs.size();
+                        }
+                        buffers[buffer_count] = uv_buffer;
+                        attributes[buffer_count] = uv_attribs;
+                        ++buffer_count;
+                    }
                 }
             }
         }
@@ -94,51 +117,83 @@ namespace
                 mesh.colors_channel_count(),
                 std::size(uv_buffer_decls));
             for ( std::size_t i = 0; i < color_count; ++i ) {
-                const vector<color32>& colors = mesh.colors(i);
-                const vertex_buffer_ptr color_buffer = render.create_vertex_buffer(
-                    colors,
-                    color_buffer_decls[i],
-                    vertex_buffer::usage::static_draw);
-                if ( color_buffer ) {
-                    geo.add_vertices(color_buffer);
+                if ( const vector<color32>& colors = mesh.colors(i); colors.size() ) {
+                    const vertex_buffer_ptr color_buffer = render.create_vertex_buffer(
+                        colors,
+                        vertex_buffer::usage::static_draw);
+                    const vertex_attribs_ptr color_attribs = render.create_vertex_attribs(
+                        color_buffer_decls[i]);
+
+                    if ( color_buffer && color_attribs ) {
+                        if ( vert_count ) {
+                            E2D_ASSERT(vert_count == colors.size());
+                        } else {
+                            vert_count = colors.size();
+                        }
+                        buffers[buffer_count] = color_buffer;
+                        attributes[buffer_count] = color_attribs;
+                        ++buffer_count;
+                    }
                 }
             }
         }
-
-        {
-            const vector<v3f>& normals = mesh.normals();
+        
+        if ( const vector<v3f>& normals = mesh.normals(); normals.size() ) {
             const vertex_buffer_ptr normal_buffer = render.create_vertex_buffer(
                 normals,
-                normal_buffer_decl,
                 vertex_buffer::usage::static_draw);
-            if ( normal_buffer ) {
-                geo.add_vertices(normal_buffer);
+            const vertex_attribs_ptr normal_attribs = render.create_vertex_attribs(
+                normal_buffer_decl);
+
+            if ( normal_buffer && normal_attribs ) {
+                if ( vert_count ) {
+                    E2D_ASSERT(vert_count == normals.size());
+                } else {
+                    vert_count = normals.size();
+                }
+                buffers[buffer_count] = normal_buffer;
+                attributes[buffer_count] = normal_attribs;
+                ++buffer_count;
             }
         }
-
-        {
-            const vector<v3f>& tangents = mesh.tangents();
+        
+        if ( const vector<v3f>& tangents = mesh.tangents(); tangents.size() ) {
             const vertex_buffer_ptr tangent_buffer = render.create_vertex_buffer(
                 tangents,
-                tangent_buffer_decl,
                 vertex_buffer::usage::static_draw);
-            if ( tangent_buffer ) {
-                geo.add_vertices(tangent_buffer);
+            const vertex_attribs_ptr tangent_attribs = render.create_vertex_attribs(
+                tangent_buffer_decl);
+
+            if ( tangent_buffer && tangent_attribs ) {
+                if ( vert_count ) {
+                    E2D_ASSERT(vert_count == tangents.size());
+                } else {
+                    vert_count = tangents.size();
+                }
+                buffers[buffer_count] = tangent_buffer;
+                attributes[buffer_count] = tangent_attribs;
+                ++buffer_count;
             }
         }
-
-        {
-            const vector<v3f>& bitangents = mesh.bitangents();
+        
+        if ( const vector<v3f>& bitangents = mesh.bitangents(); bitangents.size() ) {
             const vertex_buffer_ptr bitangent_buffer = render.create_vertex_buffer(
                 bitangents,
-                bitangent_buffer_decl,
                 vertex_buffer::usage::static_draw);
-            if ( bitangent_buffer ) {
-                geo.add_vertices(bitangent_buffer);
+            const vertex_attribs_ptr bitangent_attribs = render.create_vertex_attribs(
+                bitangent_buffer_decl);
+
+            if ( bitangent_buffer && bitangent_attribs ) {
+                if ( vert_count ) {
+                    E2D_ASSERT(vert_count == bitangents.size());
+                } else {
+                    vert_count = bitangents.size();
+                }
+                buffers[buffer_count] = bitangent_buffer;
+                attributes[buffer_count] = bitangent_attribs;
+                ++buffer_count;
             }
         }
-
-        return geo;
     }
 }
 
@@ -162,13 +217,20 @@ namespace e2d
 
     void model::clear() noexcept {
         mesh_.reset();
-        geometry_.clear();
+        indices_ = nullptr;
+        vertices_ = {};
+        attributes_ = {};
+        vertices_count_ = 0;
     }
 
     void model::swap(model& other) noexcept {
         using std::swap;
         swap(mesh_, other.mesh_);
-        swap(geometry_, other.geometry_);
+        swap(indices_, other.indices_);
+        swap(vertices_, other.vertices_);
+        swap(attributes_, other.attributes_);
+        swap(vertices_count_, other.vertices_count_);
+        swap(topology_, other.topology_);
     }
 
     model& model::assign(model&& other) noexcept {
@@ -183,15 +245,20 @@ namespace e2d
         if ( this != &other ) {
             model m;
             m.mesh_ = other.mesh_;
-            m.geometry_ = other.geometry_;
+            m.indices_ = other.indices_;
+            m.vertices_ = other.vertices_;
+            m.attributes_ = other.attributes_;
+            m.vertices_count_ = other.vertices_count_;
+            m.topology_ = other.topology_;
             swap(m);
         }
         return *this;
     }
 
     model& model::set_mesh(const mesh_asset::ptr& mesh) {
-        mesh_ = mesh;
-        geometry_.clear();
+        model m;
+        m.mesh_ = mesh;
+        swap(m);
         return *this;
     }
 
@@ -201,14 +268,34 @@ namespace e2d
 
     void model::regenerate_geometry(render& render) {
         if ( mesh_ ) {
-            geometry_ = make_geometry(render, mesh_->content());
+            create_index_buffer(render, mesh_->content(), indices_);
+            create_vertex_buffers(render, mesh_->content(), vertices_, attributes_, vertices_count_);
         } else {
-            geometry_.clear();
+            model m;
+            swap(m);
         }
     }
+    
+    std::size_t model::vertices_count() const noexcept {
+        return vertices_count_;
+    }
 
-    const render::geometry& model::geometry() const noexcept {
-        return geometry_;
+    render::topology model::topo() const noexcept {
+        return topology_;
+    }
+
+    const index_buffer_ptr& model::indices() const noexcept {
+        return indices_;
+    }
+
+    const vertex_buffer_ptr& model::vertices(std::size_t index) const noexcept {
+        E2D_ASSERT(index < vertices_count_);
+        return vertices_[index];
+    }
+    
+    const vertex_attribs_ptr& model::attribute(std::size_t index) const noexcept {
+        E2D_ASSERT(index < vertices_count_);
+        return attributes_[index];
     }
 }
 
@@ -219,8 +306,24 @@ namespace e2d
     }
 
     bool operator==(const model& l, const model& r) noexcept {
-        return l.mesh() == r.mesh()
-            && l.geometry() == r.geometry();
+        if ( l.mesh() != r.mesh() ) {
+            return false;
+        }
+        if ( l.topo() != r.topo() ) {
+            return false;
+        }
+        if ( l.indices() != r.indices() ) {
+            return false;
+        }
+        if ( l.vertices_count() != r.vertices_count() ) {
+            return false;
+        }
+        for ( std::size_t i = 0, e = l.vertices_count(); i < e; ++i ) {
+            if ( l.vertices(i) != r.vertices(i) || l.attribute(i) != r.attribute(i) ) {
+                return false;
+            }
+        }
+        return true;
     }
 
     bool operator!=(const model& l, const model& r) noexcept {

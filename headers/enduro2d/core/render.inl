@@ -76,92 +76,61 @@ namespace e2d
     // render::property_map
     //
 
-    template < typename T >
-    T* render::property_map<T>::find(str_hash key) noexcept {
+    inline
+    render::property_map::property_value*
+    render::property_map::find(str_hash key) noexcept {
         const auto iter = values_.find(key);
         return iter != values_.end()
             ? &iter->second
             : nullptr;
     }
 
-    template < typename T >
-    const T* render::property_map<T>::find(str_hash key) const noexcept {
+    inline
+    const render::property_map::property_value*
+    render::property_map::find(str_hash key) const noexcept {
         const auto iter = values_.find(key);
         return iter != values_.end()
             ? &iter->second
             : nullptr;
     }
 
-    template < typename T >
-    void render::property_map<T>::assign(str_hash key, T&& value) {
+    inline render::property_map& render::property_map::assign(str_hash key, property_value&& value) {
         values_[key] = std::move(value);
+        return *this;
     }
 
-    template < typename T >
-    void render::property_map<T>::assign(str_hash key, const T& value) {
+    inline render::property_map& render::property_map::assign(str_hash key, const property_value& value) {
         values_[key] = value;
+        return *this;
     }
 
-    template < typename T >
-    void render::property_map<T>::clear() noexcept {
+    inline void render::property_map::clear() noexcept {
         values_.clear();
     }
 
-    template < typename T >
-    std::size_t render::property_map<T>::size() const noexcept {
+    inline std::size_t render::property_map::size() const noexcept {
         return values_.size();
     }
 
-    template < typename T >
     template < typename F >
-    void render::property_map<T>::foreach(F&& f) const {
+    inline void render::property_map::foreach(F&& f) const {
         for ( const auto& [name, value] : values_ ) {
             f(name, value);
         }
     }
 
-    template < typename T >
-    void render::property_map<T>::merge(const property_map& other) {
+    inline void render::property_map::merge(const property_map& other) {
         if ( this != &other ) {
-            other.foreach([this](str_hash name, const T& value){
+            other.foreach([this](str_hash name, const property_value& value){
                 assign(name, value);
             });
         }
     }
 
-    template < typename T >
-    bool render::property_map<T>::equals(const property_map& other) const noexcept {
+    inline bool render::property_map::equals(const property_map& other) const noexcept {
         return this == &other
             ? true
             : values_ == other.values_;
-    }
-
-    //
-    // render::property_block
-    //
-
-    template < typename T >
-    render::property_block& render::property_block::property(str_hash name, T&& v) {
-        properties_.assign(name, std::forward<T>(v));
-        return *this;
-    }
-
-    template < typename T >
-    const T* render::property_block::property(str_hash name) const noexcept {
-        const property_value* prop = properties_.find(name);
-        return prop
-            ? std::get_if<T>(prop)
-            : nullptr;
-    }
-
-    template < typename F >
-    void render::property_block::foreach_by_samplers(F&& f) const {
-        samplers_.foreach(std::forward<F>(f));
-    }
-
-    template < typename F >
-    void render::property_block::foreach_by_properties(F&& f) const {
-        properties_.foreach(std::forward<F>(f));
     }
 
     //
@@ -193,6 +162,21 @@ namespace e2d
     template < std::size_t N >
     std::size_t render::command_block<N>::command_count() const noexcept {
         return command_count_;
+    }
+
+    //
+    // render::change_sate_command_
+    //
+    
+    template < typename T >
+    render::change_sate_command_<T>::change_sate_command_(const T& state) {
+        state_ = state;
+        return *this;
+    }
+
+    template < typename T >
+    const std::optional<T>& render::change_sate_command_<T>::state() const noexcept {
+        return state_;
     }
 
     //

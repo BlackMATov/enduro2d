@@ -16,7 +16,7 @@
 #if defined(E2D_BUILD_MODE) && E2D_BUILD_MODE == E2D_BUILD_MODE_DEBUG
 #  if defined(E2D_COMPILER) && E2D_COMPILER == E2D_COMPILER_MSVC
 #    include <crtdbg.h>
-#    define E2D_ASSERT(expr)          _ASSERT_EXPR((expr), nullptr)
+#    define E2D_ASSERT(expr)          _ASSERT_EXPR((expr), _CRT_WIDE(#expr))
 #    define E2D_ASSERT_MSG(expr, msg) _ASSERT_EXPR((expr), _CRT_WIDE(msg))
 #  else
 #    define E2D_ASSERT(expr)          assert((expr))

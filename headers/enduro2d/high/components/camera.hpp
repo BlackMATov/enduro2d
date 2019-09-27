@@ -23,18 +23,21 @@ namespace e2d
         camera& projection(const m4f& value) noexcept;
         camera& target(const render_target_ptr& value) noexcept;
         camera& background(const color& value) noexcept;
+        camera& constants(const const_buffer_ptr& value) noexcept;
 
         i32 depth() const noexcept;
         const b2u& viewport() const noexcept;
         const m4f& projection() const noexcept;
         const render_target_ptr& target() const noexcept;
         const color& background() const noexcept;
+        const const_buffer_ptr& constants() const noexcept;
     private:
         i32 depth_ = 0;
         b2u viewport_ = b2u::zero();
         m4f projection_ = m4f::identity();
         render_target_ptr target_ = nullptr;
         color background_ = color::clear();
+        const_buffer_ptr constants_ = nullptr;
     };
 
     template <>
@@ -78,6 +81,11 @@ namespace e2d
         background_ = value;
         return *this;
     }
+    
+    inline camera& camera::constants(const const_buffer_ptr& value) noexcept {
+        constants_ = value;
+        return *this;
+    }
 
     inline i32 camera::depth() const noexcept {
         return depth_;
@@ -97,5 +105,9 @@ namespace e2d
 
     inline const color& camera::background() const noexcept {
         return background_;
+    }
+        
+    inline const const_buffer_ptr& camera::constants() const noexcept {
+        return constants_;
     }
 }

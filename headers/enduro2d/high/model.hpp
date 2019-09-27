@@ -34,10 +34,19 @@ namespace e2d
 
         // It can only be called from the main thread
         void regenerate_geometry(render& render);
-        const render::geometry& geometry() const noexcept;
+
+        render::topology topo() const noexcept;
+        const index_buffer_ptr& indices() const noexcept;
+        const vertex_buffer_ptr& vertices(std::size_t index) const noexcept;
+        const vertex_attribs_ptr& attribute(std::size_t index) const noexcept;
+        std::size_t vertices_count() const noexcept;
     private:
         mesh_asset::ptr mesh_;
-        render::geometry geometry_;
+        index_buffer_ptr indices_;
+        std::array<vertex_buffer_ptr, render_cfg::max_attribute_count> vertices_;
+        std::array<vertex_attribs_ptr, render_cfg::max_attribute_count> attributes_;
+        std::size_t vertices_count_ = 0;
+        render::topology topology_ = render::topology::triangles;
     };
 
     void swap(model& l, model& r) noexcept;

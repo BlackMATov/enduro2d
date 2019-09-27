@@ -6,17 +6,14 @@
 
 #pragma once
 
-#include "_core.hpp"
+#include "../_high.hpp"
 
-#include "audio.hpp"
-#include "dbgui.hpp"
-#include "debug.hpp"
-#include "deferrer.hpp"
-#include "engine.hpp"
-#include "input.hpp"
-#include "network.hpp"
-#include "platform.hpp"
-#include "render.hpp"
-#include "vfs.hpp"
-#include "window.hpp"
-#include "batcher.hpp"
+namespace e2d
+{
+    class spine_player_system final : public ecs::system {
+    public:
+        spine_player_system();
+        ~spine_player_system() noexcept final;
+        void process(ecs::registry& owner) override;
+    };
+}

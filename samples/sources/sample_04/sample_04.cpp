@@ -39,6 +39,12 @@ namespace
                         the<window>().real_size());
                     cam.projection(math::make_orthogonal_lh_matrix4(
                         the<window>().real_size().cast_to<f32>(), 0.f, 1000.f));
+                    
+                    the<render>().execute(render::command_block<3>()
+                        .add_command(render::target_command(cam.target()))
+                        .add_command(render::viewport_command(cam.viewport()))
+                        .add_command(render::clear_command()
+                            .color_value(cam.background())));
                 }
             });
         }

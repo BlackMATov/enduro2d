@@ -142,6 +142,39 @@ namespace e2d
     }
 
     //
+    // vertex_attribs
+    //
+
+    const vertex_attribs::internal_state& vertex_attribs::state() const noexcept {
+        return *state_;
+    }
+
+    vertex_attribs::vertex_attribs(internal_state_uptr state)
+    : state_(std::move(state)) {}
+    vertex_attribs::~vertex_attribs() noexcept = default;
+
+    const vertex_declaration& vertex_attribs::decl() const noexcept {
+        static vertex_declaration decl;
+        return decl;
+    }
+
+    //
+    // const_buffer
+    //
+
+    const const_buffer::internal_state& const_buffer::state() const noexcept {
+        return *state_;
+    }
+
+    const_buffer::const_buffer(internal_state_uptr state)
+    : state_(std::move(state)) {}
+    const_buffer::~const_buffer() noexcept = default;
+
+    std::size_t const_buffer::buffer_size() const noexcept {
+        return 0u;
+    }
+
+    //
     // render_target
     //
 
@@ -173,18 +206,9 @@ namespace e2d
     render::~render() noexcept = default;
 
     shader_ptr render::create_shader(
-        str_view vertex_source,
-        str_view fragment_source)
+        const shader_source& source)
     {
-        E2D_UNUSED(vertex_source, fragment_source);
-        return nullptr;
-    }
-
-    shader_ptr render::create_shader(
-        const input_stream_uptr& vertex_stream,
-        const input_stream_uptr& fragment_stream)
-    {
-        E2D_UNUSED(vertex_stream, fragment_stream);
+        E2D_UNUSED(source);
         return nullptr;
     }
 
@@ -211,13 +235,44 @@ namespace e2d
         E2D_UNUSED(indices, decl, usage);
         return nullptr;
     }
+    
+    index_buffer_ptr create_index_buffer(
+        size_t size,
+        const index_declaration& decl,
+        index_buffer::usage usage)
+    {
+        E2D_UNUSED(size, decl, usage);
+        return nullptr;
+    }
 
     vertex_buffer_ptr render::create_vertex_buffer(
         buffer_view vertices,
-        const vertex_declaration& decl,
         vertex_buffer::usage usage)
     {
-        E2D_UNUSED(vertices, decl, usage);
+        E2D_UNUSED(vertices, usage);
+        return nullptr;
+    }
+    
+    vertex_buffer_ptr create_vertex_buffer(
+        size_t size,
+        vertex_buffer::usage usage)
+    {
+        E2D_UNUSED(size, usage);
+        return nullptr;
+    }
+        
+    vertex_attribs_ptr create_vertex_attribs(
+        const vertex_declaration& decl)
+    {
+        E2D_UNUSED(decl);
+        return nullptr;
+    }
+
+    const_buffer_ptr create_const_buffer(
+        const shader_ptr& shader,
+        const_buffer::scope scope)
+    {
+        E2D_UNUSED(shader, scope);
         return nullptr;
     }
 
@@ -230,27 +285,79 @@ namespace e2d
         E2D_UNUSED(size, color_decl, depth_decl, external_texture);
         return nullptr;
     }
+    
+    render& render::begin_pass(
+        const renderpass_desc& desc,
+        const const_buffer_ptr& constants,
+        const sampler_block& samplers)
+    {
+        E2D_UNUSED(desc, constants, samplers);
+        return *this;
+    }
+
+    render& render::end_pass() {
+        return *this;
+    }
+        
+    render& render::present() {
+        return *this;
+    }
+    
+    render& render::execute(const bind_vertex_buffers_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+
+    render& render::execute(const bind_pipeline_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+
+    render& render::execute(const bind_const_buffer_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+
+    render& render::execute(const bind_textures_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+
+    render& render::execute(const scissor_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+    
+    render& render::execute(const blending_state_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+
+    render& render::execute(const culling_state_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+
+    render& render::execute(const stencil_state_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+
+    render& render::execute(const depth_state_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
 
     render& render::execute(const draw_command& command) {
         E2D_UNUSED(command);
         return *this;
     }
 
-    render& render::execute(const clear_command& command) {
+    render& render::execute(const draw_indexed_command& command) {
         E2D_UNUSED(command);
         return *this;
     }
 
-    render& render::execute(const target_command& command) {
-        E2D_UNUSED(command);
-        return *this;
-    }
-
-    render& render::execute(const viewport_command& command) {
-        E2D_UNUSED(command);
-        return *this;
-    }
-    
     render& render::update_buffer(
         const index_buffer_ptr& ibuffer,
         buffer_view indices,
@@ -266,6 +373,14 @@ namespace e2d
         std::size_t offset)
     {
         E2D_UNUSED(vbuffer, vertices, offset);
+        return *this;
+    }
+    
+    render& render::update_buffer(
+        const const_buffer_ptr& cbuffer,
+        const property_map<property_value>& properties)
+    {
+        E2D_UNUSED(cbuffer, properties);
         return *this;
     }
 
@@ -290,6 +405,11 @@ namespace e2d
     const render::device_caps& render::device_capabilities() const noexcept {
         static device_caps caps;
         return caps;
+    }
+    
+    const render::statistics& render::frame_statistic() const noexcept {
+        static statistics stats;
+        return stats;
     }
 
     bool render::is_pixel_supported(const pixel_declaration& decl) const noexcept {

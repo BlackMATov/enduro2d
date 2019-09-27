@@ -9,7 +9,9 @@
 #include "render.hpp"
 
 #if defined(E2D_RENDER_MODE)
-#if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL || E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES
+#if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL || \
+    E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES || \
+    E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES3
 
 #if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL
 #  define GLEW_STATIC
@@ -25,6 +27,9 @@
 #  define GL_DEPTH_STENCIL GL_DEPTH_STENCIL_OES
 #  define GL_UNSIGNED_INT_24_8 GL_UNSIGNED_INT_24_8_OES
 #  define GL_DEPTH24_STENCIL8 GL_DEPTH24_STENCIL8_OES
+
+#elif E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES3
+#  include <GLES3/gl3.h>
 #endif
 
 #if defined(E2D_BUILD_MODE) && E2D_BUILD_MODE == E2D_BUILD_MODE_DEBUG
@@ -63,6 +68,23 @@
 
 namespace e2d::opengl
 {
+    struct gl_device_caps {
+        bool depth16_supported = false;
+        bool depth16_stencil8_supported = false;
+        bool depth24_supported = false;
+        bool depth24_stencil8_supported = false;
+        bool depth32_supported = false;
+        bool depth32_stencil8_supported = false;
+
+        bool framebuffer_discard_supported = false; // GLES2 only
+        bool framebuffer_invalidate_supported = false; // GLES3 or GL4
+
+        bool uniform_buffer_supported = false;
+        u32 max_uniform_buffer_bindings = 0;
+
+        bool debug_output_supported = false;
+    };
+
     class gl_buffer_id final : private noncopyable {
         gl_buffer_id(debug& debug, GLuint id, GLenum target, bool owned) noexcept;
     public:
@@ -209,48 +231,6 @@ namespace e2d::opengl
 
 namespace e2d::opengl
 {
-    enum class uniform_type : u8 {
-        signed_integer,
-        floating_point,
-
-        v2i,
-        v3i,
-        v4i,
-
-        v2f,
-        v3f,
-        v4f,
-
-        m2f,
-        m3f,
-        m4f,
-
-        sampler_2d,
-        sampler_cube,
-
-        unknown
-    };
-
-    enum class attribute_type : u8 {
-        floating_point,
-
-        v2f,
-        v3f,
-        v4f,
-
-        m2f,
-        m3f,
-        m4f,
-
-        unknown
-    };
-
-    const char* uniform_type_to_cstr(uniform_type ut) noexcept;
-    const char* attribute_type_to_cstr(attribute_type at) noexcept;
-}
-
-namespace e2d::opengl
-{
     GLenum convert_image_data_format_to_external_format(image_data_format f) noexcept;
     GLenum convert_image_data_format_to_external_data_type(image_data_format f) noexcept;
 
@@ -263,9 +243,7 @@ namespace e2d::opengl
 
     GLenum convert_index_type(index_declaration::index_type it) noexcept;
     GLenum convert_attribute_type(vertex_declaration::attribute_type at) noexcept;
-
-    GLint convert_uniform_type(uniform_type ut) noexcept;
-    GLint convert_attribute_type(attribute_type at) noexcept;
+    GLenum convert_uniform_type_to_texture_target(shader_source::sampler_type ut) noexcept;
 
     GLint convert_sampler_wrap(render::sampler_wrap w) noexcept;
     GLint convert_sampler_filter(render::sampler_min_filter f) noexcept;
@@ -281,9 +259,6 @@ namespace e2d::opengl
     GLenum convert_blending_factor(render::blending_factor bf) noexcept;
     GLenum convert_blending_equation(render::blending_equation be) noexcept;
 
-    uniform_type glsl_type_to_uniform_type(GLenum t) noexcept;
-    attribute_type glsl_type_to_attribute_type(GLenum t) noexcept;
-
     const char* glsl_type_to_cstr(GLenum t) noexcept;
     const char* gl_error_code_to_cstr(GLenum e) noexcept;
     const char* gl_framebuffer_status_to_cstr(GLenum s) noexcept;
@@ -294,15 +269,18 @@ namespace e2d::opengl
 {
     void gl_trace_info(debug& debug) noexcept;
     void gl_trace_limits(debug& debug) noexcept;
-    void gl_fill_device_caps(debug& debug, render::device_caps& caps) noexcept;
-    bool gl_has_extension(debug& debug, str_view name) noexcept;
+    void gl_fill_device_caps(debug& debug, render::device_caps& caps, gl_device_caps& ext) noexcept;
+    void gl_build_shader_headers(render::device_caps& caps, gl_device_caps& ext, str& vs, str& fs) noexcept;
+
+    void gl_depth_range(debug& debug, float near, float far) noexcept;
+    void gl_clear_depth(debug& debug, float value) noexcept;
 
     gl_shader_id gl_compile_shader(
         debug& debug,
         str_view header,
         str_view source,
         GLenum type) noexcept;
-
+    
     gl_program_id gl_link_program(
         debug& debug,
         gl_shader_id vs,
@@ -329,53 +307,6 @@ namespace e2d::opengl
         debug& debug,
         const v2u& size,
         GLenum format);
-}
-
-namespace e2d::opengl
-{
-    struct uniform_info {
-        str_hash name;
-        GLint size = 0;
-        GLint location = -1;
-        uniform_type type = uniform_type::floating_point;
-    public:
-        uniform_info(
-            str_hash nname,
-            GLint nsize,
-            GLint nlocation,
-            uniform_type ntype) noexcept
-        : name(std::move(nname))
-        , size(nsize)
-        , location(nlocation)
-        , type(ntype) {}
-    };
-
-    struct attribute_info {
-        str_hash name;
-        GLint size = 0;
-        GLint location = -1;
-        attribute_type type = attribute_type::floating_point;
-    public:
-        attribute_info(
-            str_hash nname,
-            GLint nsize,
-            GLint nlocation,
-            attribute_type ntype) noexcept
-        : name(std::move(nname))
-        , size(nsize)
-        , location(nlocation)
-        , type(ntype) {}
-    };
-
-    void grab_program_uniforms(
-        debug& debug,
-        GLuint program,
-        vector<uniform_info>& uniforms);
-
-    void grab_program_attributes(
-        debug& debug,
-        GLuint program,
-        vector<attribute_info>& attributes);
 }
 
 namespace e2d::opengl
@@ -416,17 +347,23 @@ namespace e2d::opengl
         GLint prev_buffer = 0;
         GL_CHECK_CODE(debug, glGetIntegerv(
             gl_target_to_get_target(target), &prev_buffer));
-        GL_CHECK_CODE(debug, glBindBuffer(
-            target, buffer));
+        bool is_different = buffer != prev_buffer;
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glBindBuffer(target, buffer));
+        }
         try {
             std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
-            GL_CHECK_CODE(debug, glBindBuffer(
-                target, math::numeric_cast<GLuint>(prev_buffer)));
+            if ( is_different ) {
+                GL_CHECK_CODE(debug, glBindBuffer(
+                    target, math::numeric_cast<GLuint>(prev_buffer)));
+            }
             throw;
         }
-        GL_CHECK_CODE(debug, glBindBuffer(
-            target, math::numeric_cast<GLuint>(prev_buffer)));
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glBindBuffer(
+                target, math::numeric_cast<GLuint>(prev_buffer)));
+        }
     }
 
     template < typename F, typename... Args >
@@ -443,17 +380,23 @@ namespace e2d::opengl
         GLint prev_texture = 0;
         GL_CHECK_CODE(debug, glGetIntegerv(
             gl_target_to_get_target(target), &prev_texture));
-        GL_CHECK_CODE(debug, glBindTexture(
-            target, texture));
+        bool is_different = prev_texture != texture;
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glBindTexture(target, texture));
+        }
         try {
             std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
-            GL_CHECK_CODE(debug, glBindTexture(
-                target, math::numeric_cast<GLuint>(prev_texture)));
+            if ( is_different ) {
+                GL_CHECK_CODE(debug, glBindTexture(
+                    target, math::numeric_cast<GLuint>(prev_texture)));
+            }
             throw;
         }
-        GL_CHECK_CODE(debug, glBindTexture(
-            target, math::numeric_cast<GLuint>(prev_texture)));
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glBindTexture(
+                target, math::numeric_cast<GLuint>(prev_texture)));
+        }
     }
 
     template < typename F, typename... Args >
@@ -470,17 +413,23 @@ namespace e2d::opengl
         GLint prev_framebuffer = 0;
         GL_CHECK_CODE(debug, glGetIntegerv(
             gl_target_to_get_target(target), &prev_framebuffer));
-        GL_CHECK_CODE(debug, glBindFramebuffer(
-            target, framebuffer));
+        bool is_different = prev_framebuffer != framebuffer;
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glBindFramebuffer(target, framebuffer));
+        }
         try {
             std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
-            GL_CHECK_CODE(debug, glBindFramebuffer(
-                target, math::numeric_cast<GLuint>(prev_framebuffer)));
+            if ( is_different ) {
+                GL_CHECK_CODE(debug, glBindFramebuffer(
+                    target, math::numeric_cast<GLuint>(prev_framebuffer)));
+            }
             throw;
         }
-        GL_CHECK_CODE(debug, glBindFramebuffer(
-            target, math::numeric_cast<GLuint>(prev_framebuffer)));
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glBindFramebuffer(
+                target, math::numeric_cast<GLuint>(prev_framebuffer)));
+        }
     }
 
     template < typename F, typename... Args >

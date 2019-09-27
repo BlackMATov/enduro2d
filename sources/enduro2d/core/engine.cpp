@@ -16,6 +16,7 @@
 #include <enduro2d/core/render.hpp>
 #include <enduro2d/core/vfs.hpp>
 #include <enduro2d/core/window.hpp>
+#include <enduro2d/core/batcher.hpp>
 
 namespace
 {
@@ -445,6 +446,10 @@ namespace e2d
                 the<debug>(),
                 the<window>());
 
+            safe_module_initialize<batcher>(
+                the<debug>(),
+                the<render>());
+
             // setup dbgui
 
             safe_module_initialize<dbgui>(
@@ -487,8 +492,8 @@ namespace e2d
 
                 if ( the<window>().enabled() ) {
                     app->frame_render();
-                    the<dbgui>().frame_render();
-                    the<window>().swap_buffers();
+                    //the<dbgui>().frame_render();  // TODO
+                    the<render>().present();  // TODO: remove?
                 }
 
                 state_->calculate_end_frame_timers();

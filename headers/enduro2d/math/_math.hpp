@@ -742,4 +742,30 @@ namespace e2d::math
         E2D_ASSERT(!approximately(l, r, T(0)));
         return (v - l) / (r - l);
     }
+
+    //
+    // align_floor/align_ceil
+    //
+
+    template < typename T, typename U >
+    std::enable_if_t<
+        std::is_integral_v<T> && std::is_integral_v<U> &&
+        std::is_convertible_v<U,T>,
+        T>
+    align_ceil (T v, U alignment) {
+        E2D_ASSERT(v >= T(0) && alignment > U(0));
+        E2D_ASSERT(v < std::numeric_limits<T>::max() - alignment);
+        T result = T((v + alignment - 1) / alignment) * alignment;
+        return result;
+    }
+
+    template < typename T, typename U >
+    std::enable_if_t<
+        std::is_integral_v<T> && std::is_integral_v<U> &&
+        std::is_convertible_v<U,T>,
+        T>
+    align_floor (T v, U alignment) {
+        E2D_ASSERT(v >= T(0) && alignment > U(0));
+        return (v / alignment) * alignment;
+    }
 }

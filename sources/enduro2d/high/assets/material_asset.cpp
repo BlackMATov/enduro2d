@@ -25,46 +25,26 @@ namespace
             "type" : "object",
             "additionalProperties" : false,
             "properties" : {
-                "passes" : {
+                "properties" : {
                     "type" : "array",
-                    "items" : { "$ref": "#/definitions/pass_state" }
+                    "items" : { "$ref" : "#/definitions/property" }
                 },
-                "property_block" : { "$ref": "#/definitions/property_block" }
+                "samplers" : {
+                    "type" : "array",
+                    "items" : { "$ref" : "#/definitions/sampler" }
+                },
+                "shader" : { "$ref": "#/common_definitions/address" },
+                "depth_state" : { "$ref": "#/definitions/depth_state" },
+                "stencil_state" : { "$ref": "#/definitions/stencil_state" },
+                "culling_state" : { "$ref": "#/definitions/culling_state" },
+                "blending_state" : { "$ref": "#/definitions/blending_state" }
             },
             "definitions" : {
-                "pass_state" : {
-                    "type" : "object",
-                    "required" : [ "shader" ],
-                    "additionalProperties" : false,
-                    "properties" : {
-                        "shader" : { "$ref": "#/common_definitions/address" },
-                        "state_block" : { "$ref": "#/definitions/state_block" },
-                        "property_block" : { "$ref": "#/definitions/property_block" }
-                    }
-                },
-                "state_block" : {
-                    "type" : "object",
-                    "additionalProperties" : false,
-                    "properties" : {
-                        "depth_state" : { "$ref": "#/definitions/depth_state" },
-                        "stencil_state" : { "$ref": "#/definitions/stencil_state" },
-                        "culling_state" : { "$ref": "#/definitions/culling_state" },
-                        "blending_state" : { "$ref": "#/definitions/blending_state" },
-                        "capabilities_state" : { "$ref": "#/definitions/capabilities_state" }
-                    }
-                },
                 "depth_state" : {
                     "type" : "object",
                     "additionalProperties" : false,
                     "properties" : {
-                        "range" : {
-                            "type" : "object",
-                            "additionalProperties" : false,
-                            "properties" : {
-                                "near" : { "type" : "number" },
-                                "far" : { "type" : "number" }
-                            }
-                        },
+                        "test" : { "type" : "boolean" },
                         "write" : { "type" : "boolean" },
                         "func" : { "$ref" : "#/definitions/compare_func" }
                     }
@@ -73,6 +53,7 @@ namespace
                     "type" : "object",
                     "additionalProperties" : false,
                     "properties" : {
+                        "test" : { "type" : "boolean" },
                         "write" : { "type" : "integer", "minimum" : 0, "maximum": 255 },
                         "func" : { "$ref" : "#/definitions/compare_func" },
                         "ref" : { "type" : "integer", "minimum" : 0, "maximum": 255 },
@@ -86,6 +67,7 @@ namespace
                     "type" : "object",
                     "additionalProperties" : false,
                     "properties" : {
+                        "enable" : { "type" : "boolean" },
                         "mode" : { "$ref" : "#/definitions/culling_mode" },
                         "face" : { "$ref" : "#/definitions/culling_face" }
                     }
@@ -94,8 +76,8 @@ namespace
                     "type" : "object",
                     "additionalProperties" : false,
                     "properties" : {
-                        "constant_color" : {
-                            "$ref" : "#/common_definitions/color"
+                        "enable" : { 
+                            "type" : "boolean"
                         },
                         "color_mask" : {
                             "$ref" : "#/definitions/color_mask"
@@ -135,30 +117,6 @@ namespace
                             }, {
                                 "$ref" : "#/definitions/blending_equation"
                             }]
-                        }
-                    }
-                },
-                "capabilities_state" : {
-                    "type" : "object",
-                    "additionalProperties" : false,
-                    "properties" : {
-                        "culling" : { "type" : "boolean" },
-                        "blending" : { "type" : "boolean" },
-                        "depth_test" : { "type" : "boolean" },
-                        "stencil_test" : { "type" : "boolean" }
-                    }
-                },
-                "property_block" : {
-                    "type" : "object",
-                    "additionalProperties" : false,
-                    "properties" : {
-                        "samplers" : {
-                            "type" : "array",
-                            "items" : { "$ref" : "#/definitions/sampler" }
-                        },
-                        "properties" : {
-                            "type" : "array",
-                            "items" : { "$ref" : "#/definitions/property" }
                         }
                     }
                 },
@@ -213,9 +171,7 @@ namespace
                     "type" : "string",
                     "enum" : [
                         "i32", "f32",
-                        "v2i", "v3i", "v4i",
                         "v2f", "v3f", "v4f",
-                        "m2i", "m3i", "m4i",
                         "m2f", "m3f", "m4f"
                     ]
                 },
@@ -355,7 +311,7 @@ namespace
 
         return *schema;
     }
-
+    /*
     bool parse_stencil_op(str_view str, render::stencil_op& op) noexcept {
     #define DEFINE_IF(x) if ( str == #x ) { op = render::stencil_op::x; return true; }
         DEFINE_IF(keep);
@@ -382,8 +338,8 @@ namespace
         DEFINE_IF(always);
     #undef DEFINE_IF
         return false;
-    }
-
+    }*/
+    
     bool parse_culling_mode(str_view str, render::culling_mode& mode) noexcept {
     #define DEFINE_IF(x) if ( str == #x ) { mode = render::culling_mode::x; return true; }
         DEFINE_IF(cw);
@@ -452,7 +408,7 @@ namespace
     #undef DEFINE_IF
         return false;
     }
-
+    
     bool parse_sampler_wrap(str_view str, render::sampler_wrap& wrap) noexcept {
     #define DEFINE_IF(x) if ( str == #x ) { wrap = render::sampler_wrap::x; return true; }
         DEFINE_IF(clamp);
@@ -491,7 +447,7 @@ namespace
                 return shader->content();
             });
     }
-
+    
     stdex::promise<texture_ptr> parse_texture_block(
         const library& library,
         str_view parent_address,
@@ -597,9 +553,40 @@ namespace
             });
     }
 
-    bool parse_property_block_properties(
+    stdex::promise<render::sampler_block> parse_sampler_block(
+        const library& library,
+        str_view parent_address,
+        const rapidjson::Value& root)
+    {
+        vector<stdex::promise<std::pair<str_hash, render::sampler_state>>> samplers_p;
+
+        if ( root.HasMember("samplers") ) {
+            E2D_ASSERT(root["samplers"].IsArray());
+            const auto& samplers_json = root["samplers"];
+
+            samplers_p.reserve(samplers_json.Size());
+            for ( rapidjson::SizeType i = 0; i < samplers_json.Size(); ++i ) {
+                E2D_ASSERT(samplers_json[i].IsObject());
+                const auto& sampler_json = samplers_json[i];
+                samplers_p.emplace_back(
+                    parse_sampler_state(library, parent_address, sampler_json));
+            }
+        }
+        return stdex::make_all_promise(samplers_p)
+            .then([](auto&& results) {
+                render::sampler_block content;
+                for ( auto& result : results ) {
+                    content.bind(
+                        std::move(result.first),
+                        std::move(result.second));
+                }
+                return content;
+            });
+    }
+
+    bool parse_property_map(
         const rapidjson::Value& root,
-        render::property_block& props)
+        render::property_map& props)
     {
         E2D_ASSERT(root.IsArray());
         for ( rapidjson::SizeType i = 0; i < root.Size(); ++i ) {
@@ -617,16 +604,12 @@ namespace
                     E2D_ASSERT_MSG(false, "unexpected property value");\
                     return false;\
                 }\
-                props.property(property_json["name"].GetString(), value);\
+                props.assign(property_json["name"].GetString(), value);\
                 continue;\
             }
 
             DEFINE_CASE(i32);
             DEFINE_CASE(f32);
-
-            DEFINE_CASE(v2i);
-            DEFINE_CASE(v3i);
-            DEFINE_CASE(v4i);
 
             DEFINE_CASE(v2f);
             DEFINE_CASE(v3f);
@@ -642,49 +625,26 @@ namespace
         }
         return true;
     }
-
-    stdex::promise<render::property_block> parse_property_block(
-        const library& library,
-        str_view parent_address,
-        const rapidjson::Value& root)
+    
+    stdex::promise<const_buffer_ptr> create_const_buffer(
+        const rapidjson::Value& root,
+        stdex::promise<shader_ptr>& shader_p)
     {
-        render::property_block content;
-
-        vector<stdex::promise<std::pair<str_hash, render::sampler_state>>> samplers_p;
-
-        if ( root.HasMember("samplers") ) {
-            E2D_ASSERT(root["samplers"].IsArray());
-            const auto& samplers_json = root["samplers"];
-
-            samplers_p.reserve(samplers_json.Size());
-            for ( rapidjson::SizeType i = 0; i < samplers_json.Size(); ++i ) {
-                E2D_ASSERT(samplers_json[i].IsObject());
-                const auto& sampler_json = samplers_json[i];
-                samplers_p.emplace_back(
-                    parse_sampler_state(library, parent_address, sampler_json));
-            }
+        render::property_map props;
+        if ( !parse_property_map(root, props) ) {
+            return stdex::make_rejected_promise<const_buffer_ptr>(material_asset_loading_exception());
         }
 
-        if ( root.HasMember("properties") ) {
-            E2D_ASSERT(root["properties"].IsArray());
-            const auto& properties_json = root["properties"];
-            if ( !parse_property_block_properties(properties_json, content) ) {
-                return stdex::make_rejected_promise<render::property_block>(
-                    material_asset_loading_exception());
-            }
-        }
-
-        return stdex::make_all_promise(samplers_p)
-            .then([content](auto&& results) mutable {
-                for ( auto& result : results ) {
-                    content.sampler(
-                        std::move(result.first),
-                        std::move(result.second));
-                }
+        return shader_p.then([props = std::move(props)](const shader_ptr& shader) {
+            return the<deferrer>().do_in_main_thread([props = std::move(props), shader]() {
+                auto content = the<render>().create_const_buffer(shader, const_buffer::scope::material);
+                the<render>().update_buffer(content, props);
                 return content;
             });
+        });
     }
 
+    /*
     bool parse_depth_state(
         const rapidjson::Value& root,
         render::depth_state& depth)
@@ -818,53 +778,55 @@ namespace
         }
 
         return true;
-    }
+    }*/
 
-    bool parse_culling_state(
-        const rapidjson::Value& root,
-        render::culling_state& culling)
-    {
+    stdex::promise<render::culling_state_opt> parse_culling_state(const rapidjson::Value& root) {
+        render::culling_state culling;
+
+        if ( root.HasMember("enable") ) {
+            E2D_ASSERT(root["enable"].IsBool());
+            culling.enable(root["enable"].GetBool());
+        }
+
         if ( root.HasMember("mode") ) {
             E2D_ASSERT(root["mode"].IsString());
 
             render::culling_mode mode = culling.mode();
             if ( !parse_culling_mode(root["mode"].GetString(), mode) ) {
                 E2D_ASSERT_MSG(false, "unexpected culling state mode");
-                return false;
+                return stdex::make_rejected_promise<render::culling_state_opt>(
+                    material_asset_loading_exception());
             }
 
             culling.mode(mode);
         }
 
-        if ( root.HasMember("face") ) {
+        if ( culling.enabled() && root.HasMember("face") ) {
             E2D_ASSERT(root["face"].IsString());
 
             render::culling_face face = culling.face();
             if ( !parse_culling_face(root["face"].GetString(), face) ) {
                 E2D_ASSERT_MSG(false, "unexpected culling state face");
-                return false;
+                return stdex::make_rejected_promise<render::culling_state_opt>(
+                    material_asset_loading_exception());
             }
 
             culling.face(face);
         }
 
-        return true;
+        return stdex::make_resolved_promise(
+            render::culling_state_opt(culling));
     }
-
-    bool parse_blending_state(
-        const rapidjson::Value& root,
-        render::blending_state& blending)
+    
+    stdex::promise<render::blending_state_opt> parse_blending_state(const rapidjson::Value& root)
     {
-        if ( root.HasMember("constant_color") ) {
-            E2D_ASSERT(root["constant_color"].IsObject());
+        E2D_ASSERT(root.IsObject());
 
-            color color = blending.constant_color();
-            if ( !json_utils::try_parse_value(root["constant_color"], color) ) {
-                E2D_ASSERT_MSG(false, "unexpected blending state constant_color");
-                return false;
-            }
+        render::blending_state blending;
 
-            blending.constant_color(color);
+        if ( root.HasMember("enable") ) {
+            E2D_ASSERT(root["enable"].IsBool());
+            blending.enable(root["enable"].GetBool());
         }
 
         if ( root.HasMember("color_mask") ) {
@@ -873,7 +835,8 @@ namespace
             render::blending_color_mask mask = blending.color_mask();
             if ( !parse_blending_color_mask(root["color_mask"].GetString(), mask) ) {
                 E2D_ASSERT_MSG(false, "unexpected blending state color mask");
-                return false;
+                return stdex::make_rejected_promise<render::blending_state_opt>(
+                    material_asset_loading_exception());
             }
 
             blending.color_mask(mask);
@@ -884,7 +847,8 @@ namespace
                 render::blending_factor factor = blending.src_rgb_factor();
                 if ( !parse_blending_factor(root["src_factor"].GetString(), factor) ) {
                     E2D_ASSERT_MSG(false, "unexpected blending state src factor");
-                    return false;
+                    return stdex::make_rejected_promise<render::blending_state_opt>(
+                        material_asset_loading_exception());
                 }
                 blending.src_factor(factor);
             } else if ( root["src_factor"].IsObject() ) {
@@ -895,7 +859,8 @@ namespace
                     render::blending_factor factor = blending.src_rgb_factor();
                     if ( !parse_blending_factor(root_src_factor["rgb"].GetString(), factor) ) {
                         E2D_ASSERT_MSG(false, "unexpected blending state src factor");
-                        return false;
+                        return stdex::make_rejected_promise<render::blending_state_opt>(
+                            material_asset_loading_exception());
                     }
                     blending.src_rgb_factor(factor);
                 }
@@ -905,7 +870,8 @@ namespace
                     render::blending_factor factor = blending.src_alpha_factor();
                     if ( !parse_blending_factor(root_src_factor["alpha"].GetString(), factor) ) {
                         E2D_ASSERT_MSG(false, "unexpected blending state src factor");
-                        return false;
+                        return stdex::make_rejected_promise<render::blending_state_opt>(
+                            material_asset_loading_exception());
                     }
                     blending.src_alpha_factor(factor);
                 }
@@ -919,7 +885,8 @@ namespace
                 render::blending_factor factor = blending.dst_rgb_factor();
                 if ( !parse_blending_factor(root["dst_factor"].GetString(), factor) ) {
                     E2D_ASSERT_MSG(false, "unexpected blending state dst factor");
-                    return false;
+                    return stdex::make_rejected_promise<render::blending_state_opt>(
+                        material_asset_loading_exception());
                 }
                 blending.dst_factor(factor);
             } else if ( root["dst_factor"].IsObject() ) {
@@ -930,7 +897,8 @@ namespace
                     render::blending_factor factor = blending.dst_rgb_factor();
                     if ( !parse_blending_factor(root_dst_factor["rgb"].GetString(), factor) ) {
                         E2D_ASSERT_MSG(false, "unexpected blending state dst factor");
-                        return false;
+                        return stdex::make_rejected_promise<render::blending_state_opt>(
+                            material_asset_loading_exception());
                     }
                     blending.dst_rgb_factor(factor);
                 }
@@ -940,7 +908,8 @@ namespace
                     render::blending_factor factor = blending.dst_alpha_factor();
                     if ( !parse_blending_factor(root_dst_factor["alpha"].GetString(), factor) ) {
                         E2D_ASSERT_MSG(false, "unexpected blending state dst factor");
-                        return false;
+                        return stdex::make_rejected_promise<render::blending_state_opt>(
+                            material_asset_loading_exception());
                     }
                     blending.dst_alpha_factor(factor);
                 }
@@ -954,7 +923,8 @@ namespace
                 render::blending_equation equation = blending.rgb_equation();
                 if ( !parse_blending_equation(root["equation"].GetString(), equation) ) {
                     E2D_ASSERT_MSG(false, "unexpected blending state equation");
-                    return false;
+                    return stdex::make_rejected_promise<render::blending_state_opt>(
+                        material_asset_loading_exception());
                 }
                 blending.equation(equation);
             } else if ( root["equation"].IsObject() ) {
@@ -965,7 +935,8 @@ namespace
                     render::blending_equation equation = blending.rgb_equation();
                     if ( !parse_blending_equation(root_equation["rgb"].GetString(), equation) ) {
                         E2D_ASSERT_MSG(false, "unexpected blending state equation");
-                        return false;
+                        return stdex::make_rejected_promise<render::blending_state_opt>(
+                            material_asset_loading_exception());
                     }
                     blending.rgb_equation(equation);
                 }
@@ -975,7 +946,8 @@ namespace
                     render::blending_equation equation = blending.alpha_equation();
                     if ( !parse_blending_equation(root_equation["alpha"].GetString(), equation) ) {
                         E2D_ASSERT_MSG(false, "unexpected blending state equation");
-                        return false;
+                        return stdex::make_rejected_promise<render::blending_state_opt>(
+                            material_asset_loading_exception());
                     }
                     blending.alpha_equation(equation);
                 }
@@ -984,89 +956,11 @@ namespace
             }
         }
 
-        return true;
+        return stdex::make_resolved_promise(
+            render::blending_state_opt(blending));
     }
 
-    bool parse_capabilities_state(
-        const rapidjson::Value& root,
-        render::capabilities_state& capabilities)
-    {
-        if ( root.HasMember("culling") ) {
-            E2D_ASSERT(root["culling"].IsBool());
-            capabilities.culling(
-                root["culling"].GetBool());
-        }
-
-        if ( root.HasMember("blending") ) {
-            E2D_ASSERT(root["blending"].IsBool());
-            capabilities.blending(
-                root["blending"].GetBool());
-        }
-
-        if ( root.HasMember("depth_test") ) {
-            E2D_ASSERT(root["depth_test"].IsBool());
-            capabilities.depth_test(
-                root["depth_test"].GetBool());
-        }
-
-        if ( root.HasMember("stencil_test") ) {
-            E2D_ASSERT(root["stencil_test"].IsBool());
-            capabilities.stencil_test(
-                root["stencil_test"].GetBool());
-        }
-
-        return true;
-    }
-
-    stdex::promise<render::state_block> parse_state_block(
-        const rapidjson::Value& root)
-    {
-        render::state_block content;
-
-        if ( root.HasMember("depth_state") ) {
-            E2D_ASSERT(root["depth_state"].IsObject());
-            if ( !parse_depth_state(root["depth_state"], content.depth()) ) {
-                return stdex::make_rejected_promise<render::state_block>(
-                    material_asset_loading_exception());
-            }
-        }
-
-        if ( root.HasMember("stencil_state") ) {
-            E2D_ASSERT(root["stencil_state"].IsObject());
-            if ( !parse_stencil_state(root["stencil_state"], content.stencil()) ) {
-                return stdex::make_rejected_promise<render::state_block>(
-                    material_asset_loading_exception());
-            }
-        }
-
-        if ( root.HasMember("culling_state") ) {
-            E2D_ASSERT(root["culling_state"].IsObject());
-            if ( !parse_culling_state(root["culling_state"], content.culling()) ) {
-                return stdex::make_rejected_promise<render::state_block>(
-                    material_asset_loading_exception());
-            }
-        }
-
-        if ( root.HasMember("blending_state") ) {
-            E2D_ASSERT(root["blending_state"].IsObject());
-            if ( !parse_blending_state(root["blending_state"], content.blending()) ) {
-                return stdex::make_rejected_promise<render::state_block>(
-                    material_asset_loading_exception());
-            }
-        }
-
-        if ( root.HasMember("capabilities_state") ) {
-            E2D_ASSERT(root["capabilities_state"].IsObject());
-            if ( !parse_capabilities_state(root["capabilities_state"], content.capabilities()) ) {
-                return stdex::make_rejected_promise<render::state_block>(
-                    material_asset_loading_exception());
-            }
-        }
-
-        return stdex::make_resolved_promise(content);
-    }
-
-    stdex::promise<render::pass_state> parse_pass_state(
+    stdex::promise<render::material> parse_material(
         const library& library,
         str_view parent_address,
         const rapidjson::Value& root)
@@ -1075,69 +969,39 @@ namespace
             ? parse_shader_block(library, parent_address, root["shader"])
             : stdex::make_resolved_promise<shader_ptr>(nullptr);
 
-        auto state_block_p = root.HasMember("state_block")
-            ? parse_state_block(root["state_block"])
-            : stdex::make_resolved_promise<render::state_block>(render::state_block());
+        auto constants_p = root.HasMember("properties")
+            ? create_const_buffer(root["properties"], shader_p)
+            : stdex::make_resolved_promise<const_buffer_ptr>(nullptr);
 
-        auto property_block_p = root.HasMember("property_block")
-            ? parse_property_block(library, parent_address, root["property_block"])
-            : stdex::make_resolved_promise<render::property_block>(render::property_block());
+        auto samplers_p = parse_sampler_block(library, parent_address, root);
 
+        auto blending_p = root.HasMember("blending_state")
+            ? parse_blending_state(root["blending_state"])
+            : stdex::make_resolved_promise<render::blending_state_opt>({});
+        
+        auto culling_p = parse_culling_state(root);
+        
         return stdex::make_tuple_promise(std::make_tuple(
-            std::move(shader_p),
-            std::move(state_block_p),
-            std::move(property_block_p)
-        )).then([](const std::tuple<
-            shader_ptr,
-            render::state_block,
-            render::property_block
-        >& result) {
-            render::pass_state content;
-            content.shader(std::get<0>(result));
-            content.states(std::get<1>(result));
-            content.properties(std::get<2>(result));
-            return content;
-        });
-    }
-
-    stdex::promise<render::material> parse_material(
-        const library& library,
-        str_view parent_address,
-        const rapidjson::Value& root)
-    {
-        vector<stdex::promise<render::pass_state>> passes_p;
-
-        if ( root.HasMember("passes") ) {
-            E2D_ASSERT(root["passes"].IsArray());
-            const auto& passes_json = root["passes"];
-
-            passes_p.reserve(passes_json.Size());
-            for ( rapidjson::SizeType i = 0; i < passes_json.Size(); ++i ) {
-                E2D_ASSERT(passes_json[i].IsObject());
-                const auto& pass_json = passes_json[i];
-                passes_p.emplace_back(
-                    parse_pass_state(library, parent_address, pass_json));
-            }
-        }
-
-        auto property_block_p = root.HasMember("property_block")
-            ? parse_property_block(library, parent_address, root["property_block"])
-            : stdex::make_resolved_promise(render::property_block());
-
-        return stdex::make_tuple_promise(std::make_tuple(
-            stdex::make_all_promise(passes_p),
-            std::move(property_block_p)))
-        .then([](const std::tuple<
-            vector<render::pass_state>,
-            render::property_block
-        >& results) {
-            render::material content;
-            for ( auto& pass : std::get<0>(results) ) {
-                content.add_pass(pass);
-            }
-            content.properties(std::get<1>(results));
-            return content;
-        });
+            shader_p, constants_p, samplers_p, blending_p, culling_p))
+            .then([](const std::tuple<
+                shader_ptr,
+                const_buffer_ptr,
+                render::sampler_block,
+                render::blending_state_opt,
+                render::culling_state_opt
+            >& results) {
+                render::material content;
+                content.shader(std::get<0>(results));
+                content.constants(std::get<1>(results));
+                content.samplers(std::get<2>(results));
+                if ( auto& blending = std::get<3>(results); blending.has_value() ) {
+                    content.blending(*blending);
+                }
+                if ( auto& culling = std::get<4>(results); culling.has_value() ) {
+                    content.culling(*culling);
+                }
+                return content;
+            });
     }
 }
 

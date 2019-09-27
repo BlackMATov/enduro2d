@@ -10,6 +10,7 @@
 
 #include "assets/atlas_asset.hpp"
 #include "assets/binary_asset.hpp"
+#include "assets/cbuffer_template_asset.hpp"
 #include "assets/flipbook_asset.hpp"
 #include "assets/font_asset.hpp"
 #include "assets/image_asset.hpp"
@@ -50,6 +51,7 @@
 #include "components/ui_layout.hpp"
 #include "components/ui_controller.hpp"
 
+#include "systems/actor_system.hpp"
 #include "systems/flipbook_system.hpp"
 #include "systems/label_system.hpp"
 #include "systems/render_system.hpp"

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "_core.hpp"
+#include <optional> // TODO
 
 namespace e2d
 {
@@ -15,16 +16,26 @@ namespace e2d
     class texture;
     class index_buffer;
     class vertex_buffer;
+    class const_buffer;
     class render_target;
     class pixel_declaration;
     class index_declaration;
     class vertex_declaration;
+    class vertex_attribs;
 
     using shader_ptr = std::shared_ptr<shader>;
     using texture_ptr = std::shared_ptr<texture>;
     using index_buffer_ptr = std::shared_ptr<index_buffer>;
     using vertex_buffer_ptr = std::shared_ptr<vertex_buffer>;
+    using vertex_attribs_ptr = std::shared_ptr<const vertex_attribs>;
+    using const_buffer_ptr = std::shared_ptr<const_buffer>;
     using render_target_ptr = std::shared_ptr<render_target>;
+    
+    namespace render_cfg {
+        constexpr static std::size_t max_attribute_count = 8;
+        constexpr static std::size_t max_vertex_buffer_count = 4;
+        constexpr static std::size_t max_samplers_in_block = 4;
+    }
 
     //
     // bad_render_operation
@@ -45,8 +56,11 @@ namespace e2d
     public:
         enum class pixel_type : u8 {
             depth16,
+            depth16_stencil8,
             depth24,
             depth24_stencil8,
+            depth32,
+            depth32_stencil8,
 
             a8,
             l8,
@@ -204,8 +218,7 @@ namespace e2d
         std::size_t attribute_count() const noexcept;
         std::size_t bytes_per_vertex() const noexcept;
     private:
-        constexpr static std::size_t max_attribute_count = 8;
-        std::array<attribute_info, max_attribute_count> attributes_;
+        std::array<attribute_info, render_cfg::max_attribute_count> attributes_;
         std::size_t attribute_count_ = 0;
         std::size_t bytes_per_vertex_ = 0;
     };
@@ -304,8 +317,51 @@ namespace e2d
         ~vertex_buffer() noexcept;
     public:
         std::size_t buffer_size() const noexcept;
-        std::size_t vertex_count() const noexcept;
+    private:
+        internal_state_uptr state_;
+    };
+
+    //
+    // vertex attribs
+    //
+
+    class vertex_attribs final : private noncopyable {
+    public:
+        class internal_state;
+        using internal_state_uptr = std::unique_ptr<internal_state>;
+        const internal_state& state() const noexcept;
+    public:
+        explicit vertex_attribs(internal_state_uptr);
+        ~vertex_attribs() noexcept;
+    public:
         const vertex_declaration& decl() const noexcept;
+    private:
+        internal_state_uptr state_;
+    };
+
+    //
+    // const buffer
+    //
+
+    class const_buffer final : private noncopyable {
+    public:
+        class internal_state;
+        using internal_state_uptr = std::unique_ptr<internal_state>;
+        const internal_state& state() const noexcept;
+    public:
+        enum class scope : u8 {
+            render_pass,
+            material,
+            draw_command,
+            last_
+        };
+    public:
+        explicit const_buffer(internal_state_uptr);
+        ~const_buffer() noexcept;
+    public:
+        [[nodiscard]] std::size_t buffer_size() const noexcept;
+        [[nodiscard]] scope binding_scope() const noexcept;
+        [[nodiscard]] bool is_compatible_with(const shader_ptr& shader) const noexcept;
     private:
         internal_state_uptr state_;
     };
@@ -344,7 +400,6 @@ namespace e2d
     public:
         enum class topology : u8 {
             triangles,
-            triangles_fan,
             triangles_strip
         };
 
@@ -369,7 +424,7 @@ namespace e2d
             notequal,
             always
         };
-
+        
         enum class culling_mode : u8 {
             cw,
             ccw
@@ -443,30 +498,40 @@ namespace e2d
             nearest,
             linear
         };
+        
+        enum class attachment_load_op : u8 {
+            load,
+            clear,
+        };
+
+        enum class attachment_store_op : u8 {
+            store,
+            discard,
+        };
 
         class depth_state final {
         public:
-            depth_state& range(f32 near, f32 far) noexcept;
+            depth_state& test(bool enable) noexcept;
             depth_state& write(bool enable) noexcept;
             depth_state& func(compare_func func) noexcept;
 
-            f32 range_near() const noexcept;
-            f32 range_far() const noexcept;
+            bool test() const noexcept;
             bool write() const noexcept;
             compare_func func() const noexcept;
         private:
-            f32 range_near_ = 0.0f;
-            f32 range_far_ = 1.0f;
+            bool test_ = false;
             bool write_ = true;
             compare_func func_ = compare_func::less;
         };
 
         class stencil_state final {
         public:
+            stencil_state& test(bool enabled) noexcept;
             stencil_state& write(u8 mask) noexcept;
             stencil_state& func(compare_func func, u8 ref, u8 mask) noexcept;
             stencil_state& op(stencil_op pass, stencil_op sfail, stencil_op zfail) noexcept;
 
+            bool test() const noexcept;
             u8 write() const noexcept;
             compare_func func() const noexcept;
             u8 ref() const noexcept;
@@ -475,9 +540,10 @@ namespace e2d
             stencil_op sfail() const noexcept;
             stencil_op zfail() const noexcept;
         private:
-            u8 write_ = 1;
+            bool test_ = false;
+            u8 write_mask_ = 0xFF;
             u8 ref_ = 0;
-            u8 read_ = 1;
+            u8 read_ = 0xFF;
             stencil_op pass_ = stencil_op::keep;
             stencil_op sfail_ = stencil_op::keep;
             stencil_op zfail_ = stencil_op::keep;
@@ -488,17 +554,20 @@ namespace e2d
         public:
             culling_state& mode(culling_mode mode) noexcept;
             culling_state& face(culling_face face) noexcept;
-
+            culling_state& enable(bool value) noexcept;
+            
             culling_mode mode() const noexcept;
             culling_face face() const noexcept;
+            bool enabled() const noexcept;
         private:
-            culling_mode mode_ = culling_mode::ccw;
             culling_face face_ = culling_face::back;
+            culling_mode mode_ = culling_mode::ccw;
+            bool enabled_ = false;
         };
 
         class blending_state final {
         public:
-            blending_state& constant_color(const color& c) noexcept;
+            blending_state& enable(bool value) noexcept;
             blending_state& color_mask(blending_color_mask mask) noexcept;
 
             blending_state& factor(blending_factor src, blending_factor dst) noexcept;
@@ -517,7 +586,7 @@ namespace e2d
             blending_state& rgb_equation(blending_equation equation) noexcept;
             blending_state& alpha_equation(blending_equation equation) noexcept;
 
-            const color& constant_color() const noexcept;
+            bool enabled() const noexcept;
             blending_color_mask color_mask() const noexcept;
 
             blending_factor src_rgb_factor() const noexcept;
@@ -529,7 +598,7 @@ namespace e2d
             blending_equation rgb_equation() const noexcept;
             blending_equation alpha_equation() const noexcept;
         private:
-            color constant_color_ = color::clear();
+            bool enabled_ = false;
             blending_color_mask color_mask_ = blending_color_mask::rgba;
             blending_factor src_rgb_factor_ = blending_factor::one;
             blending_factor dst_rgb_factor_ = blending_factor::zero;
@@ -539,49 +608,27 @@ namespace e2d
             blending_equation alpha_equation_ = blending_equation::add;
         };
 
-        class capabilities_state final {
-        public:
-            capabilities_state& culling(bool enable) noexcept;
-            capabilities_state& blending(bool enable) noexcept;
-            capabilities_state& depth_test(bool enable) noexcept;
-            capabilities_state& stencil_test(bool enable) noexcept;
-
-            bool culling() const noexcept;
-            bool blending() const noexcept;
-            bool depth_test() const noexcept;
-            bool stencil_test() const noexcept;
-        private:
-            bool culling_ = false;
-            bool blending_ = false;
-            bool depth_test_ = false;
-            bool stencil_test_ = false;
-        };
-
         class state_block final {
         public:
             state_block& depth(const depth_state& state_block) noexcept;
             state_block& stencil(const stencil_state& state_block) noexcept;
             state_block& culling(const culling_state& state_block) noexcept;
             state_block& blending(const blending_state& state_block) noexcept;
-            state_block& capabilities(const capabilities_state& state_block) noexcept;
 
             depth_state& depth() noexcept;
             stencil_state& stencil() noexcept;
             culling_state& culling() noexcept;
             blending_state& blending() noexcept;
-            capabilities_state& capabilities() noexcept;
 
             const depth_state& depth() const noexcept;
             const stencil_state& stencil() const noexcept;
             const culling_state& culling() const noexcept;
             const blending_state& blending() const noexcept;
-            const capabilities_state& capabilities() const noexcept;
         private:
             depth_state depth_;
             stencil_state stencil_;
             culling_state culling_;
             blending_state blending_;
-            capabilities_state capabilities_;
         };
 
         class sampler_state {
@@ -611,14 +658,33 @@ namespace e2d
             sampler_mag_filter mag_filter_ = sampler_mag_filter::linear;
         };
 
-        using property_value = std::variant<
-            i32, f32,
-            v2i, v3i, v4i,
-            v2f, v3f, v4f,
-            m2f, m3f, m4f>;
+        class sampler_block final {
+        public:
+            enum class scope : u8 {
+                render_pass,
+                material,
+                last_
+            };
+        public:
+            sampler_block() = default;
 
-        template < typename T >
+            sampler_block& bind(str_hash name, const sampler_state& state) noexcept;
+
+            std::size_t count() const noexcept;
+            str_hash name(std::size_t index) const noexcept;
+            const sampler_state& sampler(std::size_t index) const noexcept;
+        private:
+            std::array<str_hash, render_cfg::max_samplers_in_block> names_;
+            std::array<sampler_state, render_cfg::max_samplers_in_block> samplers_;
+            std::size_t count_ = 0;
+        };
+
         class property_map final {
+        public:
+            using property_value = std::variant<
+                f32,
+                v2f, v3f, v4f,
+                m2f, m3f, m4f>;
         public:
             property_map() = default;
 
@@ -628,11 +694,11 @@ namespace e2d
             property_map(const property_map& other) = default;
             property_map& operator=(const property_map& other) = default;
 
-            T* find(str_hash key) noexcept;
-            const T* find(str_hash key) const noexcept;
+            property_value* find(str_hash key) noexcept;
+            const property_value* find(str_hash key) const noexcept;
 
-            void assign(str_hash key, T&& value);
-            void assign(str_hash key, const T& value);
+            property_map& assign(str_hash key, property_value&& value);
+            property_map& assign(str_hash key, const property_value& value);
 
             void clear() noexcept;
             std::size_t size() const noexcept;
@@ -642,226 +708,229 @@ namespace e2d
             void merge(const property_map& other);
             bool equals(const property_map& other) const noexcept;
         private:
-            flat_map<str_hash, T> values_;
+            flat_map<str_hash, property_value> values_;
         };
-
-        class property_block final {
+        
+        class renderpass_desc final {
         public:
-            property_block() = default;
-            ~property_block() noexcept = default;
+            renderpass_desc();
+            renderpass_desc(const render_target_ptr& rt) noexcept;
 
-            property_block(property_block&&) = default;
-            property_block& operator=(property_block&&) = default;
+            renderpass_desc& target(const render_target_ptr& value) noexcept;
+            [[nodiscard]] const render_target_ptr& target() const noexcept;
 
-            property_block(const property_block&) = default;
-            property_block& operator=(const property_block&) = default;
+            renderpass_desc& viewport(const b2u& value) noexcept;
+            [[nodiscard]] const b2u& viewport() const noexcept;
+            
+            renderpass_desc& depth_range(const v2f& value) noexcept;
+            [[nodiscard]] const v2f& depth_range() const noexcept;
 
-            property_block& clear() noexcept;
-            property_block& merge(const property_block& pb);
-            bool equals(const property_block& other) const noexcept;
+            renderpass_desc& states(const state_block& states) noexcept;
+            [[nodiscard]] const state_block& states() const noexcept;
+            
+            renderpass_desc& color_clear(const color& value) noexcept;
+            renderpass_desc& color_load() noexcept;
+            //renderpass_desc& color_invalidate() noexcept;
+            renderpass_desc& color_store() noexcept;
+            renderpass_desc& color_discard() noexcept;
+            [[nodiscard]] const color& color_clear_value() const noexcept;
+            [[nodiscard]] attachment_load_op color_load_op() const noexcept;
+            [[nodiscard]] attachment_store_op color_store_op() const noexcept;
 
-            property_block& sampler(str_hash name, const sampler_state& s);
-            sampler_state* sampler(str_hash name) noexcept;
-            const sampler_state* sampler(str_hash name) const noexcept;
-
-            template < typename T >
-            property_block& property(str_hash name, T&& v);
-            template < typename T >
-            const T* property(str_hash name) const noexcept;
-
-            property_block& property(str_hash name, const property_value& v);
-            property_value* property(str_hash name) noexcept;
-            const property_value* property(str_hash name) const noexcept;
-
-            template < typename F >
-            void foreach_by_samplers(F&& f) const;
-
-            template < typename F >
-            void foreach_by_properties(F&& f) const;
-
-            std::size_t sampler_count() const noexcept;
-            std::size_t property_count() const noexcept;
+            renderpass_desc& depth_clear(float value) noexcept;
+            renderpass_desc& depth_load() noexcept;
+            //renderpass_desc& depth_invalidate() noexcept;
+            renderpass_desc& depth_store() noexcept;
+            renderpass_desc& depth_discard() noexcept;
+            [[nodiscard]] float depth_clear_value() const noexcept;
+            [[nodiscard]] attachment_load_op depth_load_op() const noexcept;
+            [[nodiscard]] attachment_store_op depth_store_op() const noexcept;
+            
+            renderpass_desc& stencil_clear(u8 value) noexcept;
+            renderpass_desc& stencil_load() noexcept;
+            //renderpass_desc& stencil_invalidate() noexcept;
+            renderpass_desc& stencil_store() noexcept;
+            renderpass_desc& stencil_discard() noexcept;
+            [[nodiscard]] u8 stencil_clear_value() const noexcept;
+            [[nodiscard]] attachment_load_op stencil_load_op() const noexcept;
+            [[nodiscard]] attachment_store_op stencil_store_op() const noexcept;
         private:
-            property_map<sampler_state> samplers_;
-            property_map<property_value> properties_;
+            template < typename ClearValue >
+            struct target_props_ {
+                attachment_load_op load_op = attachment_load_op::load;
+                attachment_store_op store_op = attachment_store_op::store;
+                ClearValue clear_value;
+            };
+        private:
+            render_target_ptr target_;
+            target_props_<color> color_;
+            target_props_<float> depth_;
+            target_props_<u8> stencil_;
+            b2u viewport_;
+            v2f depth_range_;
+            state_block states_; // default/global states for all render pass, some states can be overriden by material
         };
 
-        class pass_state final {
-        public:
-            pass_state& shader(const shader_ptr& shader) noexcept;
-            pass_state& states(const state_block& states) noexcept;
-            pass_state& properties(const property_block& properties) noexcept;
-
-            shader_ptr& shader() noexcept;
-            state_block& states() noexcept;
-            property_block& properties() noexcept;
-
-            const shader_ptr& shader() const noexcept;
-            const state_block& states() const noexcept;
-            const property_block& properties() const noexcept;
-        private:
-            property_block properties_;
-            shader_ptr shader_;
-            state_block states_;
-        };
+        using blending_state_opt = std::optional<blending_state>;
+        using culling_state_opt = std::optional<culling_state>;
 
         class material final {
         public:
-            material& clear() noexcept;
-            bool equals(const material& other) const noexcept;
+            material() = default;
 
-            material& add_pass(const pass_state& pass) noexcept;
-            std::size_t pass_count() const noexcept;
+            material& blending(const blending_state& value) noexcept;
+            material& culling(const culling_state& value) noexcept;
+            material& shader(const shader_ptr& value) noexcept;
+            material& constants(const const_buffer_ptr& value) noexcept;
+            material& sampler(str_hash name, const sampler_state& sampler) noexcept;
+            material& samplers(const sampler_block& value) noexcept;
 
-            material& properties(const property_block& properties) noexcept;
-
-            pass_state& pass(std::size_t index) noexcept;
-            const pass_state& pass(std::size_t index) const noexcept;
-
-            property_block& properties() noexcept;
-            const property_block& properties() const noexcept;
+            const blending_state_opt& blending() const noexcept;
+            const culling_state_opt& culling() const noexcept;
+            const shader_ptr& shader() const noexcept;
+            const const_buffer_ptr& constants() const noexcept;
+            const sampler_block& samplers() const noexcept;
         private:
-            constexpr static std::size_t max_pass_count = 8;
-            std::array<pass_state, max_pass_count> passes_;
-            std::size_t pass_count_ = 0;
-            property_block properties_;
+            blending_state_opt blending_;
+            culling_state_opt culling_;
+            shader_ptr shader_;
+            const_buffer_ptr constants_;
+            sampler_block sampler_block_;
         };
 
-        class geometry final {
-        public:
-            geometry& clear() noexcept;
-            bool equals(const geometry& other) const noexcept;
-
-            geometry& add_vertices(const vertex_buffer_ptr& vb) noexcept;
-            std::size_t vertices_count() const noexcept;
-
-            geometry& topo(topology tp) noexcept;
-            geometry& indices(const index_buffer_ptr& ib) noexcept;
-            geometry& vertices(std::size_t index, const vertex_buffer_ptr& vb) noexcept;
-
-            topology& topo() noexcept;
-            index_buffer_ptr& indices() noexcept;
-            vertex_buffer_ptr& vertices(std::size_t index) noexcept;
-
-            const topology& topo() const noexcept;
-            const index_buffer_ptr& indices() const noexcept;
-            const vertex_buffer_ptr& vertices(std::size_t index) const noexcept;
-        private:
-            constexpr static std::size_t max_vertices_count = 8;
-            index_buffer_ptr indices_;
-            std::array<vertex_buffer_ptr, max_vertices_count> vertices_;
-            std::size_t vertices_count_ = 0;
-            topology topology_ = topology::triangles;
-        };
+        using material_cptr = std::shared_ptr<const material>;
 
         class zero_command final {
         public:
             zero_command() = default;
         };
 
-        class draw_command final {
+        class bind_vertex_buffers_command final {
         public:
-            draw_command() = delete;
-            draw_command(const material& mat, const geometry& geo) noexcept;
-            draw_command(const material& mat, const geometry& geo, const property_block& props) noexcept;
+            bind_vertex_buffers_command() = default;
 
-            draw_command& index_range(std::size_t first, std::size_t count) noexcept;
+            bind_vertex_buffers_command& add(
+                const vertex_buffer_ptr& buffer,
+                const vertex_attribs_ptr& attribs,
+                std::size_t offset = 0) noexcept;
 
-            draw_command& first_index(std::size_t value) noexcept;
-            draw_command& index_count(std::size_t value) noexcept;
-            draw_command& material_ref(const material& value) noexcept;
-            draw_command& geometry_ref(const geometry& value) noexcept;
-            draw_command& properties_ref(const property_block& value);
+            bind_vertex_buffers_command& bind(
+                std::size_t index,
+                const vertex_buffer_ptr& buffer,
+                const vertex_attribs_ptr& attribs,
+                std::size_t offset = 0) noexcept;
 
-            std::size_t first_index() const noexcept;
-            std::size_t index_count() const noexcept;
-            const material& material_ref() const noexcept;
-            const geometry& geometry_ref() const noexcept;
-            const property_block& properties_ref() const noexcept;
+            std::size_t binding_count() const noexcept;
+            const vertex_buffer_ptr& vertices(std::size_t index) const noexcept;
+            const vertex_attribs_ptr& attributes(std::size_t index) const noexcept;
+            std::size_t vertex_offset(std::size_t index) const noexcept;
+
         private:
-            std::size_t first_index_ = 0;
-            std::size_t index_count_ = std::size_t(-1);
-            const material* material_ = nullptr;
-            const geometry* geometry_ = nullptr;
-            const property_block* properties_ = nullptr;
+            std::array<vertex_buffer_ptr, render_cfg::max_vertex_buffer_count> buffers_;
+            std::array<vertex_attribs_ptr, render_cfg::max_vertex_buffer_count> attribs_;
+            std::array<std::size_t, render_cfg::max_vertex_buffer_count> offsets_; // in bytes
+            std::size_t count_ = 0;
         };
-
-        class clear_command final {
+        
+        class material_command final {
         public:
-            enum class buffer : u8 {
-                color = (1 << 0),
-                depth = (1 << 1),
-                stencil = (1 << 2),
-                color_depth = color | depth,
-                color_stencil = color | stencil,
-                depth_stencil = depth | stencil,
-                color_depth_stencil = color | depth | stencil
-            };
-        public:
-            clear_command() = default;
-            clear_command(buffer clear_buffer) noexcept;
+            material_command() = delete;
+            material_command(const material_cptr& value);
 
-            clear_command& color_value(const color& value) noexcept;
-            clear_command& depth_value(f32 value) noexcept;
-            clear_command& stencil_value(u8 value) noexcept;
-
-            color& color_value() noexcept;
-            f32& depth_value() noexcept;
-            u8& stencil_value() noexcept;
-
-            const color& color_value() const noexcept;
-            f32 depth_value() const noexcept;
-            u8 stencil_value() const noexcept;
-
-            buffer& clear_buffer() noexcept;
-            buffer clear_buffer() const noexcept;
+            const material_cptr& material() const noexcept;
         private:
-            color color_value_ = color::clear();
-            f32 depth_value_ = 1.f;
-            u8 stencil_value_ = 0;
-            buffer clear_buffer_ = buffer::color_depth_stencil;
+            material_cptr material_;
         };
-
-        class target_command final {
+        
+        class scissor_command final {
         public:
-            target_command() = default;
-            target_command(const render_target_ptr& rt) noexcept;
-            target_command& target(const render_target_ptr& value) noexcept;
-            render_target_ptr& target() noexcept;
-            const render_target_ptr& target() const noexcept;
-        private:
-            render_target_ptr target_;
-        };
+            scissor_command() = default;
+            scissor_command(const b2u& scissor_rect) noexcept;
 
-        class viewport_command final {
-        public:
-            viewport_command() = delete;
-            viewport_command(const b2u& viewport_rect) noexcept;
-            viewport_command(const b2u& viewport_rect, const b2u& scissor_rect) noexcept;
+            scissor_command& scissor_rect(const b2u& value) noexcept;
+            scissor_command& scissoring(bool value) noexcept;
 
-            viewport_command& viewport_rect(const b2u& value) noexcept;
-            viewport_command& scissor_rect(const b2u& value) noexcept;
-            viewport_command& scissoring(bool value) noexcept;
-
-            b2u& viewport_rect() noexcept;
-            b2u& scissor_rect() noexcept;
-            bool& scissoring() noexcept;
-
-            const b2u& viewport_rect() const noexcept;
             const b2u& scissor_rect() const noexcept;
             bool scissoring() const noexcept;
         private:
-            b2u viewport_rect_ = b2u::zero();
-            b2u scissor_rect_ = b2u::zero();
+            b2u scissor_rect_;
             bool scissoring_ = false;
+        };
+
+        template < typename T >
+        class change_sate_command_ final {
+        public:
+            change_sate_command_() = default;
+            explicit change_sate_command_(const T& state);
+
+            const std::optional<T>& state() const noexcept;
+        private:
+            std::optional<T> state_;
+        };
+
+        using blending_state_command = change_sate_command_<blending_state>;
+        using culling_state_command = change_sate_command_<culling_state>;
+        using stencil_state_command = change_sate_command_<stencil_state>;
+        using depth_state_command = change_sate_command_<depth_state>;
+        
+        class draw_command final {
+        public:
+            draw_command() = default;
+
+            draw_command& constants(const const_buffer_ptr& value) noexcept;
+
+            draw_command& topo(topology value) noexcept;
+            draw_command& vertex_range(u32 first, u32 count) noexcept;
+            draw_command& first_vertex(u32 value) noexcept;
+            draw_command& vertex_count(u32 value) noexcept;
+
+            u32 first_vertex() const noexcept;
+            u32 vertex_count() const noexcept;
+            topology topo() const noexcept;
+            const const_buffer_ptr& constants() const noexcept;
+        private:
+            const_buffer_ptr cbuffer_;
+            topology topology_ = topology::triangles;
+            u32 first_vertex_ = 0;
+            u32 vertex_count_ = 0;
+        };
+        
+        class draw_indexed_command final {
+        public:
+            draw_indexed_command() = default;
+
+            draw_indexed_command& constants(const const_buffer_ptr& value) noexcept;
+            draw_indexed_command& indices(const index_buffer_ptr& value) noexcept;
+            draw_indexed_command& topo(topology value) noexcept;
+
+            //draw_indexed_command& index_range(u32 count, size_t offset) noexcept;
+            draw_indexed_command& index_offset(size_t offsetInBytes) noexcept;
+            draw_indexed_command& index_count(u32 value) noexcept;
+            
+            size_t index_offset() const noexcept;
+            u32 index_count() const noexcept;
+            topology topo() const noexcept;
+            const index_buffer_ptr& indices() const noexcept;
+            const const_buffer_ptr& constants() const noexcept;
+        private:
+            const_buffer_ptr cbuffer_;
+            index_buffer_ptr index_buffer_;
+            topology topology_ = topology::triangles;
+            size_t index_offset_ = 0; // in bytes
+            u32 index_count_ = 0;
         };
 
         using command_value = std::variant<
             zero_command,
+            bind_vertex_buffers_command,
+            material_command,
+            scissor_command,
+            blending_state_command,
+            culling_state_command,
+            stencil_state_command,
+            depth_state_command,
             draw_command,
-            clear_command,
-            target_command,
-            viewport_command>;
+            draw_indexed_command>;
 
         template < std::size_t N >
         class command_block final {
@@ -909,10 +978,6 @@ namespace e2d
 
             bool element_index_uint = false;
 
-            bool depth16_supported = false;
-            bool depth24_supported = false;
-            bool depth24_stencil8_supported = false;
-
             bool dxt_compression_supported = false;
             bool etc1_compression_supported = false;
             bool etc2_compression_supported = false;
@@ -920,17 +985,22 @@ namespace e2d
             bool pvrtc_compression_supported = false;
             bool pvrtc2_compression_supported = false;
         };
+
+        struct statistics {
+            // framebuffer load/store counter
+            // framebuffer reusing at one frame
+            // draw call counter
+            // framebuffer bind counter
+            
+            u32 render_pass_count = 0;
+            u32 draw_calls = 0;
+        };
     public:
         render(debug& d, window& w);
         ~render() noexcept final;
 
         shader_ptr create_shader(
-            str_view vertex_source,
-            str_view fragment_source);
-
-        shader_ptr create_shader(
-            const input_stream_uptr& vertex_stream,
-            const input_stream_uptr& fragment_stream);
+            const shader_source& source);
 
         texture_ptr create_texture(
             const image& image);
@@ -947,10 +1017,28 @@ namespace e2d
             const index_declaration& decl,
             index_buffer::usage usage);
 
+        index_buffer_ptr create_index_buffer(
+            size_t size,
+            const index_declaration& decl,
+            index_buffer::usage usage);
+
         vertex_buffer_ptr create_vertex_buffer(
             buffer_view vertices,
-            const vertex_declaration& decl,
             vertex_buffer::usage usage);
+        
+        vertex_buffer_ptr create_vertex_buffer(
+            size_t size,
+            vertex_buffer::usage usage);
+
+        vertex_attribs_ptr create_vertex_attribs(
+            const vertex_declaration& decl);
+        
+        const_buffer_ptr create_const_buffer(
+            const shader_ptr& shader,
+            const_buffer::scope scope);
+        const_buffer_ptr create_const_buffer(
+            const cbuffer_template_cptr& templ,
+            const_buffer::scope scope);
 
         render_target_ptr create_render_target(
             const v2u& size,
@@ -958,15 +1046,30 @@ namespace e2d
             const pixel_declaration& depth_decl,
             render_target::external_texture external_texture);
 
+        render& begin_pass(
+            const renderpass_desc& desc,
+            const const_buffer_ptr& constants,
+            const sampler_block& samplers);
+        render& end_pass();
+        render& present();
+
         template < std::size_t N >
         render& execute(const command_block<N>& commands);
         render& execute(const command_value& command);
 
+        render& execute(const bind_vertex_buffers_command& command);
+        render& execute(const material_command& command);
+        render& execute(const scissor_command& command);
+        render& execute(const blending_state_command& command);
+        render& execute(const culling_state_command& command);
+        render& execute(const stencil_state_command& command);
+        render& execute(const depth_state_command& command);
         render& execute(const draw_command& command);
-        render& execute(const clear_command& command);
-        render& execute(const target_command& command);
-        render& execute(const viewport_command& command);
+        render& execute(const draw_indexed_command& command);
 
+        render& set_material(const material& mtr);
+
+        // in separate command buffer
         render& update_buffer(
             const index_buffer_ptr& ibuffer,
             buffer_view indices,
@@ -976,6 +1079,10 @@ namespace e2d
             const vertex_buffer_ptr& vbuffer,
             buffer_view vertices,
             std::size_t offset);
+
+        render& update_buffer(
+            const const_buffer_ptr& cbuffer,
+            const property_map& properties);
 
         render& update_texture(
             const texture_ptr& tex,
@@ -988,9 +1095,14 @@ namespace e2d
             const b2u& region);
 
         const device_caps& device_capabilities() const noexcept;
+        const statistics& frame_statistic() const noexcept;
+
         bool is_pixel_supported(const pixel_declaration& decl) const noexcept;
         bool is_index_supported(const index_declaration& decl) const noexcept;
         bool is_vertex_supported(const vertex_declaration& decl) const noexcept;
+
+        bool get_suitable_depth_texture_pixel_type(pixel_declaration& decl) const noexcept;
+        bool get_suitable_depth_stencil_texture_pixel_type(pixel_declaration& decl) const noexcept;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;
@@ -1018,35 +1130,26 @@ namespace e2d
     bool operator==(const render::blending_state& l, const render::blending_state& r) noexcept;
     bool operator!=(const render::blending_state& l, const render::blending_state& r) noexcept;
 
-    bool operator==(const render::capabilities_state& l, const render::capabilities_state& r) noexcept;
-    bool operator!=(const render::capabilities_state& l, const render::capabilities_state& r) noexcept;
-
     //
-    // render::property_block
+    // render::sampler_state
     //
-
-    bool operator==(const render::property_block& l, const render::property_block& r) noexcept;
-    bool operator!=(const render::property_block& l, const render::property_block& r) noexcept;
 
     bool operator==(const render::sampler_state& l, const render::sampler_state& r) noexcept;
     bool operator!=(const render::sampler_state& l, const render::sampler_state& r) noexcept;
 
+    //
+    // render::sampler_block
+    //
+
+    bool operator==(const render::sampler_block& l, const render::sampler_block& r) noexcept;
+    bool operator!=(const render::sampler_block& l, const render::sampler_block& r) noexcept;
+    
     //
     // render::material
     //
 
     bool operator==(const render::material& l, const render::material& r) noexcept;
     bool operator!=(const render::material& l, const render::material& r) noexcept;
-
-    bool operator==(const render::pass_state& l, const render::pass_state& r) noexcept;
-    bool operator!=(const render::pass_state& l, const render::pass_state& r) noexcept;
-
-    //
-    // render::geometry
-    //
-
-    bool operator==(const render::geometry& l, const render::geometry& r) noexcept;
-    bool operator!=(const render::geometry& l, const render::geometry& r) noexcept;
 }
 
 #include "render.inl"

@@ -14,353 +14,66 @@
 namespace
 {
     using namespace e2d;
-
-    const char* vertex_shader_header_cstr(render::api_profile profile) noexcept {
-        switch ( profile ) {
-        case e2d::render::api_profile::unknown:
-            return "";
-        case e2d::render::api_profile::opengles2:
-        case e2d::render::api_profile::opengles3:
-            return R"glsl(
-                precision highp int;
-                precision highp float;
-            )glsl";
-        case e2d::render::api_profile::opengl2_compat:
-            return R"glsl(
-                #version 120
-                #define highp
-                #define mediump
-                #define lowp
-            )glsl";
-        case e2d::render::api_profile::opengl4_compat:
-            return R"glsl(
-                #version 410 core
-                #define texture2D texture
-                #define varying out
-                #define attribute in
-            )glsl";
-        default:
-            E2D_ASSERT_MSG(false, "unexpected render API profile");
-            return "";
-        }
-    }
-
-    const char* fragment_shader_header_cstr(render::api_profile profile) noexcept {
-        switch ( profile ) {
-        case e2d::render::api_profile::unknown:
-            return "";
-        case e2d::render::api_profile::opengles2:
-        case e2d::render::api_profile::opengles3:
-            return R"glsl(
-                precision mediump int;
-                precision mediump float;
-            )glsl";
-        case e2d::render::api_profile::opengl2_compat:
-            return R"glsl(
-                #version 120
-                #define highp
-                #define mediump
-                #define lowp
-            )glsl";
-        case e2d::render::api_profile::opengl4_compat:
-            return R"glsl(
-                #version 410 core
-                #define texture2D texture
-                #define varying in
-            )glsl";
-        default:
-            E2D_ASSERT_MSG(false, "unexpected render API profile");
-            return "";
-        }
-    }
-}
-
-namespace
-{
-    using namespace e2d;
     using namespace e2d::opengl;
 
-    class property_block_value_visitor final : private noncopyable {
-    public:
-        property_block_value_visitor(debug& debug, uniform_info ui) noexcept
-        : debug_(debug)
-        , ui_(std::move(ui)) {}
+    struct property_block_visitor {
+        property_block_visitor(
+            float* dst,
+            size_t size,
+            size_t offset)
+        : dst_(dst)
+        , f32count_(size / sizeof(float))
+        , offset_(offset / sizeof(float)) {}
 
-        void operator()(i32 v) const noexcept {
-            if ( check_property_type(uniform_type::signed_integer) ) {
-                GL_CHECK_CODE(debug_, glUniform1i(ui_.location, v));
-            }
+        void operator ()(f32 v) noexcept {
+            E2D_ASSERT(offset_ + 1 <= f32count_);
+            std::memcpy(dst_ + offset_, &v, sizeof(v));
         }
 
-        void operator()(f32 v) const noexcept {
-            if ( check_property_type(uniform_type::floating_point) ) {
-                GL_CHECK_CODE(debug_, glUniform1f(ui_.location, v));
-            }
+        void operator ()(const v2f& v) noexcept {
+            E2D_ASSERT(offset_ % 2 == 0);
+            E2D_ASSERT(offset_ + 2 <= f32count_);
+            std::memcpy(dst_ + offset_, v.data(), sizeof(float)*2);
         }
 
-        void operator()(const v2i& v) const noexcept {
-            if ( check_property_type(uniform_type::v2i) ) {
-                GL_CHECK_CODE(debug_, glUniform2iv(ui_.location, 1, v.data()));
-            }
+        void operator ()(const v3f& v) noexcept {
+            E2D_ASSERT(offset_ % 4 == 0);
+            E2D_ASSERT(offset_ + 3 <= f32count_);
+            std::memcpy(dst_ + offset_, v.data(), sizeof(float)*3);
         }
 
-        void operator()(const v3i& v) const noexcept {
-            if ( check_property_type(uniform_type::v3i) ) {
-                GL_CHECK_CODE(debug_, glUniform3iv(ui_.location, 1, v.data()));
-            }
+        void operator ()(const v4f& v) noexcept {
+            E2D_ASSERT(offset_ % 4 == 0);
+            E2D_ASSERT(offset_ + 4 <= f32count_);
+            std::memcpy(dst_ + offset_, v.data(), sizeof(float)*4);
         }
 
-        void operator()(const v4i& v) const noexcept {
-            if ( check_property_type(uniform_type::v4i) ) {
-                GL_CHECK_CODE(debug_, glUniform4iv(ui_.location, 1, v.data()));
-            }
+        void operator ()(const m2f& v) noexcept {
+            E2D_ASSERT(offset_ % 4 == 0);
+            E2D_ASSERT(offset_ + 2*4 <= f32count_);
+            std::memcpy(dst_ + offset_ + 0, v.data() + 0, sizeof(float)*2);
+            std::memcpy(dst_ + offset_ + 4, v.data() + 2, sizeof(float)*2);
         }
 
-        void operator()(const v2f& v) const noexcept {
-            if ( check_property_type(uniform_type::v2f) ) {
-                GL_CHECK_CODE(debug_, glUniform2fv(ui_.location, 1, v.data()));
-            }
+        void operator ()(const m3f& v) noexcept {
+            E2D_ASSERT(offset_ % 4 == 0);
+            E2D_ASSERT(offset_ + 3*4 <= f32count_);
+            std::memcpy(dst_ + offset_ + 0, v.data() + 0, sizeof(float)*3);
+            std::memcpy(dst_ + offset_ + 4, v.data() + 3, sizeof(float)*3);
+            std::memcpy(dst_ + offset_ + 8, v.data() + 6, sizeof(float)*3);
         }
 
-        void operator()(const v3f& v) const noexcept {
-            if ( check_property_type(uniform_type::v3f) ) {
-                GL_CHECK_CODE(debug_, glUniform3fv(ui_.location, 1, v.data()));
-            }
+        void operator ()(const m4f& v) noexcept {
+            E2D_ASSERT(offset_ % 4 == 0);
+            E2D_ASSERT(offset_ + 4*4 <= f32count_);
+            std::memcpy(dst_ + offset_, v.data(), sizeof(float)*4*4);
         }
 
-        void operator()(const v4f& v) const noexcept {
-            if ( check_property_type(uniform_type::v4f) ) {
-                GL_CHECK_CODE(debug_, glUniform4fv(ui_.location, 1, v.data()));
-            }
-        }
-
-        void operator()(const m2f& v) const noexcept {
-            if ( check_property_type(uniform_type::m2f) ) {
-                GL_CHECK_CODE(debug_, glUniformMatrix2fv(ui_.location, 1, GL_TRUE, v.data()));
-            }
-        }
-
-        void operator()(const m3f& v) const noexcept {
-            if ( check_property_type(uniform_type::m3f) ) {
-                GL_CHECK_CODE(debug_, glUniformMatrix3fv(ui_.location, 1, GL_TRUE, v.data()));
-            }
-        }
-
-        void operator()(const m4f& v) const noexcept {
-            if ( check_property_type(uniform_type::m4f) ) {
-                GL_CHECK_CODE(debug_, glUniformMatrix4fv(ui_.location, 1, GL_TRUE, v.data()));
-            }
-        }
     private:
-        bool check_property_type(uniform_type type) const noexcept {
-            if ( type == ui_.type ) {
-                return true;
-            }
-            E2D_ASSERT_MSG(false, "unexpected property type");
-            debug_.error("RENDER: unexpected property type:\n"
-                "--> Type: %0\n"
-                "--> Expected: %1",
-                uniform_type_to_cstr(type),
-                uniform_type_to_cstr(ui_.type));
-            return false;
-        }
-    private:
-        debug& debug_;
-        uniform_info ui_;
+        float* dst_;
+        size_t f32count_; // number of floats in buffer
+        size_t offset_; // with 4 bytes step
     };
-
-    void bind_property_block(
-        debug& debug,
-        const shader_ptr& ps,
-        const render::property_block& pb) noexcept
-    {
-        E2D_ASSERT(ps && gl_program_id::current(debug) == ps->state().id());
-        pb.foreach_by_properties([&debug, &ps](str_hash name, const render::property_value& value) noexcept {
-            ps->state().with_uniform_location(name, [&debug, &value](const uniform_info& ui) noexcept {
-                E2D_ASSERT(!value.valueless_by_exception());
-                std::visit(property_block_value_visitor(debug, ui), value);
-            });
-        });
-        GLint unit = 0;
-        pb.foreach_by_samplers([&debug, &ps, &unit](str_hash name, const render::sampler_state& sampler) noexcept {
-            ps->state().with_uniform_location(name, [&debug, &sampler, &unit](const uniform_info& ui) noexcept {
-                GL_CHECK_CODE(debug, glActiveTexture(
-                    math::numeric_cast<GLenum>(GL_TEXTURE0 + unit)));
-                GL_CHECK_CODE(debug, glUniform1i(
-                    ui.location, math::numeric_cast<GLint>(unit)));
-                if ( sampler.texture() ) {
-                    const gl_texture_id& texture_id = sampler.texture()->state().id();
-                    GL_CHECK_CODE(debug, glBindTexture(
-                        texture_id.target(), *texture_id));
-                    GL_CHECK_CODE(debug, glTexParameteri(
-                        texture_id.target(),
-                        GL_TEXTURE_WRAP_S,
-                        convert_sampler_wrap(sampler.s_wrap())));
-                    GL_CHECK_CODE(debug, glTexParameteri(
-                        texture_id.target(),
-                        GL_TEXTURE_WRAP_T,
-                        convert_sampler_wrap(sampler.t_wrap())));
-                    GL_CHECK_CODE(debug, glTexParameteri(
-                        texture_id.target(),
-                        GL_TEXTURE_MIN_FILTER,
-                        convert_sampler_filter(sampler.min_filter())));
-                    GL_CHECK_CODE(debug, glTexParameteri(
-                        texture_id.target(),
-                        GL_TEXTURE_MAG_FILTER,
-                        convert_sampler_filter(sampler.mag_filter())));
-                } else {
-                    GL_CHECK_CODE(debug, glBindTexture(GL_TEXTURE_2D, 0));
-                    GL_CHECK_CODE(debug, glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
-                }
-                ++unit;
-            });
-        });
-    }
-
-    void unbind_property_block(
-        debug& debug,
-        const shader_ptr& ps,
-        const render::property_block& pb) noexcept
-    {
-        E2D_ASSERT(ps && gl_program_id::current(debug) == ps->state().id());
-        GLint unit = 0;
-        pb.foreach_by_samplers([&debug, &ps, &unit](str_hash name, const render::sampler_state& sampler) noexcept {
-            E2D_UNUSED(sampler);
-            ps->state().with_uniform_location(name, [&debug, &unit](const uniform_info& ui) noexcept {
-                E2D_UNUSED(ui);
-                GL_CHECK_CODE(debug, glActiveTexture(
-                    math::numeric_cast<GLenum>(GL_TEXTURE0 + unit)));
-                GL_CHECK_CODE(debug, glBindTexture(GL_TEXTURE_2D, 0));
-                GL_CHECK_CODE(debug, glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
-                ++unit;
-            });
-        });
-    }
-
-    void bind_vertex_declaration(
-        debug& debug,
-        const shader_ptr& ps,
-        const vertex_buffer_ptr& vb) noexcept
-    {
-        E2D_ASSERT(ps && vb);
-        opengl::with_gl_bind_buffer(debug, vb->state().id(), [&debug, &ps, &vb]() noexcept {
-            const vertex_declaration& decl = vb->decl();
-            for ( std::size_t i = 0, e = decl.attribute_count(); i < e; ++i ) {
-                const vertex_declaration::attribute_info& vai = decl.attribute(i);
-                ps->state().with_attribute_location(vai.name, [&debug, &decl, &vai](const attribute_info& ai) noexcept {
-                    const GLuint rows = math::numeric_cast<GLuint>(vai.rows);
-                    for ( GLuint row = 0; row < rows; ++row ) {
-                        GL_CHECK_CODE(debug, glEnableVertexAttribArray(
-                            math::numeric_cast<GLuint>(ai.location) + row));
-                        GL_CHECK_CODE(debug, glVertexAttribPointer(
-                            math::numeric_cast<GLuint>(ai.location) + row,
-                            math::numeric_cast<GLint>(vai.columns),
-                            convert_attribute_type(vai.type),
-                            vai.normalized ? GL_TRUE : GL_FALSE,
-                            math::numeric_cast<GLsizei>(decl.bytes_per_vertex()),
-                            reinterpret_cast<const GLvoid*>(vai.stride + row * vai.row_size())));
-                    }
-                });
-            }
-        });
-    }
-
-    void unbind_vertex_declaration(
-        debug& debug,
-        const shader_ptr& ps,
-        const vertex_buffer_ptr& vb) noexcept
-    {
-        E2D_ASSERT(ps && vb);
-        const vertex_declaration& decl = vb->decl();
-        for ( std::size_t i = 0, e = decl.attribute_count(); i < e; ++i ) {
-            const vertex_declaration::attribute_info& vai = decl.attribute(i);
-            ps->state().with_attribute_location(vai.name, [&debug, &vai](const attribute_info& ai) noexcept {
-                const GLuint rows = math::numeric_cast<GLuint>(vai.rows);
-                for ( GLuint row = 0; row < rows; ++row ) {
-                    GL_CHECK_CODE(debug, glDisableVertexAttribArray(
-                        math::numeric_cast<GLuint>(ai.location) + row));
-                }
-            });
-        }
-    }
-
-    void draw_indexed_primitive(
-        debug& debug,
-        render::topology tp,
-        const index_buffer_ptr& ib,
-        std::size_t first,
-        std::size_t count) noexcept
-    {
-        E2D_ASSERT(ib);
-        with_gl_bind_buffer(debug, ib->state().id(), [&debug, &tp, &ib, &first, &count]() noexcept {
-            const index_declaration& decl = ib->decl();
-            if ( first < ib->index_count() ) {
-                GL_CHECK_CODE(debug, glDrawElements(
-                    convert_topology(tp),
-                    math::numeric_cast<GLsizei>(math::min(count, ib->index_count() - first)),
-                    convert_index_type(decl.type()),
-                    reinterpret_cast<const GLvoid*>(first * decl.bytes_per_index())));
-            }
-        });
-    }
-
-    template < typename F, typename... Args >
-    void with_material_shader(
-        debug& debug,
-        const shader_ptr& ps,
-        const render::property_block& pb,
-        F&& f,
-        Args&&... args)
-    {
-        bind_property_block(debug, ps, pb);
-        try {
-            std::invoke(
-                std::forward<F>(f),
-                std::forward<Args>(args)...);
-        } catch (...) {
-            unbind_property_block(debug, ps, pb);
-            throw;
-        }
-        unbind_property_block(debug, ps, pb);
-    }
-
-    template < typename F, typename... Args >
-    void with_geometry_vertices(
-        debug& debug,
-        const shader_ptr& ps,
-        const render::geometry& geo,
-        F&& f,
-        Args&&... args)
-    {
-        for ( std::size_t i = 0, e = geo.vertices_count(); i < e; ++i ) {
-            const vertex_buffer_ptr& vb = geo.vertices(i);
-            if ( vb ) {
-                bind_vertex_declaration(debug, ps, vb);
-            }
-        }
-        try {
-            std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-        } catch (...) {
-            for ( std::size_t i = 0, e = geo.vertices_count(); i < e; ++i ) {
-                const vertex_buffer_ptr& vb = geo.vertices(i);
-                if ( vb ) {
-                    unbind_vertex_declaration(debug, ps, vb);
-                }
-            }
-            throw;
-        }
-        for ( std::size_t i = 0, e = geo.vertices_count(); i < e; ++i ) {
-            const vertex_buffer_ptr& vb = geo.vertices(i);
-            if ( vb ) {
-                unbind_vertex_declaration(debug, ps, vb);
-            }
-        }
-    }
-
-    render::property_block& main_property_cache() {
-        static render::property_block props;
-        return props;
-    }
 }
 
 namespace e2d
@@ -445,14 +158,49 @@ namespace e2d
     std::size_t vertex_buffer::buffer_size() const noexcept {
         return state_->size();
     }
-
-    std::size_t vertex_buffer::vertex_count() const noexcept {
-        E2D_ASSERT(state_->size() % state_->decl().bytes_per_vertex() == 0);
-        return state_->size() / state_->decl().bytes_per_vertex();
+    
+    //
+    // vertex_attribs
+    //
+    
+    const vertex_attribs::internal_state& vertex_attribs::state() const noexcept {
+        return *state_;
     }
 
-    const vertex_declaration& vertex_buffer::decl() const noexcept {
+    vertex_attribs::vertex_attribs(internal_state_uptr state)
+    : state_(std::move(state)) {
+        E2D_ASSERT(state_);
+    }
+    vertex_attribs::~vertex_attribs() noexcept = default;
+    
+    const vertex_declaration& vertex_attribs::decl() const noexcept {
         return state_->decl();
+    }
+
+    //
+    // const_buffer
+    //
+    
+    const const_buffer::internal_state& const_buffer::state() const noexcept {
+        return *state_;
+    }
+
+    const_buffer::const_buffer(internal_state_uptr state)
+    : state_(std::move(state)) {
+        E2D_ASSERT(state_);
+    }
+    const_buffer::~const_buffer() noexcept = default;
+    
+    std::size_t const_buffer::buffer_size() const noexcept {
+        return state_->size();
+    }
+
+    const_buffer::scope const_buffer::binding_scope() const noexcept {
+        return state_->binding_scope();
+    }
+
+    bool const_buffer::is_compatible_with(const shader_ptr& shader) const noexcept {
+        return state_->is_compatible_with(shader);
     }
 
     //
@@ -490,17 +238,16 @@ namespace e2d
         E2D_ASSERT(main_thread() == nwindow.main_thread());
     }
     render::~render() noexcept = default;
-
+    
     shader_ptr render::create_shader(
-        str_view vertex_source,
-        str_view fragment_source)
+        const shader_source& source)
     {
         E2D_ASSERT(is_in_main_thread());
 
         gl_shader_id vs = gl_compile_shader(
             state_->dbg(),
-            vertex_shader_header_cstr(device_capabilities().profile),
-            vertex_source,
+            state_->vertex_shader_header(),
+            source.vertex_shader(),
             GL_VERTEX_SHADER);
 
         if ( vs.empty() ) {
@@ -509,8 +256,8 @@ namespace e2d
 
         gl_shader_id fs = gl_compile_shader(
             state_->dbg(),
-            fragment_shader_header_cstr(device_capabilities().profile),
-            fragment_source,
+            state_->fragment_shader_header(),
+            source.fragment_shader(),
             GL_FRAGMENT_SHADER);
 
         if ( fs.empty() ) {
@@ -528,22 +275,12 @@ namespace e2d
 
         return std::make_shared<shader>(
             std::make_unique<shader::internal_state>(
-                state_->dbg(), std::move(ps)));
+                state_->dbg(),
+                std::move(ps),
+                source,
+                state_->device_capabilities_ext().uniform_buffer_supported));
     }
-
-    shader_ptr render::create_shader(
-        const input_stream_uptr& vertex,
-        const input_stream_uptr& fragment)
-    {
-        E2D_ASSERT(is_in_main_thread());
-
-        str vertex_source, fragment_source;
-        return streams::try_read_tail(vertex_source, vertex)
-            && streams::try_read_tail(fragment_source, fragment)
-            ? create_shader(vertex_source, fragment_source)
-            : nullptr;
-    }
-
+    
     texture_ptr render::create_texture(
         const image& image)
     {
@@ -727,6 +464,7 @@ namespace e2d
         index_buffer::usage usage)
     {
         E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(indices.size() > 0);
         E2D_ASSERT(indices.size() % decl.bytes_per_index() == 0);
 
         if ( !is_index_supported(decl) ) {
@@ -757,19 +495,50 @@ namespace e2d
                 state_->dbg(), std::move(id), indices.size(), decl));
     }
 
+    index_buffer_ptr render::create_index_buffer(
+        size_t size,
+        const index_declaration& decl,
+        index_buffer::usage usage)
+    {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(size > 0);
+        E2D_ASSERT(size % decl.bytes_per_index() == 0);
+        E2D_ASSERT(usage != index_buffer::usage::static_draw);
+
+        if ( !is_index_supported(decl) ) {
+            state_->dbg().error("RENDER: Failed to create index buffer:\n"
+                "--> Info: unsupported index declaration\n"
+                "--> Index type: %0",
+                index_declaration::index_type_to_cstr(decl.type()));
+            return nullptr;
+        }
+
+        gl_buffer_id id = gl_buffer_id::create(state_->dbg(), GL_ELEMENT_ARRAY_BUFFER);
+        if ( id.empty() ) {
+            state_->dbg().error("RENDER: Failed to create index buffer:\n"
+                "--> Info: failed to create index buffer id");
+            return nullptr;
+        }
+
+        with_gl_bind_buffer(state_->dbg(), id, [this, &id, size, &usage]() {
+            GL_CHECK_CODE(state_->dbg(), glBufferData(
+                id.target(),
+                math::numeric_cast<GLsizeiptr>(size),
+                nullptr,
+                convert_buffer_usage(usage)));
+        });
+
+        return std::make_shared<index_buffer>(
+            std::make_unique<index_buffer::internal_state>(
+                state_->dbg(), std::move(id), size, decl));
+    }
+
     vertex_buffer_ptr render::create_vertex_buffer(
         buffer_view vertices,
-        const vertex_declaration& decl,
         vertex_buffer::usage usage)
     {
         E2D_ASSERT(is_in_main_thread());
-        E2D_ASSERT(vertices.size() % decl.bytes_per_vertex() == 0);
-
-        if ( !is_vertex_supported(decl) ) {
-            state_->dbg().error("RENDER: Failed to create vertex buffer:\n"
-                "--> Info: unsupported vertex declaration");
-            return nullptr;
-        }
+        E2D_ASSERT(vertices.size() > 0);
 
         gl_buffer_id id = gl_buffer_id::create(state_->dbg(), GL_ARRAY_BUFFER);
         if ( id.empty() ) {
@@ -788,7 +557,110 @@ namespace e2d
 
         return std::make_shared<vertex_buffer>(
             std::make_unique<vertex_buffer::internal_state>(
-                state_->dbg(), std::move(id), vertices.size(), decl));
+                state_->dbg(), std::move(id), vertices.size()));
+    }
+    
+    vertex_buffer_ptr render::create_vertex_buffer(
+        size_t size,
+        vertex_buffer::usage usage)
+    {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(size > 0);
+        E2D_ASSERT(usage != vertex_buffer::usage::static_draw);
+
+        gl_buffer_id id = gl_buffer_id::create(state_->dbg(), GL_ARRAY_BUFFER);
+        if ( id.empty() ) {
+            state_->dbg().error("RENDER: Failed to create vertex buffer:\n"
+                "--> Info: failed to create vertex buffer id");
+            return nullptr;
+        }
+
+        with_gl_bind_buffer(state_->dbg(), id, [this, &id, size, &usage]() {
+            GL_CHECK_CODE(state_->dbg(), glBufferData(
+                id.target(),
+                math::numeric_cast<GLsizeiptr>(size),
+                nullptr,
+                convert_buffer_usage(usage)));
+        });
+
+        return std::make_shared<vertex_buffer>(
+            std::make_unique<vertex_buffer::internal_state>(
+                state_->dbg(), std::move(id), size));
+    }
+    
+    vertex_attribs_ptr render::create_vertex_attribs(
+        const vertex_declaration& decl)
+    {
+        E2D_ASSERT(is_in_main_thread());
+
+        if ( !is_vertex_supported(decl) ) {
+            state_->dbg().error("RENDER: Failed to create vertex buffer:\n"
+                "--> Info: unsupported vertex declaration");
+            return nullptr;
+        }
+        return state_->create_vertex_attribs(decl);
+    }
+        
+    const_buffer_ptr render::create_const_buffer(
+        const shader_ptr& shader,
+        const_buffer::scope scope)
+    {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(shader);
+
+        const auto block_info = shader->state().get_block_info(scope);
+        if ( !block_info.templ ) {
+            // shader does not contains const buffer for current scope
+            return nullptr;
+        }
+
+        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+            E2D_ASSERT(block_info.is_buffer); // TODO: exception
+        } else {
+            E2D_ASSERT(!block_info.is_buffer); // TODO: exception
+        }
+
+        return create_const_buffer(block_info.templ, scope);
+    }
+
+    const_buffer_ptr render::create_const_buffer(
+        const cbuffer_template_cptr& templ,
+        const_buffer::scope scope)
+    {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(templ);
+
+        gl_buffer_id buf_id(state_->dbg());
+        const size_t block_size = templ->block_size();
+
+        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+            buf_id = gl_buffer_id::create(state_->dbg(), GL_UNIFORM_BUFFER);
+            if ( buf_id.empty() ) {
+                state_->dbg().error("RENDER: Failed to create uniform buffer:\n"
+                    "--> Info: failed to create uniform buffer id");
+                return nullptr;
+            }
+            
+            with_gl_bind_buffer(state_->dbg(), buf_id, [this, &buf_id, block_size, scope]() {
+                GL_CHECK_CODE(state_->dbg(), glBufferData(
+                    buf_id.target(),
+                    math::numeric_cast<GLsizeiptr>(block_size),
+                    nullptr,
+                    scope == const_buffer::scope::draw_command
+                        ? GL_STREAM_DRAW
+                        : GL_DYNAMIC_DRAW));
+            });
+        } else {
+            E2D_ASSERT(block_size % 16 == 0);
+        }
+
+        return std::make_shared<const_buffer>(
+            std::make_unique<const_buffer::internal_state>(
+                state_->dbg(),
+                std::move(buf_id),
+                0,
+                scope,
+                templ));
     }
 
     render_target_ptr render::create_render_target(
@@ -915,122 +787,131 @@ namespace e2d
                 std::move(color_rb),
                 std::move(depth_rb)));
     }
+    
+    render& render::begin_pass(
+        const renderpass_desc& desc,
+        const const_buffer_ptr& constants,
+        const sampler_block& samplers)
+    {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(!constants || constants->binding_scope() == const_buffer::scope::render_pass);
+
+        state_->begin_render_pass(desc);
+        state_->bind_const_buffer(constants);
+        state_->bind_textures(sampler_block::scope::render_pass, samplers);
+        return *this;
+    }
+
+    render& render::end_pass() {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
+
+        state_->end_render_pass();
+        return *this;
+    }
+        
+    render& render::present() {
+        E2D_ASSERT(is_in_main_thread());
+
+        if ( state_->inside_render_pass() ) {
+            state_->end_render_pass();
+        }
+
+        //E2D_ASSERT(!state_->inside_render_pass());
+        // TODO: check unpresented changes
+
+        state_->on_present();
+        state_->wnd().swap_buffers();
+        return *this;
+    }
+        
+    render& render::execute(const bind_vertex_buffers_command& command) {
+        E2D_ASSERT(is_in_main_thread());
+        for ( size_t i = 0; i < command.binding_count(); ++i ) {
+            state_->bind_vertex_buffer(
+                i,
+                command.vertices(i),
+                command.attributes(i),
+                command.vertex_offset(i));
+        }
+        return *this;
+    }
+
+    render& render::execute(const material_command& command) {
+        E2D_ASSERT(command.material());
+        return set_material(*command.material());
+    }
+    
+    render& render::set_material(const material& mtr) {
+        E2D_ASSERT(is_in_main_thread());
+        state_->set_shader_program(mtr.shader());
+        state_->bind_textures(sampler_block::scope::material, mtr.samplers());
+        state_->bind_const_buffer(mtr.constants());
+        state_->set_blending_state(mtr.blending());
+        state_->set_culling_state(mtr.culling());
+        return *this;
+    }
+
+    render& render::execute(const scissor_command& command) {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
+        state_->set_scissor(command.scissoring(), command.scissor_rect());
+        return *this;
+    }
+    
+    render& render::execute(const blending_state_command& command) {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
+        state_->set_blending_state(command.state());
+        return *this;
+    }
+
+    render& render::execute(const culling_state_command& command) {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
+        state_->set_culling_state(command.state());
+        return *this;
+    }
+
+    render& render::execute(const stencil_state_command& command) {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
+        state_->set_stencil_state(command.state());
+        return *this;
+    }
+
+    render& render::execute(const depth_state_command& command) {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
+        state_->set_depth_state(command.state());
+        return *this;
+    }
 
     render& render::execute(const draw_command& command) {
         E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(command.vertex_count() > 0);
+        E2D_ASSERT(state_->inside_render_pass());
 
-        const material& mat = command.material_ref();
-        const geometry& geo = command.geometry_ref();
-        const property_block& props = command.properties_ref();
+        state_->bind_const_buffer(command.constants());
+        state_->draw(
+            command.topo(),
+            command.first_vertex(),
+            command.vertex_count());
 
-        for ( std::size_t i = 0, e = mat.pass_count(); i < e; ++i ) {
-            const pass_state& pass = mat.pass(i);
-            if ( !pass.shader() || !geo.indices() ) {
-                continue;
-            }
-            try {
-                const property_block& main_props = main_property_cache()
-                    .merge(mat.properties())
-                    .merge(pass.properties())
-                    .merge(props);
-                state_->set_states(pass.states());
-                state_->set_shader_program(pass.shader());
-                with_material_shader(state_->dbg(), pass.shader(), main_props, [this, &command, &pass, &geo]() noexcept {
-                    with_geometry_vertices(state_->dbg(), pass.shader(), command.geometry_ref(), [this, &command, &geo]() noexcept {
-                        draw_indexed_primitive(
-                            state_->dbg(),
-                            geo.topo(),
-                            geo.indices(),
-                            command.first_index(),
-                            command.index_count());
-                    });
-                });
-            } catch (...) {
-                main_property_cache().clear();
-                throw;
-            }
-            main_property_cache().clear();
-        }
         return *this;
     }
 
-    render& render::execute(const clear_command& command) {
+    render& render::execute(const draw_indexed_command& command) {
         E2D_ASSERT(is_in_main_thread());
-
-        bool clear_color =
-            !!(utils::enum_to_underlying(command.clear_buffer())
-            & utils::enum_to_underlying(clear_command::buffer::color));
-        bool clear_depth =
-            !!(utils::enum_to_underlying(command.clear_buffer())
-            & utils::enum_to_underlying(clear_command::buffer::depth));
-        bool clear_stencil =
-            !!(utils::enum_to_underlying(command.clear_buffer())
-            & utils::enum_to_underlying(clear_command::buffer::stencil));
-
-        const render_target_ptr& rt = state_->render_target();
-        bool has_color = !rt || rt->state().color() || !rt->state().color_rb().empty();
-        bool has_depth = !rt || rt->state().depth() || !rt->state().depth_rb().empty();
-
-        GLbitfield clear_mask = 0;
-        if ( has_color && clear_color  ) {
-            clear_mask |= GL_COLOR_BUFFER_BIT;
-            GL_CHECK_CODE(state_->dbg(), glClearColor(
-                math::numeric_cast<GLclampf>(math::saturate(command.color_value().r)),
-                math::numeric_cast<GLclampf>(math::saturate(command.color_value().g)),
-                math::numeric_cast<GLclampf>(math::saturate(command.color_value().b)),
-                math::numeric_cast<GLclampf>(math::saturate(command.color_value().a))));
-        }
-        if ( has_depth ) {
-            if ( clear_depth ) {
-                clear_mask |= GL_DEPTH_BUFFER_BIT;
-            #if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL
-                GL_CHECK_CODE(state_->dbg(), glClearDepth(
-                    math::numeric_cast<GLclampd>(math::saturate(command.depth_value()))));
-            #elif E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES
-                GL_CHECK_CODE(state_->dbg(), glClearDepthf(
-                    math::numeric_cast<GLclampf>(math::saturate(command.depth_value()))));
-            #else
-            #   error unknown render mode
-            #endif
-            }
-            if ( clear_stencil ) {
-                clear_mask |= GL_STENCIL_BUFFER_BIT;
-                GL_CHECK_CODE(state_->dbg(), glClearStencil(
-                    math::numeric_cast<GLint>(command.stencil_value())));
-            }
-        }
-        GL_CHECK_CODE(state_->dbg(), glClear(clear_mask));
-        return *this;
-    }
-
-    render& render::execute(const target_command& command) {
-        E2D_ASSERT(is_in_main_thread());
-        state_->set_render_target(command.target());
-        return *this;
-    }
-
-    render& render::execute(const viewport_command& command) {
-        E2D_ASSERT(is_in_main_thread());
-
-        const b2u viewport = math::make_minmax_rect(command.viewport_rect());
-        GL_CHECK_CODE(state_->dbg(), glViewport(
-            math::numeric_cast<GLint>(viewport.position.x),
-            math::numeric_cast<GLint>(viewport.position.y),
-            math::numeric_cast<GLsizei>(viewport.size.x),
-            math::numeric_cast<GLsizei>(viewport.size.y)));
-
-        if ( command.scissoring() ) {
-            const b2u scissor = math::make_minmax_rect(command.scissor_rect());
-            GL_CHECK_CODE(state_->dbg(), glScissor(
-                math::numeric_cast<GLint>(scissor.position.x),
-                math::numeric_cast<GLint>(scissor.position.y),
-                math::numeric_cast<GLsizei>(scissor.size.x),
-                math::numeric_cast<GLsizei>(scissor.size.y)));
-            GL_CHECK_CODE(state_->dbg(), glEnable(GL_SCISSOR_TEST));
-        } else {
-            GL_CHECK_CODE(state_->dbg(), glDisable(GL_SCISSOR_TEST));
-        }
-
+        E2D_ASSERT(command.index_count() > 0);
+        E2D_ASSERT(state_->inside_render_pass());
+        
+        state_->bind_index_buffer(command.indices());
+        state_->bind_const_buffer(command.constants());
+        state_->draw_indexed(
+            command.topo(),
+            command.index_count(),
+            command.index_offset());
         return *this;
     }
 
@@ -1062,17 +943,46 @@ namespace e2d
     {
         E2D_ASSERT(is_in_main_thread());
         E2D_ASSERT(vbuffer);
-        const std::size_t buffer_offset = offset * vbuffer->state().decl().bytes_per_vertex();
-        E2D_ASSERT(vertices.size() + buffer_offset <= vbuffer->state().size());
-        E2D_ASSERT(vertices.size() % vbuffer->state().decl().bytes_per_vertex() == 0);
+        E2D_ASSERT(vertices.size() + offset <= vbuffer->state().size());
         opengl::with_gl_bind_buffer(vbuffer->state().dbg(), vbuffer->state().id(),
-            [&vbuffer, &vertices, &buffer_offset]() noexcept {
+            [&vbuffer, &vertices, offset]() noexcept {
                 GL_CHECK_CODE(vbuffer->state().dbg(), glBufferSubData(
                     vbuffer->state().id().target(),
-                    math::numeric_cast<GLintptr>(buffer_offset),
+                    math::numeric_cast<GLintptr>(offset),
                     math::numeric_cast<GLsizeiptr>(vertices.size()),
                     vertices.data()));
             });
+        return *this;
+    }
+    
+    render& render::update_buffer(
+        const const_buffer_ptr& cbuffer,
+        const property_map& properties)
+    {
+        E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(cbuffer);
+        auto& cb = cbuffer->state();
+
+        for ( auto& un : cb.block_template()->uniforms() ) {
+            auto* value = properties.find(un.name_hash);
+            if ( value ) {
+                property_block_visitor visitor(
+                    cb.data(),
+                    cb.size(),
+                    un.offset);
+                std::visit(visitor, *value);
+            }
+        }
+        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+            with_gl_bind_buffer(state_->dbg(), cb.id(), [&cb]() noexcept{
+                GL_CHECK_CODE(cb.dbg(), glBufferSubData(
+                    cb.id().target(),
+                    0,
+                    math::numeric_cast<GLsizei>(cb.size()),
+                    cb.data()));
+            });
+        }
+        cb.on_content_update(state_->frame_id());
         return *this;
     }
 
@@ -1152,22 +1062,32 @@ namespace e2d
         E2D_ASSERT(is_in_main_thread());
         return state_->device_capabilities();
     }
-
+    
+    const render::statistics& render::frame_statistic() const noexcept {
+        E2D_ASSERT(is_in_main_thread());
+        return state_->last_stats();
+    }
+    
     bool render::is_pixel_supported(const pixel_declaration& decl) const noexcept {
         E2D_ASSERT(is_in_main_thread());
-        const device_caps& caps = device_capabilities();
+        const auto& caps = device_capabilities();
+        const auto& caps_ext = state_->device_capabilities_ext();
         switch ( decl.type() ) {
             case pixel_declaration::pixel_type::depth16:
                 return caps.depth_texture_supported
-                    && caps.depth16_supported;
-
+                    && caps_ext.depth16_supported;
             case pixel_declaration::pixel_type::depth24:
                 return caps.depth_texture_supported
-                    && caps.depth24_supported;
-
+                    && caps_ext.depth24_supported;
             case pixel_declaration::pixel_type::depth24_stencil8:
                 return caps.depth_texture_supported
-                    && caps.depth24_stencil8_supported;
+                    && caps_ext.depth24_stencil8_supported;
+            case pixel_declaration::pixel_type::depth32:
+                return caps.depth_texture_supported
+                    && caps_ext.depth32_supported;
+            case pixel_declaration::pixel_type::depth32_stencil8:
+                return caps.depth_texture_supported
+                    && caps_ext.depth32_stencil8_supported;
 
             case pixel_declaration::pixel_type::a8:
             case pixel_declaration::pixel_type::l8:
@@ -1211,6 +1131,50 @@ namespace e2d
                 E2D_ASSERT_MSG(false, "unexpected pixel type");
                 return false;
         }
+    }
+    
+    bool render::get_suitable_depth_texture_pixel_type(pixel_declaration& decl) const noexcept {
+        E2D_ASSERT(is_in_main_thread());
+        const auto& caps = device_capabilities();
+        if ( caps.depth_texture_supported ) {
+            return false;
+        }
+        const auto& caps_ext = state_->device_capabilities_ext();
+        if ( caps_ext.depth32_supported ) {
+            decl = pixel_declaration::pixel_type::depth32;
+            return true;
+        }
+        if ( caps_ext.depth24_supported ) {
+            decl = pixel_declaration::pixel_type::depth24;
+            return true;
+        }
+        if ( caps_ext.depth16_supported ) {
+            decl = pixel_declaration::pixel_type::depth16;
+            return true;
+        }
+        return false;
+    }
+    
+    bool render::get_suitable_depth_stencil_texture_pixel_type(pixel_declaration& decl) const noexcept {
+        E2D_ASSERT(is_in_main_thread());
+        const auto& caps = device_capabilities();
+        if ( caps.depth_texture_supported ) {
+            return false;
+        }
+        const auto& caps_ext = state_->device_capabilities_ext();
+        if ( caps_ext.depth32_stencil8_supported ) {
+            decl = pixel_declaration::pixel_type::depth32_stencil8;
+            return true;
+        }
+        if ( caps_ext.depth24_stencil8_supported ) {
+            decl = pixel_declaration::pixel_type::depth24_stencil8;
+            return true;
+        }
+        if ( caps_ext.depth16_stencil8_supported ) {
+            decl = pixel_declaration::pixel_type::depth16_stencil8;
+            return true;
+        }
+        return false;
     }
 
     bool render::is_index_supported(const index_declaration& decl) const noexcept {
