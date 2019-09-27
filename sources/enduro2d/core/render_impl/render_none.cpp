@@ -347,6 +347,11 @@ namespace e2d
         E2D_UNUSED(command);
         return *this;
     }
+    
+    render& render::execute(const blend_constant_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
 
     render& render::execute(const draw_command& command) {
         E2D_UNUSED(command);
@@ -425,6 +430,11 @@ namespace e2d
     bool render::is_vertex_supported(const vertex_declaration& decl) const noexcept {
         E2D_UNUSED(decl);
         return false;
+    }
+    
+    render::batchr& render::batcher() noexcept {
+        static batchr b(the<debug>(), *this);
+        return b;
     }
 }
 

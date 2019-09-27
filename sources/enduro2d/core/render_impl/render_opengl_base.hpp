@@ -9,9 +9,7 @@
 #include "render.hpp"
 
 #if defined(E2D_RENDER_MODE)
-#if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL || \
-    E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES || \
-    E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES3
+#if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL || E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES
 
 #if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL
 #  define GLEW_STATIC
@@ -28,8 +26,10 @@
 #  define GL_UNSIGNED_INT_24_8 GL_UNSIGNED_INT_24_8_OES
 #  define GL_DEPTH24_STENCIL8 GL_DEPTH24_STENCIL8_OES
 
-#elif E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES3
-#  include <GLES3/gl3.h>
+// TODO: load function pointers
+#  if 0
+#    include <GLES3/gl3.h>
+#  endif
 #endif
 
 #if defined(E2D_BUILD_MODE) && E2D_BUILD_MODE == E2D_BUILD_MODE_DEBUG
@@ -79,7 +79,6 @@ namespace e2d::opengl
         bool framebuffer_discard_supported = false; // GLES2 only
         bool framebuffer_invalidate_supported = false; // GLES3 or GL4
 
-        bool uniform_buffer_supported = false;
         u32 max_uniform_buffer_bindings = 0;
 
         bool debug_output_supported = false;
@@ -254,7 +253,6 @@ namespace e2d::opengl
     GLenum convert_topology(render::topology t) noexcept;
     GLenum convert_stencil_op(render::stencil_op sa) noexcept;
     GLenum convert_compare_func(render::compare_func cf) noexcept;
-    GLenum convert_culling_mode(render::culling_mode cm) noexcept;
     GLenum convert_culling_face(render::culling_face cf) noexcept;
     GLenum convert_blending_factor(render::blending_factor bf) noexcept;
     GLenum convert_blending_equation(render::blending_equation be) noexcept;
@@ -270,7 +268,7 @@ namespace e2d::opengl
     void gl_trace_info(debug& debug) noexcept;
     void gl_trace_limits(debug& debug) noexcept;
     void gl_fill_device_caps(debug& debug, render::device_caps& caps, gl_device_caps& ext) noexcept;
-    void gl_build_shader_headers(render::device_caps& caps, gl_device_caps& ext, str& vs, str& fs) noexcept;
+    void gl_build_shader_headers(render::device_caps& caps, str& vs, str& fs) noexcept;
 
     void gl_depth_range(debug& debug, float near, float far) noexcept;
     void gl_clear_depth(debug& debug, float value) noexcept;
@@ -320,17 +318,24 @@ namespace e2d::opengl
         GLint prev_program = 0;
         GL_CHECK_CODE(debug, glGetIntegerv(
             GL_CURRENT_PROGRAM, &prev_program));
-        GL_CHECK_CODE(debug, glUseProgram(
-            program));
+        const bool is_different = math::numeric_cast<GLuint>(prev_program) != program;
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glUseProgram(
+                program));
+        }
         try {
             std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
-            GL_CHECK_CODE(debug, glUseProgram(
-                math::numeric_cast<GLuint>(prev_program)));
+            if ( is_different ) {
+                GL_CHECK_CODE(debug, glUseProgram(
+                    math::numeric_cast<GLuint>(prev_program)));
+            }
             throw;
         }
-        GL_CHECK_CODE(debug, glUseProgram(
-            math::numeric_cast<GLuint>(prev_program)));
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glUseProgram(
+                math::numeric_cast<GLuint>(prev_program)));
+        }
     }
 
     template < typename F, typename... Args >
@@ -347,7 +352,7 @@ namespace e2d::opengl
         GLint prev_buffer = 0;
         GL_CHECK_CODE(debug, glGetIntegerv(
             gl_target_to_get_target(target), &prev_buffer));
-        bool is_different = buffer != prev_buffer;
+        const bool is_different = math::numeric_cast<GLuint>(prev_buffer) != buffer;
         if ( is_different ) {
             GL_CHECK_CODE(debug, glBindBuffer(target, buffer));
         }
@@ -380,7 +385,7 @@ namespace e2d::opengl
         GLint prev_texture = 0;
         GL_CHECK_CODE(debug, glGetIntegerv(
             gl_target_to_get_target(target), &prev_texture));
-        bool is_different = prev_texture != texture;
+        const bool is_different = math::numeric_cast<GLuint>(prev_texture) != texture;
         if ( is_different ) {
             GL_CHECK_CODE(debug, glBindTexture(target, texture));
         }
@@ -413,7 +418,7 @@ namespace e2d::opengl
         GLint prev_framebuffer = 0;
         GL_CHECK_CODE(debug, glGetIntegerv(
             gl_target_to_get_target(target), &prev_framebuffer));
-        bool is_different = prev_framebuffer != framebuffer;
+        const bool is_different = math::numeric_cast<GLuint>(prev_framebuffer) != framebuffer;
         if ( is_different ) {
             GL_CHECK_CODE(debug, glBindFramebuffer(target, framebuffer));
         }
@@ -446,17 +451,24 @@ namespace e2d::opengl
         GLint prev_renderbuffer = 0;
         GL_CHECK_CODE(debug, glGetIntegerv(
             gl_target_to_get_target(target), &prev_renderbuffer));
-        GL_CHECK_CODE(debug, glBindRenderbuffer(
-            target, renderbuffer));
+        const bool is_different = math::numeric_cast<GLuint>(prev_renderbuffer) != renderbuffer;
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glBindRenderbuffer(
+                target, renderbuffer));
+        }
         try {
             std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } catch (...) {
-            GL_CHECK_CODE(debug, glBindRenderbuffer(
-                target, math::numeric_cast<GLuint>(prev_renderbuffer)));
+            if ( is_different ) {
+                GL_CHECK_CODE(debug, glBindRenderbuffer(
+                    target, math::numeric_cast<GLuint>(prev_renderbuffer)));
+            }
             throw;
         }
-        GL_CHECK_CODE(debug, glBindRenderbuffer(
-            target, math::numeric_cast<GLuint>(prev_renderbuffer)));
+        if ( is_different ) {
+            GL_CHECK_CODE(debug, glBindRenderbuffer(
+                target, math::numeric_cast<GLuint>(prev_renderbuffer)));
+        }
     }
 
     template < typename F, typename... Args >

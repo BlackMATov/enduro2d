@@ -51,24 +51,26 @@ namespace
         void operator ()(const m2f& v) noexcept {
             E2D_ASSERT(offset_ % 4 == 0);
             E2D_ASSERT(offset_ + 2*4 <= f32count_);
-            std::memcpy(dst_ + offset_ + 0, v.data() + 0, sizeof(float)*2);
-            std::memcpy(dst_ + offset_ + 4, v.data() + 2, sizeof(float)*2);
+            dst_[offset_ + 0] = v.data()[0];  dst_[offset_ + 1] = v.data()[2];
+            dst_[offset_ + 4] = v.data()[1];  dst_[offset_ + 5] = v.data()[3];
         }
 
         void operator ()(const m3f& v) noexcept {
             E2D_ASSERT(offset_ % 4 == 0);
             E2D_ASSERT(offset_ + 3*4 <= f32count_);
-            std::memcpy(dst_ + offset_ + 0, v.data() + 0, sizeof(float)*3);
-            std::memcpy(dst_ + offset_ + 4, v.data() + 3, sizeof(float)*3);
-            std::memcpy(dst_ + offset_ + 8, v.data() + 6, sizeof(float)*3);
+            dst_[offset_ + 0] = v.data()[0];  dst_[offset_ + 1] = v.data()[3];  dst_[offset_ + 2] = v.data()[6];
+            dst_[offset_ + 4] = v.data()[1];  dst_[offset_ + 5] = v.data()[4];  dst_[offset_ + 6] = v.data()[7];
+            dst_[offset_ + 8] = v.data()[2];  dst_[offset_ + 9] = v.data()[5];  dst_[offset_ + 10] = v.data()[8];
         }
 
         void operator ()(const m4f& v) noexcept {
             E2D_ASSERT(offset_ % 4 == 0);
             E2D_ASSERT(offset_ + 4*4 <= f32count_);
-            std::memcpy(dst_ + offset_, v.data(), sizeof(float)*4*4);
+            dst_[offset_ +  0] = v.data()[0];  dst_[offset_ +  1] = v.data()[4];  dst_[offset_ +  2] = v.data()[ 8];  dst_[offset_ +  3] = v.data()[12];
+            dst_[offset_ +  4] = v.data()[1];  dst_[offset_ +  5] = v.data()[5];  dst_[offset_ +  6] = v.data()[ 9];  dst_[offset_ +  7] = v.data()[13];
+            dst_[offset_ +  8] = v.data()[2];  dst_[offset_ +  9] = v.data()[6];  dst_[offset_ + 10] = v.data()[10];  dst_[offset_ + 11] = v.data()[14];
+            dst_[offset_ + 12] = v.data()[3];  dst_[offset_ + 13] = v.data()[7];  dst_[offset_ + 14] = v.data()[11];  dst_[offset_ + 15] = v.data()[15];
         }
-
     private:
         float* dst_;
         size_t f32count_; // number of floats in buffer
@@ -234,7 +236,7 @@ namespace e2d
     //
 
     render::render(debug& ndebug, window& nwindow)
-    : state_(new internal_state(ndebug, nwindow)) {
+    : state_(new internal_state(ndebug, nwindow, *this)) {
         E2D_ASSERT(main_thread() == nwindow.main_thread());
     }
     render::~render() noexcept = default;
@@ -278,7 +280,7 @@ namespace e2d
                 state_->dbg(),
                 std::move(ps),
                 source,
-                state_->device_capabilities_ext().uniform_buffer_supported));
+                state_->device_capabilities().uniform_buffer_supported));
     }
     
     texture_ptr render::create_texture(
@@ -614,7 +616,7 @@ namespace e2d
             return nullptr;
         }
 
-        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+        if ( state_->device_capabilities().uniform_buffer_supported ) {
             E2D_ASSERT(block_info.is_buffer); // TODO: exception
         } else {
             E2D_ASSERT(!block_info.is_buffer); // TODO: exception
@@ -624,7 +626,7 @@ namespace e2d
     }
 
     const_buffer_ptr render::create_const_buffer(
-        const cbuffer_template_cptr& templ,
+        const cbuffer_template_ptr& templ,
         const_buffer::scope scope)
     {
         E2D_ASSERT(is_in_main_thread());
@@ -633,7 +635,7 @@ namespace e2d
         gl_buffer_id buf_id(state_->dbg());
         const size_t block_size = templ->block_size();
 
-        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+        if ( state_->device_capabilities().uniform_buffer_supported ) {
             buf_id = gl_buffer_id::create(state_->dbg(), GL_UNIFORM_BUFFER);
             if ( buf_id.empty() ) {
                 state_->dbg().error("RENDER: Failed to create uniform buffer:\n"
@@ -827,6 +829,7 @@ namespace e2d
         
     render& render::execute(const bind_vertex_buffers_command& command) {
         E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
         for ( size_t i = 0; i < command.binding_count(); ++i ) {
             state_->bind_vertex_buffer(
                 i,
@@ -844,11 +847,13 @@ namespace e2d
     
     render& render::set_material(const material& mtr) {
         E2D_ASSERT(is_in_main_thread());
+        E2D_ASSERT(state_->inside_render_pass());
         state_->set_shader_program(mtr.shader());
         state_->bind_textures(sampler_block::scope::material, mtr.samplers());
         state_->bind_const_buffer(mtr.constants());
         state_->set_blending_state(mtr.blending());
         state_->set_culling_state(mtr.culling());
+        state_->set_depth_state(mtr.depth());
         return *this;
     }
 
@@ -884,6 +889,11 @@ namespace e2d
         E2D_ASSERT(is_in_main_thread());
         E2D_ASSERT(state_->inside_render_pass());
         state_->set_depth_state(command.state());
+        return *this;
+    }
+   
+    render& render::execute(const blend_constant_command& command) {
+        E2D_UNUSED(command);
         return *this;
     }
 
@@ -962,6 +972,7 @@ namespace e2d
         E2D_ASSERT(is_in_main_thread());
         E2D_ASSERT(cbuffer);
         auto& cb = cbuffer->state();
+        bool dirty = false;
 
         for ( auto& un : cb.block_template()->uniforms() ) {
             auto* value = properties.find(un.name_hash);
@@ -971,9 +982,13 @@ namespace e2d
                     cb.size(),
                     un.offset);
                 std::visit(visitor, *value);
+                dirty |= true;
             }
         }
-        if ( state_->device_capabilities_ext().uniform_buffer_supported ) {
+        if ( !dirty ) {
+            return *this;
+        }
+        if ( !cb.id().empty() ) {
             with_gl_bind_buffer(state_->dbg(), cb.id(), [&cb]() noexcept{
                 GL_CHECK_CODE(cb.dbg(), glBufferSubData(
                     cb.id().target(),
@@ -1057,6 +1072,10 @@ namespace e2d
 
         return *this;
     }
+    
+    render::batchr& render::batcher() noexcept {
+        return state_->batcher();
+    }
 
     const render::device_caps& render::device_capabilities() const noexcept {
         E2D_ASSERT(is_in_main_thread());
@@ -1133,50 +1152,6 @@ namespace e2d
         }
     }
     
-    bool render::get_suitable_depth_texture_pixel_type(pixel_declaration& decl) const noexcept {
-        E2D_ASSERT(is_in_main_thread());
-        const auto& caps = device_capabilities();
-        if ( caps.depth_texture_supported ) {
-            return false;
-        }
-        const auto& caps_ext = state_->device_capabilities_ext();
-        if ( caps_ext.depth32_supported ) {
-            decl = pixel_declaration::pixel_type::depth32;
-            return true;
-        }
-        if ( caps_ext.depth24_supported ) {
-            decl = pixel_declaration::pixel_type::depth24;
-            return true;
-        }
-        if ( caps_ext.depth16_supported ) {
-            decl = pixel_declaration::pixel_type::depth16;
-            return true;
-        }
-        return false;
-    }
-    
-    bool render::get_suitable_depth_stencil_texture_pixel_type(pixel_declaration& decl) const noexcept {
-        E2D_ASSERT(is_in_main_thread());
-        const auto& caps = device_capabilities();
-        if ( caps.depth_texture_supported ) {
-            return false;
-        }
-        const auto& caps_ext = state_->device_capabilities_ext();
-        if ( caps_ext.depth32_stencil8_supported ) {
-            decl = pixel_declaration::pixel_type::depth32_stencil8;
-            return true;
-        }
-        if ( caps_ext.depth24_stencil8_supported ) {
-            decl = pixel_declaration::pixel_type::depth24_stencil8;
-            return true;
-        }
-        if ( caps_ext.depth16_stencil8_supported ) {
-            decl = pixel_declaration::pixel_type::depth16_stencil8;
-            return true;
-        }
-        return false;
-    }
-
     bool render::is_index_supported(const index_declaration& decl) const noexcept {
         E2D_ASSERT(is_in_main_thread());
         const device_caps& caps = device_capabilities();

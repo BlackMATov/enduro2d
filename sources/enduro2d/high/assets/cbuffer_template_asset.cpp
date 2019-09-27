@@ -107,12 +107,12 @@ namespace
         return false;
     }
 
-    stdex::promise<cbuffer_template_cptr> parse_cbuffer_template(
+    stdex::promise<cbuffer_template_ptr> parse_cbuffer_template(
         const rapidjson::Value& root)
     {
         if ( !root.HasMember("uniforms") ) {
             the<debug>().error("CBUFFER_TEMPLATE: Property 'uniforms' does not exists");
-            return stdex::make_rejected_promise<cbuffer_template_cptr>(
+            return stdex::make_rejected_promise<cbuffer_template_ptr>(
                 cbuffer_template_asset_loading_exception());
         }
 
@@ -124,7 +124,7 @@ namespace
             auto& item = json_uniforms[i];
             if ( !parse_uniform(item, content) ) {
                 the<debug>().error("CBUFFER_TEMPLATE: Incorrect formatting of 'uniform' property");
-                return stdex::make_rejected_promise<cbuffer_template_cptr>(
+                return stdex::make_rejected_promise<cbuffer_template_ptr>(
                     cbuffer_template_asset_loading_exception());
             }
         }

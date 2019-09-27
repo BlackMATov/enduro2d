@@ -7,9 +7,7 @@
 #include "render_opengl_base.hpp"
 
 #if defined(E2D_RENDER_MODE)
-#if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL || \
-    E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES || \
-    E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES3
+#if E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGL || E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES
 
 namespace
 {
@@ -195,6 +193,38 @@ namespace
             }
         }
     #endif
+    }
+    
+    pixel_declaration gl_get_best_depth_render_target_format(
+        debug& debug, const gl_device_caps& caps) noexcept
+    {
+        // TODO: try to create framebuffer
+        if ( caps.depth32_supported ) {
+            return pixel_declaration::pixel_type::depth32;
+        }
+        if ( caps.depth24_supported ) {
+            return pixel_declaration::pixel_type::depth24;
+        }
+        if ( caps.depth16_supported ) {
+            return pixel_declaration::pixel_type::depth16;
+        }
+        return {};
+    }
+
+    pixel_declaration gl_get_best_depth_stencil_render_target_format(
+        debug& debug, const gl_device_caps& caps) noexcept
+    {
+        // TODO: try to create framebuffer
+        if ( caps.depth32_stencil8_supported ) {
+            return pixel_declaration::pixel_type::depth32_stencil8;
+        }
+        if ( caps.depth24_stencil8_supported ) {
+            return pixel_declaration::pixel_type::depth24_stencil8;
+        }
+        if ( caps.depth16_stencil8_supported ) {
+            return pixel_declaration::pixel_type::depth16_stencil8;
+        }
+        return {};
     }
 
     const char* vertex_shader_header_cstr(render::api_profile profile) noexcept {
@@ -1143,18 +1173,6 @@ namespace e2d::opengl
         }
         #undef DEFINE_CASE
     }
-    
-    GLenum convert_culling_mode(render::culling_mode cm) noexcept {
-        #define DEFINE_CASE(x,y) case render::culling_mode::x: return y;
-        switch ( cm ) {
-            DEFINE_CASE(cw, GL_CW);
-            DEFINE_CASE(ccw, GL_CCW);
-            default:
-                E2D_ASSERT_MSG(false, "unexpected render culling mode");
-                return 0;
-        }
-        #undef DEFINE_CASE
-    }
 
     GLenum convert_culling_face(render::culling_face cm) noexcept {
         #define DEFINE_CASE(x,y) case render::culling_face::x: return y;
@@ -1442,6 +1460,11 @@ namespace e2d::opengl
             version >= gl_version::gles_300 ||
             gl_has_any_extension(debug,
                 "GL_ARB_depth_buffer_float");
+
+        caps.depth_rt_format =
+            gl_get_best_depth_render_target_format(debug, caps_ext);
+        caps.depth_stencil_rt_format =
+            gl_get_best_depth_stencil_render_target_format(debug, caps_ext);
         
         caps_ext.framebuffer_discard_supported =
             gl_has_any_extension(debug,
@@ -1451,13 +1474,13 @@ namespace e2d::opengl
             version >= gl_version::gl_430 ||
             version >= gl_version::gles_300;
 
-        caps_ext.uniform_buffer_supported =
+        caps.uniform_buffer_supported =
             version >= gl_version::gl_300 ||
             version >= gl_version::gles_300 ||
             gl_has_any_extension(debug,
                 "GL_ARB_uniform_buffer_object");
 
-        if ( caps_ext.uniform_buffer_supported ) {
+        if ( caps.uniform_buffer_supported ) {
             GLint value;
             glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &value);
             caps_ext.max_uniform_buffer_bindings = math::numeric_cast<u32>(value);
@@ -1472,11 +1495,12 @@ namespace e2d::opengl
         gl_use_implementation_from_extensions(debug, version);
     }
     
-    void gl_build_shader_headers(render::device_caps& caps, gl_device_caps& ext, str& vs, str& fs) noexcept {
+    void gl_build_shader_headers(render::device_caps& caps, str& vs, str& fs) noexcept {
         vs = vertex_shader_header_cstr(caps.profile);
         fs = fragment_shader_header_cstr(caps.profile);
 
-        if ( ext.uniform_buffer_supported ) {
+        // TODO: remove
+        if ( caps.uniform_buffer_supported ) {
             vs += "#define E2D_SUPPORTS_UBO 1\n";
             fs += "#define E2D_SUPPORTS_UBO 1\n";
         }
@@ -1487,7 +1511,7 @@ namespace e2d::opengl
         GL_CHECK_CODE(debug, glDepthRange(
             math::numeric_cast<GLclampd>(math::saturate(near)),
             math::numeric_cast<GLclampd>(math::saturate(far))));
-    #elif E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES || E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES3
+    #elif E2D_RENDER_MODE == E2D_RENDER_MODE_OPENGLES
         GL_CHECK_CODE(debug, glDepthRangef(
             math::numeric_cast<GLclampf>(math::saturate(near)),
             math::numeric_cast<GLclampf>(math::saturate(far))));

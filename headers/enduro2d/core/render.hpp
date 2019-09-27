@@ -55,6 +55,8 @@ namespace e2d
     class pixel_declaration final {
     public:
         enum class pixel_type : u8 {
+            unknown,
+
             depth16,
             depth16_stencil8,
             depth24,
@@ -111,7 +113,7 @@ namespace e2d
         std::size_t bytes_per_block() const noexcept;
         std::size_t data_size_for_dimension(v2u dim) const noexcept;
     private:
-        pixel_type type_ = pixel_type::rgba8;
+        pixel_type type_ = pixel_type::unknown;
     };
 
     bool operator==(
@@ -192,6 +194,10 @@ namespace e2d
                 bool normalized) noexcept;
 
             std::size_t row_size() const noexcept;
+        };
+
+        struct hash {
+            std::size_t operator()(const vertex_declaration& x) const noexcept;
         };
     public:
         vertex_declaration() = default;
@@ -424,11 +430,6 @@ namespace e2d
             notequal,
             always
         };
-        
-        enum class culling_mode : u8 {
-            cw,
-            ccw
-        };
 
         enum class culling_face : u8 {
             back = (1 << 0),
@@ -502,6 +503,7 @@ namespace e2d
         enum class attachment_load_op : u8 {
             load,
             clear,
+            invalidate,
         };
 
         enum class attachment_store_op : u8 {
@@ -522,6 +524,18 @@ namespace e2d
             bool test_ = false;
             bool write_ = true;
             compare_func func_ = compare_func::less;
+        };
+        
+        class depth_dynamic_state final {
+        public:
+            depth_dynamic_state& test(bool enable) noexcept;
+            depth_dynamic_state& write(bool enable) noexcept;
+
+            bool test() const noexcept;
+            bool write() const noexcept;
+        private:
+            bool test_ = false;
+            bool write_ = true;
         };
 
         class stencil_state final {
@@ -552,16 +566,13 @@ namespace e2d
 
         class culling_state final {
         public:
-            culling_state& mode(culling_mode mode) noexcept;
             culling_state& face(culling_face face) noexcept;
             culling_state& enable(bool value) noexcept;
             
-            culling_mode mode() const noexcept;
             culling_face face() const noexcept;
             bool enabled() const noexcept;
         private:
             culling_face face_ = culling_face::back;
-            culling_mode mode_ = culling_mode::ccw;
             bool enabled_ = false;
         };
 
@@ -696,6 +707,8 @@ namespace e2d
 
             property_value* find(str_hash key) noexcept;
             const property_value* find(str_hash key) const noexcept;
+            template< typename T >
+            const T* find(str_hash key) const noexcept;
 
             property_map& assign(str_hash key, property_value&& value);
             property_map& assign(str_hash key, const property_value& value);
@@ -705,10 +718,10 @@ namespace e2d
 
             template < typename F >
             void foreach(F&& f) const;
-            void merge(const property_map& other);
+            property_map& merge(const property_map& other);
             bool equals(const property_map& other) const noexcept;
         private:
-            flat_map<str_hash, property_value> values_;
+            flat_map<str_hash, property_value> values_; // TODO: use static memory
         };
         
         class renderpass_desc final {
@@ -730,27 +743,33 @@ namespace e2d
             
             renderpass_desc& color_clear(const color& value) noexcept;
             renderpass_desc& color_load() noexcept;
-            //renderpass_desc& color_invalidate() noexcept;
+            renderpass_desc& color_invalidate() noexcept;
             renderpass_desc& color_store() noexcept;
             renderpass_desc& color_discard() noexcept;
+            renderpass_desc& color_load_op(attachment_load_op value) noexcept;
+            renderpass_desc& color_store_op(attachment_store_op value) noexcept;
             [[nodiscard]] const color& color_clear_value() const noexcept;
             [[nodiscard]] attachment_load_op color_load_op() const noexcept;
             [[nodiscard]] attachment_store_op color_store_op() const noexcept;
 
             renderpass_desc& depth_clear(float value) noexcept;
             renderpass_desc& depth_load() noexcept;
-            //renderpass_desc& depth_invalidate() noexcept;
+            renderpass_desc& depth_invalidate() noexcept;
             renderpass_desc& depth_store() noexcept;
             renderpass_desc& depth_discard() noexcept;
+            renderpass_desc& depth_load_op(attachment_load_op value) noexcept;
+            renderpass_desc& depth_store_op(attachment_store_op value) noexcept;
             [[nodiscard]] float depth_clear_value() const noexcept;
             [[nodiscard]] attachment_load_op depth_load_op() const noexcept;
             [[nodiscard]] attachment_store_op depth_store_op() const noexcept;
             
             renderpass_desc& stencil_clear(u8 value) noexcept;
             renderpass_desc& stencil_load() noexcept;
-            //renderpass_desc& stencil_invalidate() noexcept;
+            renderpass_desc& stencil_invalidate() noexcept;
             renderpass_desc& stencil_store() noexcept;
             renderpass_desc& stencil_discard() noexcept;
+            renderpass_desc& stencil_load_op(attachment_load_op value) noexcept;
+            renderpass_desc& stencil_store_op(attachment_store_op value) noexcept;
             [[nodiscard]] u8 stencil_clear_value() const noexcept;
             [[nodiscard]] attachment_load_op stencil_load_op() const noexcept;
             [[nodiscard]] attachment_store_op stencil_store_op() const noexcept;
@@ -773,6 +792,7 @@ namespace e2d
 
         using blending_state_opt = std::optional<blending_state>;
         using culling_state_opt = std::optional<culling_state>;
+        using depth_dynamic_state_opt = std::optional<depth_dynamic_state>;
 
         class material final {
         public:
@@ -780,6 +800,7 @@ namespace e2d
 
             material& blending(const blending_state& value) noexcept;
             material& culling(const culling_state& value) noexcept;
+            material& depth(const depth_dynamic_state& value) noexcept;
             material& shader(const shader_ptr& value) noexcept;
             material& constants(const const_buffer_ptr& value) noexcept;
             material& sampler(str_hash name, const sampler_state& sampler) noexcept;
@@ -787,12 +808,14 @@ namespace e2d
 
             const blending_state_opt& blending() const noexcept;
             const culling_state_opt& culling() const noexcept;
+            const depth_dynamic_state_opt& depth() const noexcept;
             const shader_ptr& shader() const noexcept;
             const const_buffer_ptr& constants() const noexcept;
             const sampler_block& samplers() const noexcept;
         private:
             blending_state_opt blending_;
             culling_state_opt culling_;
+            depth_dynamic_state_opt depth_;
             shader_ptr shader_;
             const_buffer_ptr constants_;
             sampler_block sampler_block_;
@@ -858,20 +881,21 @@ namespace e2d
         };
 
         template < typename T >
-        class change_sate_command_ final {
+        class change_state_command_ final {
         public:
-            change_sate_command_() = default;
-            explicit change_sate_command_(const T& state);
+            change_state_command_() = default;
+            explicit change_state_command_(const T& state);
 
             const std::optional<T>& state() const noexcept;
         private:
             std::optional<T> state_;
         };
 
-        using blending_state_command = change_sate_command_<blending_state>;
-        using culling_state_command = change_sate_command_<culling_state>;
-        using stencil_state_command = change_sate_command_<stencil_state>;
-        using depth_state_command = change_sate_command_<depth_state>;
+        using blending_state_command = change_state_command_<blending_state>;
+        using culling_state_command = change_state_command_<culling_state>;
+        using stencil_state_command = change_state_command_<stencil_state>;
+        using depth_state_command = change_state_command_<depth_dynamic_state>;
+        using blend_constant_command = change_state_command_<color>;
         
         class draw_command final {
         public:
@@ -929,6 +953,7 @@ namespace e2d
             culling_state_command,
             stencil_state_command,
             depth_state_command,
+            blend_constant_command,
             draw_command,
             draw_indexed_command>;
 
@@ -958,6 +983,9 @@ namespace e2d
         struct device_caps {
             api_profile profile = api_profile::unknown;
 
+            pixel_declaration depth_rt_format;
+            pixel_declaration depth_stencil_rt_format;
+
             u32 max_texture_size = 0;
             u32 max_renderbuffer_size = 0;
             u32 max_cube_map_texture_size = 0;
@@ -984,17 +1012,18 @@ namespace e2d
             bool astc_compression_supported = false;
             bool pvrtc_compression_supported = false;
             bool pvrtc2_compression_supported = false;
+            
+            bool uniform_buffer_supported = false;
         };
 
         struct statistics {
-            // framebuffer load/store counter
-            // framebuffer reusing at one frame
-            // draw call counter
-            // framebuffer bind counter
-            
             u32 render_pass_count = 0;
+            u32 attachment_load_count = 0;
+            u32 attachment_store_count = 0;
             u32 draw_calls = 0;
         };
+        
+        class batchr;
     public:
         render(debug& d, window& w);
         ~render() noexcept final;
@@ -1037,7 +1066,7 @@ namespace e2d
             const shader_ptr& shader,
             const_buffer::scope scope);
         const_buffer_ptr create_const_buffer(
-            const cbuffer_template_cptr& templ,
+            const cbuffer_template_ptr& templ,
             const_buffer::scope scope);
 
         render_target_ptr create_render_target(
@@ -1048,8 +1077,8 @@ namespace e2d
 
         render& begin_pass(
             const renderpass_desc& desc,
-            const const_buffer_ptr& constants,
-            const sampler_block& samplers);
+            const const_buffer_ptr& constants = nullptr,
+            const sampler_block& samplers = {});
         render& end_pass();
         render& present();
 
@@ -1064,12 +1093,12 @@ namespace e2d
         render& execute(const culling_state_command& command);
         render& execute(const stencil_state_command& command);
         render& execute(const depth_state_command& command);
+        render& execute(const blend_constant_command& command);
         render& execute(const draw_command& command);
         render& execute(const draw_indexed_command& command);
 
         render& set_material(const material& mtr);
 
-        // in separate command buffer
         render& update_buffer(
             const index_buffer_ptr& ibuffer,
             buffer_view indices,
@@ -1094,15 +1123,14 @@ namespace e2d
             buffer_view pixels,
             const b2u& region);
 
+        batchr& batcher() noexcept;
+
         const device_caps& device_capabilities() const noexcept;
         const statistics& frame_statistic() const noexcept;
 
         bool is_pixel_supported(const pixel_declaration& decl) const noexcept;
         bool is_index_supported(const index_declaration& decl) const noexcept;
         bool is_vertex_supported(const vertex_declaration& decl) const noexcept;
-
-        bool get_suitable_depth_texture_pixel_type(pixel_declaration& decl) const noexcept;
-        bool get_suitable_depth_stencil_texture_pixel_type(pixel_declaration& decl) const noexcept;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;
@@ -1150,6 +1178,35 @@ namespace e2d
 
     bool operator==(const render::material& l, const render::material& r) noexcept;
     bool operator!=(const render::material& l, const render::material& r) noexcept;
+}
+
+namespace e2d::json_utils
+{
+    void add_render_schema_definitions(rapidjson::Document& schema);
+}
+
+namespace e2d::json_utils
+{
+    bool try_parse_value(const rapidjson::Value& root, render::topology& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::stencil_op& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::compare_func& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::culling_face& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::blending_factor& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::blending_equation& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::blending_color_mask& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::sampler_wrap& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::sampler_min_filter& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::sampler_mag_filter& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::attachment_load_op& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::attachment_store_op& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::depth_state& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::depth_dynamic_state& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::stencil_state& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::culling_state& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::blending_state& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::state_block& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::property_map& v) noexcept;
+    bool try_parse_value(const rapidjson::Value& root, render::renderpass_desc& v) noexcept;
 }
 
 #include "render.inl"

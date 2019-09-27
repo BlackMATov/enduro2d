@@ -6,8 +6,25 @@
 
 #include <enduro2d/utils/buffer.hpp>
 
+namespace
+{
+    using namespace e2d;
+
+    u8* allocate(std::size_t size) {
+        return static_cast<u8*>(::operator new(size));
+    }
+
+    void deallocate(u8* ptr) {
+        ::operator delete(ptr);
+    }
+}
+
 namespace e2d
 {
+    void buffer::deleter::operator()(u8* ptr) const noexcept {
+        deallocate(ptr);
+    }
+    
     buffer::buffer(buffer&& other) noexcept {
         assign(std::move(other));
     }
@@ -91,7 +108,7 @@ namespace e2d
         data_t ndata = size_ == nsize
             ? std::move(data_)
             : (nsize
-                ? std::make_unique<u8[]>(nsize)
+                ? data_t(allocate(nsize))
                 : data_t());
         if ( ndata && data_ && size_ ) {
             std::memcpy(ndata.get(), data_.get(), math::min(size_, nsize));
@@ -119,7 +136,7 @@ namespace e2d
         data_t ndata = size_ == nsize
             ? std::move(data_)
             : (nsize
-                ? std::make_unique<u8[]>(nsize)
+                ? data_t(allocate(nsize))
                 : data_t());
         if ( ndata && src && nsize ) {
             std::memcpy(ndata.get(), src, nsize);

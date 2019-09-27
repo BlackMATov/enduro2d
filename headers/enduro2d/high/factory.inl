@@ -22,6 +22,7 @@ namespace e2d
             throw bad_factory_operation();
         }
         json_utils::add_common_schema_definitions(doc);
+        json_utils::add_render_schema_definitions(doc);
         schema_ = std::make_unique<rapidjson::SchemaDocument>(doc);
     }
 

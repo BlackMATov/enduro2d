@@ -9,7 +9,7 @@
         {
             "vertex" : "gles3/colored_sprite.vert",
             "fragment" : "gles3/colored_sprite.frag",
-            "requires" : [ "uniform_buffer" ]
+            "requires" : [ "render.uniform_buffer" ]
         },
         {
             "vertex" : "gles2/colored_sprite.vert",

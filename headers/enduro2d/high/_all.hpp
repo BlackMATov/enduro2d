@@ -38,6 +38,7 @@
 #include "components/label.hpp"
 #include "components/model_renderer.hpp"
 #include "components/renderer.hpp"
+#include "components/render_technique.hpp"
 #include "components/scene.hpp"
 #include "components/spine_player.hpp"
 #include "components/spine_player_cmd.hpp"
@@ -51,7 +52,6 @@
 #include "components/ui_layout.hpp"
 #include "components/ui_controller.hpp"
 
-#include "systems/actor_system.hpp"
 #include "systems/flipbook_system.hpp"
 #include "systems/label_system.hpp"
 #include "systems/render_system.hpp"

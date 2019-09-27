@@ -181,7 +181,7 @@ namespace
         const f32 glyph_dilate = math::clamp(l.glyph_dilate(), -1.f, 1.0f);
         const f32 outline_width = math::clamp(l.outline_width(), 0.f, 1.f - glyph_dilate);
         const v4f outline_color = make_vec4(color(l.outline_color()));
-
+        /* TODO
         r.properties(render::property_block()
             .sampler("u_texture", render::sampler_state()
                 .texture(texture)
@@ -189,7 +189,7 @@ namespace
                 .mag_filter(render::sampler_mag_filter::linear))
             .property("u_glyph_dilate", glyph_dilate)
             .property("u_outline_width", outline_width)
-            .property("u_outline_color", outline_color));
+            .property("u_outline_color", outline_color));*/
     }
 
     void update_label_geometry(

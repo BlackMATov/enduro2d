@@ -23,7 +23,7 @@ namespace e2d
         };
 
         using value_type = cbuffer_template::value_type;
-        using blocks_t = std::array<cbuffer_template_cptr, u32(scope_type::last_)>;
+        using blocks_t = std::array<cbuffer_template_ptr, u32(scope_type::last_)>;
 
         enum class sampler_type : u8 {
             _2d,
@@ -67,13 +67,13 @@ namespace e2d
         shader_source& fragment_shader(str source);
         shader_source& add_sampler(str name, u32 unit, sampler_type type, scope_type scope);
         shader_source& add_attribute(str name, u32 index, value_type type);
-        shader_source& set_block(const cbuffer_template_cptr& cb, scope_type scope);
+        shader_source& set_block(const cbuffer_template_ptr& cb, scope_type scope);
 
         const str& vertex_shader() const noexcept;
         const str& fragment_shader() const noexcept;
         const vector<sampler>& samplers() const noexcept;
         const vector<attribute>& attributes() const noexcept;
-        const cbuffer_template_cptr& block(scope_type scope) const noexcept;
+        const cbuffer_template_ptr& block(scope_type scope) const noexcept;
     private:
         str vs_;
         str fs_;

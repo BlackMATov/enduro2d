@@ -19,7 +19,7 @@ namespace
             E2D_UNUSED(owner);
             const keyboard& k = the<input>().keyboard();
 
-            if ( k.is_key_just_released(keyboard_key::f12) ) {
+            if ( k.is_key_just_released(keyboard_key::f1) ) {
                 the<dbgui>().toggle_visible(!the<dbgui>().visible());
             }
 
@@ -36,8 +36,8 @@ namespace
     class camera_system final : public ecs::system {
     public:
         void process(ecs::registry& owner) override {
-            owner.for_joined_components<camera>(
-            [](const ecs::const_entity&, camera& cam){
+            owner.for_each_component<camera>(
+            [this](const ecs::const_entity&, camera& cam){
                 if ( !cam.target() ) {
                     cam.viewport(
                         the<window>().real_size());

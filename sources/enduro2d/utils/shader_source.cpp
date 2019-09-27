@@ -102,7 +102,7 @@ namespace e2d
         return *this;
     }
 
-    shader_source& shader_source::set_block(const cbuffer_template_cptr& cb, scope_type scope) {
+    shader_source& shader_source::set_block(const cbuffer_template_ptr& cb, scope_type scope) {
         blocks_[size_t(scope)] = cb;
         return *this;
     }
@@ -123,7 +123,7 @@ namespace e2d
         return attributes_;
     }
     
-    const cbuffer_template_cptr& shader_source::block(scope_type scope) const noexcept {
+    const cbuffer_template_ptr& shader_source::block(scope_type scope) const noexcept {
         return blocks_[size_t(scope)];
     }
 }

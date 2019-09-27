@@ -1,4 +1,5 @@
 /*******************************************************************************
+/*******************************************************************************
  * This file is part of the "Enduro2D"
  * For conditions of distribution and use, see copyright notice in LICENSE.md
  * Copyright (C) 2018-2019, by Matvey Cherevko (blackmatov@gmail.com)
@@ -100,7 +101,7 @@ namespace
                 "sampler_type" : {
                     "type" : "string",
                     "enum" : [
-                        "_2d",
+                        "2d",
                         "cube_map"
                     ]
                 }
@@ -148,9 +149,9 @@ namespace
     }
 
     bool parse_sampler_type(str_view str, shader_source::sampler_type& value) noexcept {
-    #define DEFINE_IF(x) if ( str == #x ) { value = shader_source::sampler_type::x; return true; }
-        DEFINE_IF(_2d);
-        DEFINE_IF(cube_map);
+    #define DEFINE_IF(x,y) if ( str == #x ) { value = shader_source::sampler_type::y; return true; }
+        DEFINE_IF(2d, _2d);
+        DEFINE_IF(cube_map, cube_map);
     #undef DEFINE_IF
         return false;
     }
@@ -252,7 +253,7 @@ namespace
                 if ( item.HasMember("requires") ) {
                     auto& requires = item["requires"];
                     for ( rapidjson::SizeType j = 0; j < requires.Size(); ++j ) {
-                        //supported |= library.environment(requires[j]);  // TODO
+                        supported |= library.get_env_value(make_hash(requires[j].GetString()));
                     }
                 } 
                 if ( supported ) {

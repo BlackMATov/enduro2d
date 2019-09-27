@@ -2,6 +2,32 @@
     "components" : {
         "camera" : {
             "background" : [1.0, 0.4, 0.0, 1.0]
+        },
+        
+        "render_technique" : {
+            "passes" : [{
+                "block" : "shaders/block/pass_1.json",
+                "state_block" : {
+                    "depth_state" : {
+                        "test" : false,
+                        "write" : false,
+                        "func" : "lequal"
+                    },
+                    "culling_state" : {
+                        "enable" : false
+                    },
+                    "blending_state" : {
+                        "enable" : false
+                    }
+                },
+                
+                "color_load_op" : "clear",
+                "color_store_op" : "store",
+              
+                "depth_clear_value" : 1.0,
+                "depth_load_op" : "clear",
+                "depth_store_op" : "discard"
+            }]
         }
     }
 }

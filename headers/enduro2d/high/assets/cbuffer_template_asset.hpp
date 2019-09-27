@@ -12,7 +12,7 @@
 
 namespace e2d
 {
-    class cbuffer_template_asset final : public content_asset<cbuffer_template_asset, cbuffer_template_cptr> {
+    class cbuffer_template_asset final : public content_asset<cbuffer_template_asset, cbuffer_template_ptr> {
     public:
         static const char* type_name() noexcept { return "cbuffer_template_asset"; }
         static load_async_result load_async(const library& library, str_view address);

@@ -72,6 +72,9 @@ namespace e2d
         const url& root() const noexcept;
         const asset_cache& cache() const noexcept;
 
+        void add_env_value(str_hash key, bool value);
+        bool get_env_value(str_hash key) const noexcept;
+
         std::size_t unload_unused_assets() noexcept;
         std::size_t loading_asset_count() const noexcept;
 
@@ -103,6 +106,7 @@ namespace e2d
         url root_;
         deferrer& deferrer_;
         std::atomic<bool> cancelled_{false};
+        flat_map<str_hash, bool> env_values_;
     private:
         mutable asset_cache cache_;
         mutable std::recursive_mutex mutex_;

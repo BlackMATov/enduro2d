@@ -1,0 +1,19 @@
+{
+	"attributes" : [
+		{ "name": "a_vertex", "index": 0, "type": "v3f" },
+		{ "name": "a_tint",   "index": 1, "type": "v4f" },
+		{ "name": "a_st",     "index": 2, "type": "v2f" }
+	],
+	"samplers" : [
+		{ "name": "u_texture", "unit": 0, "scope": "material" }
+	],
+	"render_pass_block" : "block/pass_1.json",
+	
+	"opengl" : [
+        {
+            "vertex" : "gles2/sprite_shader.vert",
+            "fragment" : "gles2/sprite_shader.frag",
+            "requires" : []
+        }
+    ]
+}

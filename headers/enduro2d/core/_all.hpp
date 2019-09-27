@@ -19,4 +19,3 @@
 #include "render.hpp"
 #include "vfs.hpp"
 #include "window.hpp"
-#include "batcher.hpp"

@@ -94,7 +94,7 @@ namespace e2d
         }
 
         void frame_tick() {
-            /*ImGuiIO& io = bind_context();
+            ImGuiIO& io = bind_context();
             const mouse& m = input_.mouse();
             const keyboard& k = input_.keyboard();
 
@@ -137,14 +137,14 @@ namespace e2d
                 ImGui::EndFrame();
             }
 
-            ImGui::NewFrame();*/
+            ImGui::NewFrame();
         }
 
         void frame_render() {
-            /*ImGui::Render();
+            ImGui::Render();
 
             ImDrawData* draw_data = ImGui::GetDrawData();
-            if ( !draw_data ) {
+            if ( !draw_data || !draw_data->CmdListsCount ) {
                 return;
             }
 
@@ -155,22 +155,33 @@ namespace e2d
                 math::make_translation_matrix4(display_size * v2f(-0.5f, 0.5f)) *
                 math::make_orthogonal_lh_matrix4(display_size, 0.f, 1.f);
 
+            auto ib = create_index_buffer(*draw_data);
+            auto vb = create_vertex_buffer(*draw_data);
+
+            if ( !ib || !vb ) {
+                return;
+            }
+
+            render_.begin_pass(render::renderpass_desc()
+                .color_load()
+                .color_store()
+                .viewport(display_size_r.cast_to<u32>())
+                .target(nullptr));
+            
+            render_.update_buffer(
+                const_buffer_,
+                render::property_map()
+                    .assign("u_MVP", projection));
+            
+            std::size_t idx_offset = 0;
+            std::size_t vtx_offset = 0;
+
             for ( int i = 0; i < draw_data->CmdListsCount; ++i ) {
                 const ImDrawList* cmd_list = draw_data->CmdLists[i];
 
-                update_index_buffer({
-                    cmd_list->IdxBuffer.Data,
-                    math::numeric_cast<std::size_t>(cmd_list->IdxBuffer.Size) * sizeof(ImDrawIdx)});
+                render_.execute(render::bind_vertex_buffers_command()
+                    .add(vb, attribs_, vtx_offset));
 
-                update_vertex_buffer({
-                    cmd_list->VtxBuffer.Data,
-                    math::numeric_cast<std::size_t>(cmd_list->VtxBuffer.Size) * sizeof(ImDrawVert)});
-
-                const auto geometry = render::geometry()
-                    .indices(index_buffer_)
-                    .add_vertices(vertex_buffer_);
-
-                std::size_t first_index = 0;
                 for ( int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; ++cmd_i ) {
                     const ImDrawCmd& pcmd = cmd_list->CmdBuffer[cmd_i];
 
@@ -181,30 +192,32 @@ namespace e2d
                         pcmd.ClipRect.w - pcmd.ClipRect.y);
 
                     if ( math::minimum(clip_r.position) >= 0.f
-                        && math::overlaps(clip_r, display_size_r) )
+                        && math::overlaps(clip_r, display_size_r)
+                        && pcmd.TextureId )
                     {
                         texture_ptr texture = pcmd.TextureId
                             ? *static_cast<texture_ptr*>(pcmd.TextureId)
                             : texture_ptr();
 
-                        mprops_
-                            .property("u_MVP", projection)
+                        render_.set_material(render::material(material_)
                             .sampler("u_texture", render::sampler_state()
                                 .texture(texture)
                                 .min_filter(render::sampler_min_filter::linear)
-                                .mag_filter(render::sampler_mag_filter::linear));
-
-                        render_.execute(render::command_block<8>()
-                            .add_command(render::viewport_command(
-                                display_size_r.cast_to<u32>(),
-                                clip_r.cast_to<u32>()))
-                            .add_command(render::draw_command(material_, geometry, mprops_)
-                                .index_range(first_index, pcmd.ElemCount)));
+                                .mag_filter(render::sampler_mag_filter::linear)));
+                        render_.execute(render::scissor_command(clip_r.cast_to<u32>()));
+                        render_.execute(render::draw_indexed_command()
+                            .topo(render::topology::triangles)
+                            .indices(ib)
+                            .index_count(pcmd.ElemCount)
+                            .index_offset(idx_offset));
                     }
 
-                    first_index += pcmd.ElemCount;
+                    idx_offset += pcmd.ElemCount * sizeof(ImDrawIdx);
                 }
-            }*/
+                vtx_offset += cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
+            }
+
+            render_.end_pass();
         }
     private:
         void setup_key_map_(ImGuiIO& io) noexcept {
@@ -248,12 +261,29 @@ namespace e2d
         }
 
         void setup_internal_resources_(ImGuiIO& io) {
-            /*{
-                shader_ = render_.create_shader(
-                    dbgui_shaders::vertex_source_cstr(),
-                    dbgui_shaders::fragment_source_cstr());
+            {
+                auto templ = std::make_shared<cbuffer_template>(cbuffer_template()
+                    .add_uniform("u_MVP", 0, cbuffer_template::value_type::m4f));
+
+                shader_ = render_.create_shader(shader_source()
+                    .vertex_shader(dbgui_shaders::vertex_source_cstr())
+                    .fragment_shader(dbgui_shaders::fragment_source_cstr())
+                    .add_attribute("a_position", 0, shader_source::value_type::v3f)
+                    .add_attribute("a_uv", 1, shader_source::value_type::v2f)
+                    .add_attribute("a_color", 2, shader_source::value_type::v4f)
+                    .set_block(templ, shader_source::scope_type::material)
+                    .add_sampler("u_texture", 0, shader_source::sampler_type::_2d, shader_source::scope_type::material));
 
                 if ( !shader_ ) {
+                    throw bad_dbgui_operation();
+                }
+            }
+            {
+                const_buffer_ = render_.create_const_buffer(
+                    shader_,
+                    const_buffer::scope::material);
+
+                if ( !const_buffer_ ) {
                     throw bad_dbgui_operation();
                 }
             }
@@ -277,83 +307,67 @@ namespace e2d
             }
             {
                 material_ = render::material()
-                    .add_pass(render::pass_state()
-                        .states(render::state_block()
-                            .capabilities(render::capabilities_state()
-                                .blending(true))
-                            .blending(render::blending_state()
-                                .src_factor(render::blending_factor::src_alpha)
-                                .dst_factor(render::blending_factor::one_minus_src_alpha)))
-                        .shader(shader_));
-            }*/
+                    .blending(render::blending_state()
+                        .enable(true)
+                        .src_factor(render::blending_factor::src_alpha)
+                        .dst_factor(render::blending_factor::one_minus_src_alpha))
+                    .shader(shader_)
+                    .constants(const_buffer_);
+            }
+            {
+                attribs_ = render_.create_vertex_attribs(
+                    vertex_declaration()
+                        .add_attribute<v2f>("a_position")
+                        .add_attribute<v2f>("a_uv")
+                        .add_attribute<color32>("a_color").normalized());
+                
+                if ( !attribs_ ) {
+                    throw bad_dbgui_operation();
+                }
+            }
         }
 
-        static std::size_t calculate_new_buffer_size(
-            std::size_t esize, std::size_t osize, std::size_t nsize)
-        {
-            std::size_t msize = std::size_t(-1) / esize * esize;
-            if ( nsize > msize ) {
-                throw bad_dbgui_operation();
-            }
-            if ( osize >= msize / 2u ) {
-                return msize;
-            }
-            return math::max(osize * 2u, nsize);
-        }
+        index_buffer_ptr create_index_buffer(ImDrawData& draw_data) {
+            const std::size_t data_size = draw_data.TotalIdxCount * sizeof(ImDrawIdx);
 
-        void update_index_buffer(buffer_view indices) {
-            /*if ( index_buffer_ && index_buffer_->buffer_size() >= indices.size() ) {
-                render_.update_buffer(index_buffer_, indices, 0u);
-                return;
-            }
-
-            const std::size_t new_buffer_size = calculate_new_buffer_size(
-                sizeof(ImDrawIdx),
-                index_buffer_ ? index_buffer_->buffer_size() : 0u,
-                indices.size());
-
-            buffer new_buffer_data(new_buffer_size);
-            std::memcpy(new_buffer_data.data(), indices.data(), indices.size());
-
-            index_buffer_ = render_.create_index_buffer(
-                new_buffer_data,
+            index_buffer_ptr ib = render_.create_index_buffer(
+                data_size,
                 index_declaration::index_type::unsigned_short,
-                index_buffer::usage::dynamic_draw);
-
-            if ( !index_buffer_ ) {
-                debug_.error("DBGUI: Failed to create index buffer:\n"
-                    "--> Size: %0",
-                    new_buffer_size);
-            }*/
-        }
-
-        void update_vertex_buffer(buffer_view vertices) {
-            /*if ( vertex_buffer_ && vertex_buffer_->buffer_size() >= vertices.size() ) {
-                render_.update_buffer(vertex_buffer_, vertices, 0u);
-                return;
+                index_buffer::usage::stream_draw);
+            if ( !ib ) {
+                return nullptr;
             }
 
-            const std::size_t new_buffer_size = calculate_new_buffer_size(
-                sizeof(ImDrawVert),
-                vertex_buffer_ ? vertex_buffer_->buffer_size() : 0u,
-                vertices.size());
+            std::size_t offset = 0;
+            for ( int i = 0; i < draw_data.CmdListsCount; ++i ) {
+                const ImDrawList& cmd_list = *draw_data.CmdLists[i];
+                render_.update_buffer(ib,
+                    buffer_view(cmd_list.IdxBuffer.Data, cmd_list.IdxBuffer.Size * sizeof(ImDrawIdx)),
+                    offset);
+                offset += cmd_list.IdxBuffer.Size;
+            }
+            return ib;
+        }
 
-            buffer new_buffer_data(new_buffer_size);
-            std::memcpy(new_buffer_data.data(), vertices.data(), vertices.size());
+        vertex_buffer_ptr create_vertex_buffer(ImDrawData& draw_data) {
+            const std::size_t data_size = draw_data.TotalVtxCount * sizeof(ImDrawVert);
 
-            vertex_buffer_ = render_.create_vertex_buffer(
-                new_buffer_data,
-                vertex_declaration()
-                    .add_attribute<v2f>("a_position")
-                    .add_attribute<v2f>("a_uv")
-                    .add_attribute<color32>("a_color").normalized(),
-                vertex_buffer::usage::dynamic_draw);
+            vertex_buffer_ptr vb = render_.create_vertex_buffer(
+                data_size,
+                vertex_buffer::usage::stream_draw);
+            if ( !vb ) {
+                return nullptr;
+            }
 
-            if ( !vertex_buffer_ ) {
-                debug_.error("DBGUI: Failed to create vertex buffer:\n"
-                    "--> Size: %0",
-                    new_buffer_size);
-            }*/
+            std::size_t offset = 0;
+            for ( int i = 0; i < draw_data.CmdListsCount; ++i ) {
+                const ImDrawList& cmd_list = *draw_data.CmdLists[i];
+                render_.update_buffer(vb,
+                    buffer_view(cmd_list.VtxBuffer.Data, cmd_list.VtxBuffer.Size * sizeof(ImDrawVert)),
+                    offset);
+                offset += cmd_list.VtxBuffer.Size * sizeof(ImDrawVert);
+            }
+            return vb;
         }
     private:
         debug& debug_;
@@ -364,12 +378,11 @@ namespace e2d
         ImGuiContext* context_{nullptr};
         window::event_listener& listener_;
     private:
-        //shader_ptr shader_;
+        shader_ptr shader_;
         texture_ptr texture_;
-        //render::material material_;
-        //render::property_block mprops_;
-        index_buffer_ptr index_buffer_;
-        vertex_buffer_ptr vertex_buffer_;
+        render::material material_;
+        const_buffer_ptr const_buffer_;
+        vertex_attribs_ptr attribs_;
     };
 }
 

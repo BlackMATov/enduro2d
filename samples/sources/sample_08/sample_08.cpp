@@ -114,18 +114,18 @@ namespace
         rectangle_batch_strip(const b2f& pos, const b2f& uv, color32 col)
         : pos(pos), uv(uv), col(col) {}
 
-        void get_indices(batcher::index_iterator iter) const noexcept {
+        void get_indices(render::batchr::index_iterator iter) const noexcept {
             iter++ = 0;  iter++ = 1; iter++ = 2;  iter++ = 3;
         }
 
-        void get_vertices(batcher::vertex_iterator<VertexType> iter) const noexcept {
+        void get_vertices(render::batchr::vertex_iterator<VertexType> iter) const noexcept {
             iter[0] = VertexType(pos.position,                         uv.position,                        col);
             iter[1] = VertexType(pos.position + v2f(0.0f, pos.size.y), uv.position + v2f(0.0f, uv.size.y), col);
             iter[2] = VertexType(pos.position + v2f(pos.size.x, 0.0f), uv.position + v2f(uv.size.x, 0.0f), col);
             iter[3] = VertexType(pos.position + pos.size,              uv.position + uv.size,              col);
         }
 
-        static batcher::topology topology() noexcept { return batcher::topology::triangles_strip; }
+        static render::topology topology() noexcept { return render::topology::triangles_strip; }
         static u32 index_count() noexcept { return 4; }
         static u32 vertex_count() noexcept { return 4; }
     public:
@@ -134,7 +134,7 @@ namespace
         color32 col;
     };
 
-    using rect_batch = batcher::rectangle_batch<vertex>;
+    using rect_batch = render::batchr::rectangle_batch<vertex>;
     using rect_batch_strip = rectangle_batch_strip<vertex>;
 
 
@@ -187,9 +187,9 @@ namespace
                 return false;
             }
 
-            /*if ( k.is_key_just_pressed(keyboard_key::f12) ) {
+            if ( k.is_key_just_pressed(keyboard_key::f1) ) {
                 the<dbgui>().toggle_visible(!the<dbgui>().visible());
-            }*/
+            }
 
             if ( k.is_key_pressed(keyboard_key::lsuper) && k.is_key_just_released(keyboard_key::enter) ) {
                 the<window>().toggle_fullscreen(!the<window>().fullscreen());
@@ -245,52 +245,53 @@ namespace
                     .min_filter(render::sampler_min_filter::linear)
                     .mag_filter(render::sampler_mag_filter::linear));
 
-            auto batch = the<batcher>().alloc_batch<vertex2>(4, 6,
-                render::topology::triangles,
-                render::material().shader(shader2_));
-            batch.vertices[0] = vertex2(v3f(- 90.0f,  170.0f, 0.0f), color32::red());
-            batch.vertices[1] = vertex2(v3f(-120.0f, -210.0f, 0.0f), color32::green());
-            batch.vertices[2] = vertex2(v3f( 120.0f,  230.0f, 0.0f), color32::blue());
-            batch.vertices[3] = vertex2(v3f(  80.0f, -130.0f, 0.0f), color32::yellow());
-            batch.indices++ = 0;  batch.indices++ = 1;  batch.indices++ = 2;
-            batch.indices++ = 1;  batch.indices++ = 2;  batch.indices++ = 3;
+            {
+                auto batch = the<render>().batcher().alloc_batch<vertex2>(4, 6,
+                    render::topology::triangles,
+                    render::material().shader(shader2_));
+                batch.vertices[0] = vertex2(v3f(- 90.0f,  170.0f, 0.0f), color32::red());
+                batch.vertices[1] = vertex2(v3f(-120.0f, -210.0f, 0.0f), color32::green());
+                batch.vertices[2] = vertex2(v3f( 120.0f,  230.0f, 0.0f), color32::blue());
+                batch.vertices[3] = vertex2(v3f(  80.0f, -130.0f, 0.0f), color32::yellow());
+                batch.indices++ = 0;  batch.indices++ = 1;  batch.indices++ = 2;
+                batch.indices++ = 1;  batch.indices++ = 2;  batch.indices++ = 3;
+            }
 
-            the<batcher>().add_batch(
+            the<render>().batcher().add_batch(
                 mtr1,
                 rect_batch(
                     b2f(100.0f, -50.0f, 100.0f, 100.0f),
                     b2f(0.0f, 0.0f, 1.0f, -1.0f),
                     color32::green()));
             
-            the<batcher>().add_batch(
+            the<render>().batcher().add_batch(
                 mtr1,
                 rect_batch(
                     b2f(50.0f, 50.0f, 100.0f, 100.0f),
                     b2f(0.0f, 0.0f, 1.0f, -1.0f),
                     color32::green()));
             
-            the<batcher>().add_batch(
+            the<render>().batcher().add_batch(
                 mtr2,
                 rect_batch_strip(
                     b2f(-200.0f, -50.0f, 100.0f, 100.0f),
                     b2f(0.0f, 0.0f, 1.0f, -1.0f),
                     color32::blue()));
             
-            the<batcher>().add_batch(
+            the<render>().batcher().add_batch(
                 mtr2,
                 rect_batch_strip(
                     b2f(-250.0f, -180.0f, 100.0f, 100.0f),
                     b2f(0.0f, 0.0f, 1.0f, -1.0f),
                     color32::blue()));
             
-            the<batcher>().add_batch(
+            the<render>().batcher().add_batch(
                 mtr2,
                 rect_batch_strip(
                     b2f(-170.0f, 130.0f, 100.0f, 100.0f),
                     b2f(0.0f, 0.0f, 1.0f, -1.0f),
                     color32::blue()));
 
-            the<batcher>().flush();
             the<render>().end_pass();
         }
     private:

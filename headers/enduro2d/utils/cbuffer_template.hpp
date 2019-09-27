@@ -12,8 +12,7 @@
 namespace e2d
 {
     class cbuffer_template;
-    using cbuffer_template_ptr = std::shared_ptr<cbuffer_template>;
-    using cbuffer_template_cptr = std::shared_ptr<const cbuffer_template>;
+    using cbuffer_template_ptr = std::shared_ptr<const cbuffer_template>;
 
     class cbuffer_template final {
     public:

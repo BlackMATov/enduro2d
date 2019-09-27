@@ -128,7 +128,7 @@ namespace e2d
             const renderer& node_r,
             const actor& actor)
         {
-            draw_sprite(spr_r, node_r, actor);
+            //draw_sprite(spr_r, node_r, actor);
         });
     }
 }

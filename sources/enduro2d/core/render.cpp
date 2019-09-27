@@ -22,6 +22,8 @@ namespace
     };
 
     const pixel_type_description pixel_type_descriptions[] = {
+        {"unknown",           0, false, false, false, pixel_declaration::pixel_type::unknown,          false, v2u(1)},
+
         {"depth16",           2, false, true,  false, pixel_declaration::pixel_type::depth16,          false, v2u(1)},
         {"depth16_stencil8",  0, false, true,  true,  pixel_declaration::pixel_type::depth16_stencil8, false, v2u(1)},
         {"depth24",           3, false, true,  false, pixel_declaration::pixel_type::depth24,          false, v2u(1)},
@@ -106,6 +108,35 @@ namespace
         }
         #undef DEFINE_CASE
     }
+    
+    template < typename T >
+    size_t hash_of(const T& x) noexcept {
+        return std::hash<T>()(x);
+    }
+    
+    size_t hash_of(str_hash x) noexcept {
+        return x.hash();
+    }
+
+    size_t hash_of(const vertex_declaration::attribute_info& x) noexcept {
+        size_t h = 0;
+        h = utils::hash_combine(h, hash_of(x.stride));
+        h = utils::hash_combine(h, hash_of(x.name));
+        h = utils::hash_combine(h, hash_of(x.rows));
+        h = utils::hash_combine(h, hash_of(x.columns));
+        h = utils::hash_combine(h, hash_of(x.type));
+        h = utils::hash_combine(h, hash_of(x.normalized));
+        return h;
+    }
+
+    size_t hash_of(const vertex_declaration& x) noexcept {
+        size_t h = hash_of(x.attribute_count());
+        for ( size_t i = 0; i < x.attribute_count(); ++i ) {
+            h = utils::hash_combine(h, hash_of(x.attribute(i)));
+        }
+        h = utils::hash_combine(h, hash_of(x.bytes_per_vertex()));
+        return h;
+    }
 
     class command_value_visitor final : private noncopyable {
     public:
@@ -141,6 +172,10 @@ namespace
         }
 
         void operator()(const render::depth_state_command& command) const {
+            render_.execute(command);
+        }
+        
+        void operator()(const render::blend_constant_command& command) const {
             render_.execute(command);
         }
 
@@ -261,6 +296,14 @@ namespace e2d
     std::size_t vertex_declaration::attribute_info::row_size() const noexcept {
         return attribute_element_size(type) * columns;
     }
+    
+    //
+    // vertex_declaration::hash
+    //
+
+    std::size_t vertex_declaration::hash::operator()(const vertex_declaration& x) const noexcept {
+        return hash_of(x);
+    }
 
     //
     // vertex_declaration
@@ -379,6 +422,28 @@ namespace e2d
     render::compare_func render::depth_state::func() const noexcept {
         return func_;
     }
+    
+    //
+    // depth_dynamic_state
+    //
+
+    render::depth_dynamic_state& render::depth_dynamic_state::test(bool enable) noexcept {
+        test_ = enable;
+        return *this;
+    }
+
+    render::depth_dynamic_state& render::depth_dynamic_state::write(bool enable) noexcept {
+        write_ = enable;
+        return *this;
+    }
+
+    bool render::depth_dynamic_state::test() const noexcept {
+        return test_;
+    }
+
+    bool render::depth_dynamic_state::write() const noexcept {
+        return write_;
+    }
 
     //
     // stencil_state
@@ -449,11 +514,6 @@ namespace e2d
         return *this;
     }
     
-    render::culling_state& render::culling_state::mode(culling_mode mode) noexcept {
-        mode_ = mode;
-        return *this;
-    }
-    
     render::culling_state& render::culling_state::enable(bool value) noexcept {
         enabled_ = value;
         return *this;
@@ -461,10 +521,6 @@ namespace e2d
 
     render::culling_face render::culling_state::face() const noexcept {
         return face_;
-    }
-    
-    render::culling_mode render::culling_state::mode() const noexcept {
-        return mode_;
     }
     
     bool render::culling_state::enabled() const noexcept {
@@ -798,10 +854,10 @@ namespace e2d
         return *this;
     }
 
-    /*render::renderpass_desc& render::renderpass_desc::color_invalidate() noexcept {
+    render::renderpass_desc& render::renderpass_desc::color_invalidate() noexcept {
         color_.load_op = attachment_load_op::invalidate;
         return *this;
-    }*/
+    }
 
     render::renderpass_desc& render::renderpass_desc::color_store() noexcept {
         color_.store_op = attachment_store_op::store;
@@ -810,6 +866,16 @@ namespace e2d
 
     render::renderpass_desc& render::renderpass_desc::color_discard() noexcept {
         color_.store_op = attachment_store_op::discard;
+        return *this;
+    }
+
+    render::renderpass_desc& render::renderpass_desc::color_load_op(attachment_load_op value) noexcept {
+        color_.load_op = value;
+        return *this;
+    }
+
+    render::renderpass_desc& render::renderpass_desc::color_store_op(attachment_store_op value) noexcept {
+        color_.store_op = value;
         return *this;
     }
 
@@ -837,10 +903,10 @@ namespace e2d
         return *this;
     }
 
-    /*render::renderpass_desc& render::renderpass_desc::depth_invalidate() noexcept {
+    render::renderpass_desc& render::renderpass_desc::depth_invalidate() noexcept {
         depth_.load_op = attachment_load_op::invalidate;
         return *this;
-    }*/
+    }
 
     render::renderpass_desc& render::renderpass_desc::depth_store() noexcept {
         depth_.store_op = attachment_store_op::store;
@@ -849,6 +915,16 @@ namespace e2d
 
     render::renderpass_desc& render::renderpass_desc::depth_discard() noexcept {
         depth_.store_op = attachment_store_op::discard;
+        return *this;
+    }
+    
+    render::renderpass_desc& render::renderpass_desc::depth_load_op(attachment_load_op value) noexcept {
+        depth_.load_op = value;
+        return *this;
+    }
+
+    render::renderpass_desc& render::renderpass_desc::depth_store_op(attachment_store_op value) noexcept {
+        depth_.store_op = value;
         return *this;
     }
 
@@ -876,10 +952,10 @@ namespace e2d
         return *this;
     }
 
-    /*render::renderpass_desc& render::renderpass_desc::stencil_invalidate() noexcept {
+    render::renderpass_desc& render::renderpass_desc::stencil_invalidate() noexcept {
         stencil_.load_op = attachment_load_op::invalidate;
         return *this;
-    }*/
+    }
 
     render::renderpass_desc& render::renderpass_desc::stencil_store() noexcept {
         stencil_.store_op = attachment_store_op::store;
@@ -888,6 +964,16 @@ namespace e2d
 
     render::renderpass_desc& render::renderpass_desc::stencil_discard() noexcept {
         stencil_.store_op = attachment_store_op::discard;
+        return *this;
+    }
+    
+    render::renderpass_desc& render::renderpass_desc::stencil_load_op(attachment_load_op value) noexcept {
+        stencil_.load_op = value;
+        return *this;
+    }
+
+    render::renderpass_desc& render::renderpass_desc::stencil_store_op(attachment_store_op value) noexcept {
+        stencil_.store_op = value;
         return *this;
     }
 
@@ -917,6 +1003,11 @@ namespace e2d
         culling_ = value;
         return *this;
     }
+    
+    render::material& render::material::depth(const depth_dynamic_state& value) noexcept {
+        depth_ = value;
+        return *this;
+    }
 
     render::material& render::material::shader(const shader_ptr& value) noexcept {
         shader_ = value;
@@ -944,6 +1035,10 @@ namespace e2d
 
     const std::optional<render::culling_state>& render::material::culling() const noexcept {
         return culling_;
+    }
+    
+    const render::depth_dynamic_state_opt& render::material::depth() const noexcept {
+        return depth_;
     }
 
     const shader_ptr& render::material::shader() const noexcept {
@@ -1034,7 +1129,6 @@ namespace e2d
     }
 
     const b2u& render::scissor_command::scissor_rect() const noexcept {
-        E2D_ASSERT(scissoring_);
         return scissor_rect_;
     }
 
@@ -1200,8 +1294,7 @@ namespace e2d
             return !r.enabled();
         }
         return l.enabled() == r.enabled()
-            && l.face() == r.face()
-            && l.mode() == r.mode();
+            && l.face() == r.face();
     }
 
     bool operator!=(const render::culling_state& l, const render::culling_state& r) noexcept {
@@ -1264,5 +1357,1104 @@ namespace e2d
 
     bool operator!=(const render::material& l, const render::material& r) noexcept {
         return !(l == r);
+    }
+}
+
+namespace
+{
+    class render_schema_parsing_exception final : public exception {
+        const char* what() const noexcept final {
+            return "render scheme parsing exception";
+        }
+    };
+
+    const char* render_schema_definitions_source = R"json({
+        "render_pass_description" : {
+            "type" : "object",
+            "required" : [],
+            "additionalProperties" : false,
+            "properties" : {
+                "viewport" : { "$ref": "#/common_definitions/b2" },
+                "depth_range" : {
+                    "type" : "object",
+                    "additionalProperties" : false,
+                    "properties" : {
+                        "near" : { "type" : "number" },
+                        "far" : { "type" : "number" }
+                    }
+                },
+                "state_block" : { "$ref": "#/render_definitions/state_block" },
+
+                "color_clear_value" : { "$ref" : "#/common_definitions/color" },
+                "color_load_op" : { "$ref" : "#/render_definitions/attachment_load_op" },
+                "color_store_op" : { "$ref" : "#/render_definitions/attachment_store_op" },
+
+                "depth_clear_value" : { "type" : "number" },
+                "depth_load_op" : { "$ref" : "#/render_definitions/attachment_load_op" },
+                "depth_store_op" : { "$ref" : "#/render_definitions/attachment_store_op" },
+
+                "stencil_clear_value" : { "type" : "integer", "minimum" : 0, "maximum": 255 },
+                "stencil_load_op" : { "$ref" : "#/render_definitions/attachment_load_op" },
+                "stencil_store_op" : { "$ref" : "#/render_definitions/attachment_store_op" }
+            }
+        },
+        "state_block" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "depth_state" : { "$ref": "#/render_definitions/depth_state" },
+                "stencil_state" : { "$ref": "#/render_definitions/stencil_state" },
+                "culling_state" : { "$ref": "#/render_definitions/culling_state" },
+                "blending_state" : { "$ref": "#/render_definitions/blending_state" }
+            }
+        },
+        "depth_state" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "test" : { "type" : "boolean" },
+                "write" : { "type" : "boolean" },
+                "func" : { "$ref" : "#/render_definitions/compare_func" }
+            }
+        },
+        "depth_dynamic_state" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "test" : { "type" : "boolean" },
+                "write" : { "type" : "boolean" }
+            }
+        },
+        "stencil_state" : {
+            "type" : "object",
+            "required" : [ "test" ],
+            "additionalProperties" : false,
+            "properties" : {
+                "test" : { "type" : "boolean" },
+                "write" : { "type" : "integer", "minimum" : 0, "maximum": 255 },
+                "func" : { "$ref" : "#/render_definitions/compare_func" },
+                "ref" : { "type" : "integer", "minimum" : 0, "maximum": 255 },
+                "mask" : { "type" : "integer", "minimum" : 0, "maximum": 255 },
+                "pass" : { "$ref" : "#/render_definitions/stencil_op" },
+                "sfail" : { "$ref" : "#/render_definitions/stencil_op" },
+                "zfail" : { "$ref" : "#/render_definitions/stencil_op" }
+            }
+        },
+        "culling_state" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enable" : { "type" : "boolean" },
+                "face" : { "$ref" : "#/render_definitions/culling_face" }
+            }
+        },
+        "blending_state" : {
+            "type" : "object",
+            "required" : [ "enable" ],
+            "additionalProperties" : false,
+            "properties" : {
+                "enable" : { 
+                    "type" : "boolean"
+                },
+                "color_mask" : {
+                    "$ref" : "#/render_definitions/color_mask"
+                },
+                "src_factor" : {
+                    "anyOf" : [{
+                        "type" : "object",
+                        "additionalProperties" : false,
+                        "properties" : {
+                            "rgb" : { "$ref" : "#/render_definitions/blending_factor" },
+                            "alpha" : { "$ref" : "#/render_definitions/blending_factor" }
+                        }
+                    }, {
+                        "$ref" : "#/render_definitions/blending_factor"
+                    }]
+                },
+                "dst_factor" : {
+                    "anyOf" : [{
+                        "type" : "object",
+                        "additionalProperties" : false,
+                        "properties" : {
+                            "rgb" : { "$ref" : "#/render_definitions/blending_factor" },
+                            "alpha" : { "$ref" : "#/render_definitions/blending_factor" }
+                        }
+                    }, {
+                        "$ref" : "#/render_definitions/blending_factor"
+                    }]
+                },
+                "equation" : {
+                    "anyOf" : [{
+                        "type" : "object",
+                        "additionalProperties" : false,
+                        "properties" : {
+                            "rgb" : { "$ref" : "#/render_definitions/blending_equation" },
+                            "alpha" : { "$ref" : "#/render_definitions/blending_equation" }
+                        }
+                    }, {
+                        "$ref" : "#/render_definitions/blending_equation"
+                    }]
+                }
+            }
+        },
+        "property" : {
+            "type" : "object",
+            "required" : [ "name", "type" ],
+            "additionalProperties" : false,
+            "properties" : {
+                "name" : { "$ref" : "#/common_definitions/name" },
+                "type" : { "$ref" : "#/render_definitions/property_type" },
+                "value" : { "$ref" : "#/render_definitions/property_value" }
+            }
+        },
+        "property_type" : {
+            "type" : "string",
+            "enum" : [
+                "f32",
+                "v2f", "v3f", "v4f",
+                "m2f", "m3f", "m4f"
+            ]
+        },
+        "property_value" : {
+            "anyOf": [
+                { "type" : "number" },
+                { "$ref" : "#/common_definitions/v2" },
+                { "$ref" : "#/common_definitions/v3" },
+                { "$ref" : "#/common_definitions/v4" },
+                { "$ref" : "#/common_definitions/m2" },
+                { "$ref" : "#/common_definitions/m3" },
+                { "$ref" : "#/common_definitions/m4" }
+            ]
+        },
+        "stencil_op" : {
+            "type" : "string",
+            "enum" : [
+                "keep",
+                "zero",
+                "replace",
+                "incr",
+                "incr_wrap",
+                "decr",
+                "decr_wrap",
+                "invert"
+            ]
+        },
+        "compare_func" : {
+            "type" : "string",
+            "enum" : [
+                "never",
+                "less",
+                "lequal",
+                "greater",
+                "gequal",
+                "equal",
+                "notequal",
+                "always"
+            ]
+        },
+        "culling_face" : {
+            "type" : "string",
+            "enum" : [
+                "back",
+                "front",
+                "back_and_front"
+            ]
+        },
+        "blending_factor" : {
+            "type" : "string",
+            "enum" : [
+                "zero",
+                "one",
+                "src_color",
+                "one_minus_src_color",
+                "dst_color",
+                "one_minus_dst_color",
+                "src_alpha",
+                "one_minus_src_alpha",
+                "dst_alpha",
+                "one_minus_dst_alpha",
+                "constant_color",
+                "one_minus_constant_color",
+                "constant_alpha",
+                "one_minus_constant_alpha",
+                "src_alpha_saturate"
+            ]
+        },
+        "blending_equation" : {
+            "type" : "string",
+            "enum" : [
+                "add",
+                "subtract",
+                "reverse_subtract"
+            ]
+        },
+        "blending_color_mask" : {
+            "type" : "string",
+            "enum" : [
+                "none",
+                "r",
+                "g",
+                "b",
+                "a",
+                "rg",
+                "rb",
+                "ra",
+                "gb",
+                "ga",
+                "ba",
+                "rgb",
+                "rga",
+                "rba",
+                "gba",
+                "rgba"
+            ]
+        },
+        "sampler_wrap" : {
+            "type" : "string",
+            "enum" : [
+                "clamp",
+                "repeat",
+                "mirror"
+            ]
+        },
+        "sampler_filter" : {
+            "type" : "string",
+            "enum" : [
+                "nearest",
+                "linear"
+            ]
+        },
+        "attachment_load_op" : {
+            "type" : "string",
+            "enum" : [
+                "load",
+                "clear",
+                "invalidate"
+            ]
+        },
+        "attachment_store_op" : {
+            "type" : "string",
+            "enum" : [
+                "store",
+                "discard"
+            ]
+        }
+    })json";
+    
+    const rapidjson::Value& render_schema_definitions() {
+        static std::mutex mutex;
+        static std::unique_ptr<rapidjson::Document> defs_doc;
+
+        std::lock_guard<std::mutex> guard(mutex);
+        if ( !defs_doc ) {
+            rapidjson::Document doc;
+            if ( doc.Parse(render_schema_definitions_source).HasParseError() ) {
+                throw render_schema_parsing_exception();
+            }
+            defs_doc = std::make_unique<rapidjson::Document>(std::move(doc));
+        }
+
+        return *defs_doc;
+    }
+}
+
+namespace e2d
+{   
+    render::batchr::batch_::batch_(const material &mtr)
+    : mtr(mtr) {}
+    
+    size_t render::batchr::buffer_::available(size_t align) const noexcept {
+        size_t off = math::align_ceil(offset, align);
+        return off < content.size()
+             ? math::align_ceil(content.size() - off, align)
+             : 0;
+    }
+    
+    buffer_view render::batchr::buffer_::actual_data() const noexcept {
+        static_assert(vertex_buffer_size_ % gpu_buffer_alignment == 0, "");
+        static_assert(index_buffer_size_ % gpu_buffer_alignment == 0, "");
+        return buffer_view(content.data(), math::align_ceil(offset, gpu_buffer_alignment));
+    }
+
+    render::batchr::batchr(debug& d, render& r)
+    : debug_(d)
+    , render_(r) {}
+
+    render::batchr::~batchr() noexcept = default;
+
+    render::batchr::batch_& render::batchr::append_batch_(
+        const material& mtr,
+        topology topo,
+        vertex_attribs_ptr attribs,
+        size_t vert_stride,
+        size_t vertex_count,
+        size_t min_ib_size,
+        const std::optional<b2u>& scissor)
+    {
+        const size_t min_vb_size = vertex_count * vert_stride;
+        constexpr size_t max_vertex_count = std::numeric_limits<batch_index_t>::max();
+        
+        if ( vertex_count > max_vertex_count ||
+             min_vb_size > vertex_buffer_size_ ||
+             min_ib_size > index_buffer_size_ )
+        {
+            throw std::runtime_error("too big for batching");
+        }
+
+        // try to reuse last batch
+        if ( batches_.size() ) {
+            auto& last = batches_.back();
+            auto& vb = vertex_buffers_[last.vb_index];
+            auto& ib = index_buffers_[last.ib_index];
+            size_t vert_offset = (vb.offset + vert_stride-1) / vert_stride;
+
+            if ( last.mtr == mtr &&
+                 last.attribs == attribs &&
+                 last.topo == topo &&
+                 vert_offset + vertex_count < max_vertex_count &&
+                 vb.available(vert_stride) >= min_vb_size &&
+                 ib.available(index_stride_) >= min_ib_size &&
+                 last.scissor_test == scissor.has_value() &&
+                 (!last.scissor_test || last.scissor_rect == scissor.value()) )
+            {
+                ++curr_stats_.num_appended_batches;
+                return last;
+            }
+        }
+
+        // create new batch
+        ++curr_stats_.num_created_batches;
+        batch_& result = batches_.emplace_back(mtr);
+
+        if ( vertex_buffers_.empty() ||
+             vertex_buffers_.back().available(vert_stride) < min_vb_size ||
+             ((vertex_buffers_.back().offset + vert_stride-1) / vert_stride) + vertex_count >= max_vertex_count )
+        {
+            auto& vb = vertex_buffers_.emplace_back();
+            vb.content.resize(vertex_buffer_size_);
+        }
+
+        if ( index_buffers_.empty() ||
+             index_buffers_.back().available(index_stride_) < min_ib_size )
+        {
+            auto& ib = index_buffers_.emplace_back();
+            ib.content.resize(index_buffer_size_);
+        }
+        
+        if ( scissor.has_value() ) {
+            result.scissor_test = true;
+            result.scissor_rect = scissor.value();
+        }
+
+        result.attribs = attribs;
+        result.topo = topo;
+        result.vb_index = u32(vertex_buffers_.size()-1);
+        result.ib_index = u32(index_buffers_.size()-1);
+        result.idx_offset = index_buffers_.back().offset;
+
+        return result;
+    }
+
+    void render::batchr::flush() {
+        if ( !dirty_ ) {
+            return;
+        }
+        dirty_ = false;
+
+        vertex_attribs_ptr curr_attribs;
+        shader_ptr curr_shader;
+        u32 curr_vb_index = ~0u;
+
+        std::vector<vertex_buffer_ptr> vert_buffers(vertex_buffers_.size());
+        for ( std::size_t i = 0; i  < vertex_buffers_.size(); ++i ) {
+            vert_buffers[i] = render_.create_vertex_buffer(
+                vertex_buffers_[i].actual_data(),
+                vertex_buffer::usage::static_draw);
+        }
+
+        std::vector<index_buffer_ptr> index_buffers(index_buffers_.size());
+        for ( std::size_t i = 0; i < index_buffers_.size(); ++i ) {
+            index_buffers[i] = render_.create_index_buffer(
+                index_buffers_[i].actual_data(),
+                index_declaration::index_type::unsigned_short,
+                index_buffer::usage::static_draw);
+        }
+
+        for ( auto& batch : batches_ ) {
+            if ( curr_vb_index != batch.vb_index ||
+                 curr_attribs != batch.attribs ||
+                 curr_shader != batch.mtr.shader() )
+            {
+                curr_vb_index = batch.vb_index;
+                curr_attribs = batch.attribs;
+                curr_shader = batch.mtr.shader();
+
+                render_.execute(render::bind_vertex_buffers_command()
+                    .bind(0, vert_buffers[curr_vb_index], curr_attribs));
+            }
+            
+            render_.set_material(batch.mtr);
+
+            render_.execute(render::scissor_command()
+                .scissor_rect(batch.scissor_rect)
+                .scissoring(batch.scissor_test));
+
+            render_.execute(render::draw_indexed_command()
+                .index_count(batch.idx_count)
+                .index_offset(batch.idx_offset)
+                .indices(index_buffers[batch.ib_index])
+                .topo(batch.topo));
+        }
+
+        // TODO: optimize
+        vertex_buffers_.clear();
+        index_buffers_.clear();
+        batches_.clear();
+
+        ++curr_stats_.flush_counter;
+    }
+    
+    void render::batchr::on_present_() {
+        flush();
+        last_stats_ = curr_stats_;
+        curr_stats_ = {};
+    }
+}
+
+namespace e2d::json_utils
+{
+    void add_render_schema_definitions(rapidjson::Document& schema) {
+        schema.AddMember(
+            "render_definitions",
+            rapidjson::Value(
+                render_schema_definitions(),
+                schema.GetAllocator()).Move(),
+            schema.GetAllocator());
+    }
+}
+
+namespace e2d::json_utils
+{
+    bool try_parse_value(const rapidjson::Value& root, render::topology& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::topology::x; return true; }
+        DEFINE_IF(triangles);
+        DEFINE_IF(triangles_strip);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::stencil_op& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::stencil_op::x; return true; }
+        DEFINE_IF(keep);
+        DEFINE_IF(zero);
+        DEFINE_IF(replace);
+        DEFINE_IF(incr);
+        DEFINE_IF(incr_wrap);
+        DEFINE_IF(decr);
+        DEFINE_IF(decr_wrap);
+        DEFINE_IF(invert);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::compare_func& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::compare_func::x; return true; }
+        DEFINE_IF(never);
+        DEFINE_IF(less);
+        DEFINE_IF(lequal);
+        DEFINE_IF(greater);
+        DEFINE_IF(gequal);
+        DEFINE_IF(equal);
+        DEFINE_IF(notequal);
+        DEFINE_IF(always);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::culling_face& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::culling_face::x; return true; }
+        DEFINE_IF(back);
+        DEFINE_IF(front);
+        DEFINE_IF(back_and_front);
+    #undef DEFINE_IF
+        return false;
+    }
+    
+    bool try_parse_value(const rapidjson::Value& root, render::blending_factor& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::blending_factor::x; return true; }
+        DEFINE_IF(zero);
+        DEFINE_IF(one);
+        DEFINE_IF(src_color);
+        DEFINE_IF(one_minus_src_color);
+        DEFINE_IF(dst_color);
+        DEFINE_IF(one_minus_dst_color);
+        DEFINE_IF(src_alpha);
+        DEFINE_IF(one_minus_src_alpha);
+        DEFINE_IF(dst_alpha);
+        DEFINE_IF(one_minus_dst_alpha);
+        DEFINE_IF(constant_color);
+        DEFINE_IF(one_minus_constant_color);
+        DEFINE_IF(constant_alpha);
+        DEFINE_IF(one_minus_constant_alpha);
+        DEFINE_IF(src_alpha_saturate);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::blending_equation& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::blending_equation::x; return true; }
+        DEFINE_IF(add);
+        DEFINE_IF(subtract);
+        DEFINE_IF(reverse_subtract);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::blending_color_mask& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::blending_color_mask::x; return true; }
+        DEFINE_IF(none);
+        DEFINE_IF(r);
+        DEFINE_IF(g);
+        DEFINE_IF(b);
+        DEFINE_IF(a);
+        DEFINE_IF(rg);
+        DEFINE_IF(rb);
+        DEFINE_IF(ra);
+        DEFINE_IF(gb);
+        DEFINE_IF(ga);
+        DEFINE_IF(ba);
+        DEFINE_IF(rgb);
+        DEFINE_IF(rga);
+        DEFINE_IF(rba);
+        DEFINE_IF(gba);
+        DEFINE_IF(rgba);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::sampler_wrap& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::sampler_wrap::x; return true; }
+        DEFINE_IF(clamp);
+        DEFINE_IF(repeat);
+        DEFINE_IF(mirror);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::sampler_min_filter& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::sampler_min_filter::x; return true; }
+        DEFINE_IF(nearest);
+        DEFINE_IF(linear);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::sampler_mag_filter& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x,y) if ( str == #x ) { v = render::sampler_mag_filter::y; return true; }
+        DEFINE_IF(nearest, nearest);
+        DEFINE_IF(linear, linear);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::attachment_load_op& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::attachment_load_op::x; return true; }
+        DEFINE_IF(load);
+        DEFINE_IF(clear);
+        DEFINE_IF(invalidate);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::attachment_store_op& v) noexcept {
+        E2D_ASSERT(root.IsString());
+        str_view str = root.GetString();
+    #define DEFINE_IF(x) if ( str == #x ) { v = render::attachment_store_op::x; return true; }
+        DEFINE_IF(store);
+        DEFINE_IF(discard);
+    #undef DEFINE_IF
+        return false;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::depth_state& depth) noexcept {
+        E2D_ASSERT(root.IsObject());
+
+        if ( root.HasMember("test") ) {
+            E2D_ASSERT(root["test"].IsBool());
+            depth.test(root["test"].GetBool());
+        }
+
+        if ( root.HasMember("write") ) {
+            E2D_ASSERT(root["write"].IsBool());
+            depth.write(root["write"].GetBool());
+        }
+
+        if ( root.HasMember("func") ) {
+            render::compare_func func = depth.func();
+            if ( !try_parse_value(root["func"], func) ) {
+                E2D_ASSERT_MSG(false, "unexpected depth state func");
+                return false;
+            }
+
+            depth.func(func);
+        }
+        return true;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::depth_dynamic_state& depth) noexcept {
+        E2D_ASSERT(root.IsObject());
+        
+        if ( root.HasMember("test") ) {
+            E2D_ASSERT(root["test"].IsBool());
+            depth.test(root["test"].GetBool());
+        }
+
+        if ( root.HasMember("write") ) {
+            E2D_ASSERT(root["write"].IsBool());
+            depth.write(root["write"].GetBool());
+        }
+
+        return true;
+    }
+    
+    bool try_parse_value(const rapidjson::Value& root, render::stencil_state& stencil) noexcept {
+        E2D_ASSERT(root.IsObject());
+        
+        if ( root.HasMember("test") ) {
+            E2D_ASSERT(root["test"].IsBool());
+            stencil.test(root["test"].GetBool());
+        }
+
+        if ( root.HasMember("write") ) {
+            E2D_ASSERT(root["write"].IsUint() && root["write"].GetUint() <= 255);
+            stencil.write(math::numeric_cast<u8>(
+                root["write"].GetUint()));
+        }
+
+        if ( root.HasMember("func") ) {
+            render::compare_func func = stencil.func();
+            if ( !try_parse_value(root["func"], func) ) {
+                E2D_ASSERT_MSG(false, "unexpected stencil state func");
+                return false;
+            }
+
+            stencil.func(
+                func,
+                stencil.ref(),
+                stencil.mask());
+        }
+
+        if ( root.HasMember("ref") ) {
+            E2D_ASSERT(root["ref"].IsUint() && root["ref"].GetUint() <= 255);
+
+            stencil.func(
+                stencil.func(),
+                math::numeric_cast<u8>(root["ref"].GetUint()),
+                stencil.mask());
+        }
+
+        if ( root.HasMember("mask") ) {
+            E2D_ASSERT(root["mask"].IsUint() && root["mask"].GetUint() <= 255);
+
+            stencil.func(
+                stencil.func(),
+                stencil.ref(),
+                math::numeric_cast<u8>(root["mask"].GetUint()));
+        }
+
+        if ( root.HasMember("pass") ) {
+            render::stencil_op op = stencil.pass();
+            if ( !try_parse_value(root["pass"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected stencil state pass");
+                return false;
+            }
+
+            stencil.op(
+                op,
+                stencil.sfail(),
+                stencil.zfail());
+        }
+
+        if ( root.HasMember("sfail") ) {
+            render::stencil_op op = stencil.sfail();
+            if ( !try_parse_value(root["sfail"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected stencil state sfail");
+                return false;
+            }
+
+            stencil.op(
+                stencil.pass(),
+                op,
+                stencil.zfail());
+        }
+
+        if ( root.HasMember("zfail") ) {
+            render::stencil_op op = stencil.zfail();
+            if ( !try_parse_value(root["zfail"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected stencil state zfail");
+                return false;
+            }
+
+            stencil.op(
+                stencil.pass(),
+                stencil.sfail(),
+                op);
+        }
+
+        return true;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::culling_state& culling) noexcept {
+        E2D_ASSERT(root.IsObject());
+
+        if ( root.HasMember("enable") ) {
+            E2D_ASSERT(root["enable"].IsBool());
+            culling.enable(root["enable"].GetBool());
+        }
+
+        if ( root.HasMember("face") ) {
+            render::culling_face face = culling.face();
+            if ( !try_parse_value(root["face"], face) ) {
+                E2D_ASSERT_MSG(false, "unexpected culling state face");
+                return false;
+            }
+
+            culling.face(face);
+        }
+        return true;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::blending_state& blending) noexcept {
+        E2D_ASSERT(root.IsObject());
+
+        if ( root.HasMember("enable") ) {
+            E2D_ASSERT(root["enable"].IsBool());
+            blending.enable(root["enable"].GetBool());
+        }
+
+        if ( root.HasMember("color_mask") ) {
+            render::blending_color_mask mask = blending.color_mask();
+            if ( !try_parse_value(root["color_mask"], mask) ) {
+                E2D_ASSERT_MSG(false, "unexpected blending state color mask");
+                return false;
+            }
+
+            blending.color_mask(mask);
+        }
+
+        if ( root.HasMember("src_factor") ) {
+            if ( root["src_factor"].IsString() ) {
+                render::blending_factor factor = blending.src_rgb_factor();
+                if ( !try_parse_value(root["src_factor"], factor) ) {
+                    E2D_ASSERT_MSG(false, "unexpected blending state src factor");
+                    return false;
+                }
+                blending.src_factor(factor);
+            } else if ( root["src_factor"].IsObject() ) {
+                const auto& root_src_factor = root["src_factor"];
+
+                if ( root_src_factor.HasMember("rgb") ) {
+                    render::blending_factor factor = blending.src_rgb_factor();
+                    if ( !try_parse_value(root_src_factor["rgb"], factor) ) {
+                        E2D_ASSERT_MSG(false, "unexpected blending state src factor");
+                        return false;
+                    }
+                    blending.src_rgb_factor(factor);
+                }
+
+                if ( root_src_factor.HasMember("alpha") ) {
+                    render::blending_factor factor = blending.src_alpha_factor();
+                    if ( !try_parse_value(root_src_factor["alpha"], factor) ) {
+                        E2D_ASSERT_MSG(false, "unexpected blending state src factor");
+                        return false;
+                    }
+                    blending.src_alpha_factor(factor);
+                }
+            } else {
+                E2D_ASSERT_MSG(false, "unexpected blending state src factor");
+            }
+        }
+
+        if ( root.HasMember("dst_factor") ) {
+            if ( root["dst_factor"].IsString() ) {
+                render::blending_factor factor = blending.dst_rgb_factor();
+                if ( !try_parse_value(root["dst_factor"], factor) ) {
+                    E2D_ASSERT_MSG(false, "unexpected blending state dst factor");
+                    return false;
+                }
+                blending.dst_factor(factor);
+            } else if ( root["dst_factor"].IsObject() ) {
+                const auto& root_dst_factor = root["dst_factor"];
+
+                if ( root_dst_factor.HasMember("rgb") ) {
+                    render::blending_factor factor = blending.dst_rgb_factor();
+                    if ( !try_parse_value(root_dst_factor["rgb"], factor) ) {
+                        E2D_ASSERT_MSG(false, "unexpected blending state dst factor");
+                        return false;
+                    }
+                    blending.dst_rgb_factor(factor);
+                }
+
+                if ( root_dst_factor.HasMember("alpha") ) {
+                    render::blending_factor factor = blending.dst_alpha_factor();
+                    if ( !try_parse_value(root_dst_factor["alpha"], factor) ) {
+                        E2D_ASSERT_MSG(false, "unexpected blending state dst factor");
+                        return false;
+                    }
+                    blending.dst_alpha_factor(factor);
+                }
+            } else {
+                E2D_ASSERT_MSG(false, "unexpected blending state dst factor");
+            }
+        }
+
+        if ( root.HasMember("equation") ) {
+            if ( root["equation"].IsString() ) {
+                render::blending_equation equation = blending.rgb_equation();
+                if ( !try_parse_value(root["equation"], equation) ) {
+                    E2D_ASSERT_MSG(false, "unexpected blending state equation");
+                    return false;
+                }
+                blending.equation(equation);
+            } else if ( root["equation"].IsObject() ) {
+                const auto& root_equation = root["equation"];
+
+                if ( root_equation.HasMember("rgb") ) {
+                    render::blending_equation equation = blending.rgb_equation();
+                    if ( !try_parse_value(root_equation["rgb"], equation) ) {
+                        E2D_ASSERT_MSG(false, "unexpected blending state equation");
+                        return false;
+                    }
+                    blending.rgb_equation(equation);
+                }
+
+                if ( root_equation.HasMember("alpha") ) {
+                    render::blending_equation equation = blending.alpha_equation();
+                    if ( !try_parse_value(root_equation["alpha"], equation) ) {
+                        E2D_ASSERT_MSG(false, "unexpected blending state equation");
+                        return false;
+                    }
+                    blending.alpha_equation(equation);
+                }
+            } else {
+                E2D_ASSERT_MSG(false, "unexpected blending state equation");
+            }
+        }
+        return true;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::state_block& block) noexcept {
+        E2D_ASSERT(root.IsObject());
+
+        if ( root.HasMember("depth_state") ) {
+            if ( !try_parse_value(root["depth_state"], block.depth()) ) {
+                return false;
+            }
+        }
+
+        if ( root.HasMember("stencil_state") ) {
+            if ( !try_parse_value(root["stencil_state"], block.stencil()) ) {
+                return false;
+            }
+        }
+
+        if ( root.HasMember("culling_state") ) {
+            if ( !try_parse_value(root["culling_state"], block.culling()) ) {
+                return false;
+            }
+        }
+
+        if ( root.HasMember("blending_state") ) {
+            if ( !try_parse_value(root["blending_state"], block.blending()) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::property_map& props) noexcept {
+        E2D_ASSERT(root.IsArray());
+
+        for ( rapidjson::SizeType i = 0; i < root.Size(); ++i ) {
+            E2D_ASSERT(root[i].IsObject());
+            const auto& property_json = root[i];
+
+            E2D_ASSERT(property_json.HasMember("name") && property_json["name"].IsString());
+            E2D_ASSERT(property_json.HasMember("type") && property_json["type"].IsString());
+
+        #define DEFINE_CASE(x)\
+            if ( 0 == std::strcmp(property_json["type"].GetString(), #x) ) {\
+                x value;\
+                if ( property_json.HasMember("value") ) {\
+                    if ( !try_parse_value(property_json["value"], value) ) {\
+                        E2D_ASSERT_MSG(false, "unexpected property value");\
+                        return false;\
+                    }\
+                }\
+                props.assign(property_json["name"].GetString(), value);\
+                continue;\
+            }
+
+            DEFINE_CASE(f32);
+
+            DEFINE_CASE(v2f);
+            DEFINE_CASE(v3f);
+            DEFINE_CASE(v4f);
+
+            DEFINE_CASE(m2f);
+            DEFINE_CASE(m3f);
+            DEFINE_CASE(m4f);
+        #undef DEFINE_CASE
+
+            E2D_ASSERT_MSG(false, "unexpected property type");
+            return false;
+        }
+        return true;
+    }
+
+    bool try_parse_value(const rapidjson::Value& root, render::renderpass_desc& pass) noexcept {
+        E2D_ASSERT(root.IsObject());
+
+        if ( root.HasMember("viewport") ) {
+            b2u viewport;
+            if ( !try_parse_value(root["viewport"], viewport) ) {
+                E2D_ASSERT_MSG(false, "unexpected viewport value");
+                return false;
+            }
+            pass.viewport(viewport);
+        }
+
+        if ( root.HasMember("depth_range") ) {
+            E2D_ASSERT(root["range"].IsObject());
+            const auto& root_range = root["range"];
+
+            if ( root_range.HasMember("near") ) {
+                E2D_ASSERT(root_range["near"].IsNumber());
+                pass.depth_range(v2f(
+                    root_range["near"].GetFloat(),
+                    pass.depth_range().y));
+            }
+
+            if ( root_range.HasMember("far") ) {
+                E2D_ASSERT(root_range["far"].IsNumber());
+                pass.depth_range(v2f(
+                    pass.depth_range().x,
+                    root_range["far"].GetFloat()));
+            }
+        }
+
+        if ( root.HasMember("state_block") ) {
+            render::state_block states;
+            if ( !try_parse_value(root["state_block"], states) ) {
+                return false;
+            }
+            pass.states(states);
+        }
+
+        if ( root.HasMember("color_load_op") ) {
+            render::attachment_load_op op = pass.color_load_op();
+            if ( !try_parse_value(root["color_load_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected color load operation");
+                return false;
+            }
+            pass.color_load_op(op);
+        }
+
+        if ( pass.color_load_op() == render::attachment_load_op::clear
+            &&root.HasMember("color_clear_value") )
+        {
+            color col;
+            if ( !try_parse_value(root["color_clear_value"], col) ) {
+                E2D_ASSERT_MSG(false, "unexpected color clear value");
+                return false;
+            }
+            pass.color_clear(col);
+        }
+
+        if ( root.HasMember("color_store_op") ) {
+            render::attachment_store_op op = pass.color_store_op();
+            if ( !try_parse_value(root["color_store_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected color store operation");
+                return false;
+            }
+            pass.color_store_op(op);
+        }
+
+        if ( root.HasMember("depth_load_op") ) {
+            render::attachment_load_op op = pass.depth_load_op();
+            if ( !try_parse_value(root["depth_load_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected depth load operation");
+                return false;
+            }
+            pass.depth_load_op(op);
+        }
+
+        if ( pass.depth_load_op() == render::attachment_load_op::clear
+            && root.HasMember("depth_clear_value") )
+        {
+            const auto& root_d = root["depth_clear_value"];
+            E2D_ASSERT(root_d.IsNumber());
+            pass.depth_clear(root_d.GetFloat());
+        }
+
+        if ( root.HasMember("depth_store_op") ) {
+            render::attachment_store_op op = pass.depth_store_op();
+            if ( !try_parse_value(root["depth_store_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected depth store operation");
+                return false;
+            }
+            pass.depth_store_op(op);
+        }
+
+        if ( root.HasMember("stencil_load_op") ) {
+            render::attachment_load_op op = pass.stencil_load_op();
+            if ( !try_parse_value(root["stencil_load_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected stencil load operation");
+                return false;
+            }
+            pass.stencil_load_op(op);
+        }
+
+        if ( pass.stencil_load_op() == render::attachment_load_op::clear
+            && root.HasMember("stencil_clear_value") )
+        {
+            const auto& root_s = root["stencil_clear_value"];
+            E2D_ASSERT(root_s.IsInt());
+            pass.stencil_clear(math::numeric_cast<u8>(root_s.GetInt()));
+        }
+
+        if ( root.HasMember("stencil_store_op") ) {
+            render::attachment_store_op op = pass.stencil_store_op();
+            if ( !try_parse_value(root["stencil_store_op"], op) ) {
+                E2D_ASSERT_MSG(false, "unexpected stencil store operation");
+                return false;
+            }
+            pass.stencil_store_op(op);
+        }
+
+        return true;
     }
 }

@@ -43,22 +43,22 @@ TEST_CASE("render"){
             REQUIRE(ss.mag_filter() == render::sampler_mag_filter::nearest);
         }
     }
-    SECTION("property_block"){
+    SECTION("property_map"){
         {
-            const auto pb1 = render::property_block()
-                .property("f", 1.f)
-                .property("i", 42);
-            REQUIRE(*pb1.property<f32>("f") == 1.f);
-            REQUIRE(*pb1.property<i32>("i") == 42);
-            REQUIRE_FALSE(pb1.property<f32>("i"));
-            REQUIRE_FALSE(pb1.property<i32>("f"));
-            REQUIRE(pb1.property("i"));
-            REQUIRE(pb1.property("f"));
-            REQUIRE(std::get<i32>(*pb1.property("i")) == 42);
-            REQUIRE(std::get<f32>(*pb1.property("f")) == 1.f);
+            const auto pb1 = render::property_map()
+                .assign("f", 1.f)
+                .assign("i", 42);
+            REQUIRE(*pb1.find<f32>("f") == 1.f);
+            REQUIRE(*pb1.find<i32>("i") == 42);
+            REQUIRE_FALSE(pb1.find<f32>("i"));
+            REQUIRE_FALSE(pb1.find<i32>("f"));
+            REQUIRE(pb1.find("i"));
+            REQUIRE(pb1.find("f"));
+            REQUIRE(stdex::get<i32>(*pb1.find("i")) == 42);
+            REQUIRE(stdex::get<f32>(*pb1.find("f")) == 1.f);
             {
                 f32 acc = 0.f;
-                pb1.foreach_by_properties([&acc](str_hash n, const render::property_value& v){
+                pb1.foreach([&acc](str_hash n, const auto& v){
                     if ( n == make_hash("f") ) {
                         acc += std::get<f32>(v);
                     }
@@ -70,39 +70,39 @@ TEST_CASE("render"){
             }
         }
         {
-            const auto pb1 = render::property_block()
-                .property("f", 1.f)
-                .property("i", 42);
-            const auto pb2 = render::property_block()
-                .property("ff", 2.f)
-                .property("ii", 84);
-            auto pb3 = render::property_block()
+            const auto pb1 = render::property_map()
+                .assign("f", 1.f)
+                .assign("i", 42);
+            const auto pb2 = render::property_map()
+                .assign("ff", 2.f)
+                .assign("ii", 84);
+            auto pb3 = render::property_map()
                 .merge(pb1)
                 .merge(pb2);
-            REQUIRE(pb3.property_count() == 4);
-            REQUIRE(pb3.property("i"));
-            REQUIRE(pb3.property("f"));
-            REQUIRE(pb3.property("ii"));
-            REQUIRE(pb3.property("ff"));
+            REQUIRE(pb3.size() == 4);
+            REQUIRE(pb3.find("i"));
+            REQUIRE(pb3.find("f"));
+            REQUIRE(pb3.find("ii"));
+            REQUIRE(pb3.find("ff"));
             pb3.clear();
-            REQUIRE(pb3.property_count() == 0);
-            REQUIRE_FALSE(pb3.property("i"));
-            REQUIRE_FALSE(pb3.property("f"));
-            REQUIRE_FALSE(pb3.property("ii"));
-            REQUIRE_FALSE(pb3.property("ff"));
+            REQUIRE(pb3.size() == 0);
+            REQUIRE_FALSE(pb3.find("i"));
+            REQUIRE_FALSE(pb3.find("f"));
+            REQUIRE_FALSE(pb3.find("ii"));
+            REQUIRE_FALSE(pb3.find("ff"));
         }
         {
-            const auto pb1 = render::property_block()
-                .property("i", 42)
-                .property("f", 1.f);
-            const auto pb2 = render::property_block()
-                .property("i", 40)
-                .property("ii", 20)
+            const auto pb1 = render::property_map()
+                .assign("i", 42)
+                .assign("f", 1.f);
+            const auto pb2 = render::property_map()
+                .assign("i", 40)
+                .assign("ii", 20)
                 .merge(pb1);
-            REQUIRE(pb2.property_count() == 3);
-            REQUIRE(*pb2.property<i32>("i") == 42);
-            REQUIRE(*pb2.property<i32>("ii") == 20);
-            REQUIRE(*pb2.property<f32>("f") == 1.f);
+            REQUIRE(pb2.size() == 3);
+            REQUIRE(*pb2.find<i32>("i") == 42);
+            REQUIRE(*pb2.find<i32>("ii") == 20);
+            REQUIRE(*pb2.find<f32>("f") == 1.f);
         }
     }
     SECTION("index_declaration"){

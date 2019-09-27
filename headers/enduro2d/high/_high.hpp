@@ -61,6 +61,7 @@ namespace e2d
     class ui_button;
     class ui_selectable;
     class ui_draggable;
+    class render_technique;
 
     class actor_system;
     class flipbook_system;

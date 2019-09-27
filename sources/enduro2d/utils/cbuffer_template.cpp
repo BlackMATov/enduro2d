@@ -41,19 +41,10 @@ namespace e2d
         size_ = math::max(size_, offset + get_uniform_size(type));
         return *this;
     }
-    
-    /*cbuffer_template& cbuffer_template::set_uid(u32 value) noexcept {
-        uid_ = value;
-        return *this;
-    }*/
 
     const vector<cbuffer_template::uniform>& cbuffer_template::uniforms() const noexcept {
         return uniforms_;
     }
-
-    /*u32 cbuffer_template::uid() const noexcept {
-        return uid_;
-    }*/
     
     size_t cbuffer_template::block_size() const noexcept {
         return size_;
