@@ -1,16 +1,10 @@
 {
-    "passes" : [{
-        "shader" : "../../shaders/model_shader.json",
-        "state_block" : {
-            "capabilities_state" : {
-                "depth_test" : true
-            }
-        }
+    "shader" : "../../shaders/model_shader.json",
+    "samplers" : [{
+        "name" : "u_texture",
+        "texture" : "gnome.png"
     }],
-    "property_block" : {
-        "samplers" : [{
-            "name" : "u_texture",
-            "texture" : "gnome.png"
-        }]
+    "depth_state" : {
+        "test" : true
     }
 }

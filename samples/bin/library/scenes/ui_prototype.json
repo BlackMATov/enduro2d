@@ -5,6 +5,8 @@
         "ui_layout.root_tag" : {}
     },
     "children" : [{
+        "prototype" : "../prefabs/camera_prefab.json"
+    }, {
         "prototype" : "../prefabs/sprite_prefab.json",
         "components" : {
             "actor" : {},

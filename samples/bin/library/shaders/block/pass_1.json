@@ -1,6 +1,6 @@
 {
 	"uniforms" : [
         { "name" : "u_screen_s", "offset" : 0, "type" : "v2f" },
-		{ "name": "u_matrix_vp", "offset": 4, "type": "m4f" }
+		{ "name": "u_matrix_vp", "offset": 16, "type": "m4f" }
 	]
 }

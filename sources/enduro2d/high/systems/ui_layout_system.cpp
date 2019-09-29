@@ -367,6 +367,13 @@ namespace
         std::vector<ui_layout::layout_state>&)
     {
         auto& lbl = e.get_component<label>();
+
+        if ( math::is_near_zero(lbl.preferred_size().x) ||
+             math::is_near_zero(lbl.preferred_size().y) )
+        {
+            return;
+        }
+
         auto& layout = e.get_component<label_autoscale_layout>();
         const b2f local = project_to_local(node, parent_rect);
 

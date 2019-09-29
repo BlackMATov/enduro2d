@@ -28,7 +28,7 @@ namespace
             }
 
             shared_props.foreach([&content](str_hash key, const auto& value) {
-                content.properties.assign(key, value);
+                content.properties.property(key, value);
             });
         }
 

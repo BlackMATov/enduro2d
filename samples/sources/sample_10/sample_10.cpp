@@ -59,15 +59,13 @@ namespace
                 : nullptr;
             return !!scene_go;
         }
-
+        
         bool create_camera() {
-            auto camera_i = the<world>().instantiate();
-            camera_i->entity_filler()
-                .component<camera>(camera()
-                    .background({0.f, 0.f, 0.f, 1.f}))
-                .component<actor>(node::create(camera_i))
-                .component<camera::input_handler_tag>();
-            return true;
+            auto camera_prefab_res = the<library>().load_asset<prefab_asset>("prefabs/camera_prefab.json");
+            auto camera_go = camera_prefab_res
+                ? the<world>().instantiate(camera_prefab_res->content())
+                : nullptr;
+            return !!camera_go;
         }
 
         bool create_systems() {

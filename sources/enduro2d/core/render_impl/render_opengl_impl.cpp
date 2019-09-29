@@ -151,6 +151,15 @@ namespace e2d
         // apply new attribute indices
         GL_CHECK_CODE(debug_, glLinkProgram(*id_));
 
+        // check attribs
+        #if E2D_BUILD_MODE == E2D_BUILD_MODE_DEBUG
+        for ( auto& attr : source.attributes() ) {
+            GLint loc;
+            GL_CHECK_CODE(debug_, loc = glGetAttribLocation(*id_, attr.name.c_str()));
+            E2D_ASSERT(loc != -1);
+        }
+        #endif
+
         // bind uniforms
         with_gl_use_program(debug_, *id_, [this, &source]() noexcept{
             for ( auto& samp : source.samplers() ) {
@@ -469,7 +478,7 @@ namespace e2d
     // render::internal_state
     //
     
-    render::internal_state::internal_state(debug& debug, window& window, render& render)
+    render::internal_state::internal_state(debug& debug, window& window)
     : debug_(debug)
     , window_(window)
     , default_sp_(gl_program_id::current(debug))
@@ -642,7 +651,7 @@ namespace e2d
     void render::internal_state::end_render_pass() noexcept {
         E2D_ASSERT(inside_render_pass_);
 
-        batcher_.flush();
+        //batcher_.flush();
 
         inside_render_pass_ = false;
         clear_after_renderpass_();

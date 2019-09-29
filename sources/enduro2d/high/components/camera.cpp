@@ -75,3 +75,29 @@ namespace e2d
         return true;
     }
 }
+
+namespace e2d
+{
+    const char* factory_loader<camera::input_handler_tag>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<camera::input_handler_tag>::operator()(
+        camera::input_handler_tag& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<camera::input_handler_tag>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}

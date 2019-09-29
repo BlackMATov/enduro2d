@@ -10,6 +10,9 @@
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/draw_order.hpp>
 #include <enduro2d/high/components/renderer.hpp>
+#include <enduro2d/high/components/render_technique.hpp>
+
+#include "render_system_impl.hpp"
 
 namespace e2d
 {
@@ -19,25 +22,88 @@ namespace e2d
 
     class render_system::internal_state final : private noncopyable {
     public:
-        internal_state() {}
+        internal_state();
         ~internal_state() noexcept = default;
 
         void process(ecs::registry& owner);
     private:
         void update_draw_order_(ecs::registry& owner);
+    private:
+        render& render_;
+        render_queue::memory_manager mem_mngr_;
+        render_queue::resource_cache res_cache_;
     };
     
+    render_system::internal_state::internal_state()
+    : render_(the<render>())
+    , mem_mngr_()
+    , res_cache_(render_)
+    {}
+
     void render_system::internal_state::process(ecs::registry& owner) {
+        // prepare
+        mem_mngr_.discard();
+
+        // draw
         owner.for_each_component<camera>(
         [this, &owner](const ecs::const_entity& cam_e, const camera& cam){
-            const actor* const cam_a = cam_e.find_component<actor>();
-            const const_node_iptr cam_n = cam_a ? cam_a->node() : nullptr;
+            const auto* const cam_rt = cam_e.find_component<render_technique>();
+            const auto* const cam_a = cam_e.find_component<actor>();
+            const auto cam_n = cam_a ? cam_a->node() : nullptr;
             
             update_draw_order_(owner);
 
-            auto rq = the<render>().create_render_queue();
+            auto rq = std::make_shared<render_queue>(the<render>(), mem_mngr_, res_cache_);
+            
+            render::renderpass_desc rp;
+            const_buffer_ptr cbuf;
+            
+            if ( cam_rt && cam_rt->passes().size() ) {
+                auto& pass = cam_rt->passes().front();
+                rp = pass.desc;
 
-            owner.set_event(render_system::render_with_camera_evt{rq});
+                if ( rp.color_load_op() == render::attachment_load_op::clear ) {
+                    rp.color_clear(cam.background());
+                }
+            
+                if ( pass.templ ) {
+                    render::property_map props = pass.properties;
+
+                    const m4f& cam_w = cam_n
+                        ? cam_n->world_matrix()
+                        : m4f::identity();
+                    const std::pair<m4f,bool> cam_w_inv = math::inversed(cam_w);
+
+                    const m4f& m_v = cam_w_inv.second
+                        ? cam_w_inv.first
+                        : m4f::identity();
+                    const m4f& m_p = cam.projection();
+
+                    props.property(matrix_v_property_hash, m_v)
+                        .property(matrix_p_property_hash, m_p)
+                        .property(matrix_vp_property_hash, m_v * m_p)
+                        .property(time_property_hash, the<engine>().time());
+
+                    cbuf = render_.create_const_buffer(
+                        pass.templ,
+                        const_buffer::scope::render_pass);
+                    render_.update_buffer(cbuf, props);
+                }
+            } else {
+                rp.color_clear(cam.background())
+                  .color_store()
+                  .depth_clear(1.0f)
+                  .depth_discard();
+            }
+            
+            rp.target(cam.target())
+              .viewport(cam.viewport());
+
+            auto encoder = rq->create_pass(rp, {}, cbuf);
+
+            owner.set_event(render_system::render_with_camera_evt{encoder});
+
+            rq->submit();
         });
     }
     

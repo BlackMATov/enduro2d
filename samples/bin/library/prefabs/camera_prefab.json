@@ -3,10 +3,12 @@
         "camera" : {
             "background" : [1.0, 0.4, 0.0, 1.0]
         },
+		
+		"camera.input_handler_tag" : {},
         
         "render_technique" : {
             "passes" : [{
-                "block" : "shaders/block/pass_1.json",
+                "block" : "../shaders/block/pass_1.json",
                 "state_block" : {
                     "depth_state" : {
                         "test" : false,

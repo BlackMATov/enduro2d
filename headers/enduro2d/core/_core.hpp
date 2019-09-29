@@ -45,6 +45,7 @@ namespace e2d
     class network;
     class platform;
     class render;
+    class render_queue;
     class shader;
     class texture;
     class index_buffer;

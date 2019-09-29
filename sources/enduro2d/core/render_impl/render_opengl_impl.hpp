@@ -37,8 +37,6 @@ namespace e2d
         const opengl::gl_program_id& id() const noexcept;
     public:
         template < typename F >
-        void with_uniform_location(str_hash name, const_buffer::scope scope, F&& f) const;
-        template < typename F >
         void with_attribute_location(str_hash name, F&& f) const;
         template < typename F >
         void with_sampler_location(str_hash name, F&& f) const;
@@ -72,22 +70,12 @@ namespace e2d
     };
 
     template < typename F >
-    void shader::internal_state::with_uniform_location(str_hash name, const_buffer::scope scope, F&& f) const {
-        auto& templ = blocks_[size_t(scope)].templ;
-        if ( templ ) {
-            const auto iter = templ->uniforms().find(name);
-            if ( iter != templ->uniforms().end() ) {
-                stdex::invoke(std::forward<F>(f), iter->second);
-            }
-        }
-        E2D_ASSERT_MSG(false, "uniform is not exists");
-    }
-
-    template < typename F >
     void shader::internal_state::with_attribute_location(str_hash name, F&& f) const {
         const auto iter = attributes_.find(name);
         if ( iter != attributes_.end() ) {
             stdex::invoke(std::forward<F>(f), iter->second);
+        } else {
+            //E2D_ASSERT_MSG(false, "attribute is not exists");
         }
     }
 
@@ -266,8 +254,7 @@ namespace e2d
     public:
         internal_state(
             debug& debug,
-            window& window,
-            render& render);
+            window& window);
         ~internal_state() noexcept = default;
     public:
         debug& dbg() const noexcept;

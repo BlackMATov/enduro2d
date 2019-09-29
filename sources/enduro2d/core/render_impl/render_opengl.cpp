@@ -236,7 +236,7 @@ namespace e2d
     //
 
     render::render(debug& ndebug, window& nwindow)
-    : state_(new internal_state(ndebug, nwindow, *this)) {
+    : state_(new internal_state(ndebug, nwindow)) {
         E2D_ASSERT(main_thread() == nwindow.main_thread());
     }
     render::~render() noexcept = default;

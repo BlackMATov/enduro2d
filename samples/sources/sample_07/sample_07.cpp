@@ -14,9 +14,9 @@ namespace
         game_system(gobject_iptr raptor)
         : raptor_gobj_(raptor) {}
 
-        ~game_system() noexcept override {}
+        ~game_system() noexcept {}
 
-        void process(ecs::registry& owner) override {
+        void process(ecs::registry& owner, ecs::event_ref) override {
             E2D_UNUSED(owner);
             const keyboard& k = the<input>().keyboard();
 
@@ -64,7 +64,7 @@ namespace
     
     class camera_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override {
+        void process(ecs::registry& owner, ecs::event_ref) override {
             owner.for_each_component<camera>(
             [this](const ecs::const_entity&, camera& cam){
                 if ( !cam.target() ) {

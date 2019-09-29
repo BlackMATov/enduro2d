@@ -30,8 +30,8 @@ namespace
         static vertex_declaration decl() noexcept {
             return vertex_declaration()
                 .add_attribute<v3f>("a_vertex")
-                .add_attribute<v2f>("a_st")
-                .add_attribute<color32>("a_tint").normalized();
+                .add_attribute<v2f>("a_st0")
+                .add_attribute<color32>("a_color0").normalized();
         }
     };
 }
@@ -39,7 +39,7 @@ namespace
 namespace
 {
     void draw_sprite(
-        render_queue::command_encoder_ptr& batcher,
+        render_queue::command_encoder& cmd_encoder,
         const draw_order& draw_idx,
         const sprite_renderer& spr_r,
         const renderer& node_r,
@@ -113,7 +113,7 @@ namespace
             return;
         }
 
-        auto batch = batcher->alloc_batch<vertex_v3f_t2f_c32b>(
+        auto batch = cmd_encoder.alloc_batch<vertex_v3f_t2f_c32b>(
             draw_idx.index(),
             4, 6,
             render::topology::triangles,
@@ -138,16 +138,16 @@ namespace
 namespace e2d
 {
     void sprite_render_system::process(ecs::registry& owner, ecs::event_ref event) {
-        //auto& camera = event.cast<render_system::render_with_camera_evt>();
+        auto& encoder = event.cast<render_system::render_with_camera_evt>().rq;
 
-        owner.for_joined_components<draw_order, sprite_renderer, renderer, actor>([](
+        owner.for_joined_components<draw_order, sprite_renderer, renderer, actor>([encoder](
             const ecs::const_entity&,
-            const draw_order& order,
+            const draw_order& draw_idx,
             const sprite_renderer& spr_r,
             const renderer& node_r,
             const actor& actor)
         {
-            //draw_sprite(spr_r, node_r, actor);
+            draw_sprite(*encoder, draw_idx, spr_r, node_r, actor);
         });
     }
 }

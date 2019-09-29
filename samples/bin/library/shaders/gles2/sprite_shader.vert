@@ -1,16 +1,37 @@
-attribute vec3 a_vertex;
-attribute vec4 a_tint;
-attribute vec2 a_st;
-
 uniform vec4 cb_pass[5];
 #define u_matrix_vp mat4(cb_pass[1], cb_pass[2], cb_pass[3], cb_pass[4])
 #define u_screen_s cb_pass[0].xy
 
-varying vec4 v_tint;
-varying vec2 v_st;
+attribute vec3 a_vertex;
+attribute vec2 a_st0;
+attribute vec4 a_color0;
+
+varying vec2 v_st0;
+varying vec4 v_color0;
+
+vec2 round(vec2 v) {
+    return vec2(
+        floor(v.x + 0.5),
+        floor(v.y + 0.5));
+}
+
+vec4 pixel_snap(vec4 pos) {
+    vec2 hpc = u_screen_s * 0.5;
+    vec2 pixel_pos = round((pos.xy / pos.w) * hpc);
+    pos.xy = pixel_pos / hpc * pos.w;
+    return pos;
+}
+
+vec4 vertex_to_homo(vec3 pos) {
+    return vec4(pos, 1.0) * u_matrix_vp;
+}
 
 void main() {
-    v_st = a_st;
-    v_tint = a_tint;
-    gl_Position = vec4(a_vertex, 1.0) * u_matrix_vp;
+    v_st0 = vec2(a_st0.s, 1.0 - a_st0.t);
+    v_color0 = a_color0;
+#ifndef VERTEX_SNAPPING_ON
+    gl_Position = vertex_to_homo(a_vertex);
+#else
+    gl_Position = pixel_snap(vertex_to_homo(a_vertex));
+#endif
 }

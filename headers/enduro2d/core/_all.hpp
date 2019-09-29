@@ -17,5 +17,6 @@
 #include "network.hpp"
 #include "platform.hpp"
 #include "render.hpp"
+#include "render_queue.hpp"
 #include "vfs.hpp"
 #include "window.hpp"

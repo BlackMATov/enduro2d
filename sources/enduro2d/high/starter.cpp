@@ -17,6 +17,7 @@
 #include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/components/model_renderer.hpp>
 #include <enduro2d/high/components/renderer.hpp>
+#include <enduro2d/high/components/render_technique.hpp>
 #include <enduro2d/high/components/scene.hpp>
 #include <enduro2d/high/components/spine_player.hpp>
 #include <enduro2d/high/components/spine_player_cmd.hpp>
@@ -146,11 +147,13 @@ namespace e2d
         safe_module_initialize<factory>()
             .register_component<actor>("actor")
             .register_component<camera>("camera")
+            .register_component<camera::input_handler_tag>("camera.input_handler_tag")
             .register_component<flipbook_player>("flipbook_player")
             .register_component<label>("label")
             .register_component<label::dirty>("label.dirty")
             .register_component<model_renderer>("model_renderer")
             .register_component<renderer>("renderer")
+            .register_component<render_technique>("render_technique")
             .register_component<scene>("scene")
             .register_component<spine_player>("spine_player")
             .register_component<spine_player_cmd>("spine_player_cmd")

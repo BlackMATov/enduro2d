@@ -15,7 +15,7 @@ namespace
 
     class game_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override {
+        void process(ecs::registry& owner, ecs::event_ref) override {
             E2D_UNUSED(owner);
             const keyboard& k = the<input>().keyboard();
 
@@ -35,7 +35,7 @@ namespace
 
     class camera_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override {
+        void process(ecs::registry& owner, ecs::event_ref) override {
             owner.for_each_component<camera>(
             [this](const ecs::const_entity&, camera& cam){
                 if ( !cam.target() ) {
@@ -43,17 +43,6 @@ namespace
                         the<window>().real_size());
                     cam.projection(math::make_orthogonal_lh_matrix4(
                         the<window>().real_size().cast_to<f32>(), 0.f, 1000.f));
-                    
-                    the<render>().begin_pass(
-                        render::renderpass_desc()
-                            .target(cam.target())
-                            .color_clear(cam.background())
-                            .color_store()
-                            .depth_clear(1.0f)
-                            .depth_discard()
-                            .viewport(cam.viewport()),
-                        cam.constants(),
-                        {});
                 }
             });
         }
@@ -61,7 +50,7 @@ namespace
 
     class rotator_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner) override {
+        void process(ecs::registry& owner, ecs::event_ref) override {
             const f32 time = the<engine>().time();
             owner.for_joined_components<rotator, actor>(
                 [&time](const ecs::const_entity&, const rotator& rot, actor& act){
@@ -157,25 +146,20 @@ namespace
 
             return true;
         }
-
+        
         bool create_camera() {
-            auto cb_templ = the<library>().load_asset<cbuffer_template_asset>("shaders/block/pass_1.json");
-            auto cbuffer = the<render>().create_const_buffer(cb_templ->content(), const_buffer::scope::render_pass);
-
-            auto camera_i = the<world>().instantiate();
-            camera_i->entity_filler()
-                .component<camera>(camera()
-                    .background({1.f, 0.4f, 0.f, 1.f})
-                    .constants(cbuffer))
-                .component<actor>(node::create(camera_i));
-            return true;
+            auto camera_prefab_res = the<library>().load_asset<prefab_asset>("prefabs/camera_prefab.json");
+            auto camera_go = camera_prefab_res
+                ? the<world>().instantiate(camera_prefab_res->content())
+                : nullptr;
+            return !!camera_go;
         }
 
         bool create_systems() {
             ecs::registry_filler(the<world>().registry())
-                .system<game_system>(world::priority_update)
-                .system<rotator_system>(world::priority_pre_update)
-                .system<camera_system>(world::priority_pre_render);
+                .system<game_system, world_ev::update>()
+                .system<rotator_system, world_ev::pre_update>()
+                .system<camera_system, world_ev::pre_update>();
             return true;
         }
     };

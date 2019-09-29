@@ -1117,6 +1117,10 @@ namespace e2d
     render::scissor_command::scissor_command(const b2u& scissor_rect) noexcept
     : scissor_rect_(scissor_rect)
     , scissoring_(true) {}
+    
+    render::scissor_command::scissor_command(const std::optional<b2u>& scissor_rect) noexcept
+    : scissor_rect_(scissor_rect.value_or(b2u()))
+    , scissoring_(scissor_rect.has_value()) {}
 
     render::scissor_command& render::scissor_command::scissor_rect(const b2u& value) noexcept {
         scissor_rect_ = value;
@@ -2151,7 +2155,7 @@ namespace e2d::json_utils
                         return false;\
                     }\
                 }\
-                props.assign(property_json["name"].GetString(), value);\
+                props.property(property_json["name"].GetString(), value);\
                 continue;\
             }
 

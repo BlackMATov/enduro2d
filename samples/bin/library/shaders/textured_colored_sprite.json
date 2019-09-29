@@ -11,11 +11,6 @@
 	
 	"opengl" : [
         {
-            "vertex" : "gles3/textured_colored_sprite.vert",
-            "fragment" : "gles3/textured_sprite.frag",
-            "requires" : [ "render.uniform_buffer" ]
-        },
-        {
             "vertex" : "gles2/textured_colored_sprite.vert",
             "fragment" : "gles2/textured_sprite.frag",
             "requires" : []

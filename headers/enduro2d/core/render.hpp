@@ -712,8 +712,8 @@ namespace e2d
             template< typename T >
             const T* find(str_hash key) const noexcept;
 
-            property_map& assign(str_hash key, property_value&& value);
-            property_map& assign(str_hash key, const property_value& value);
+            property_map& property(str_hash key, property_value&& value);
+            property_map& property(str_hash key, const property_value& value);
 
             void clear() noexcept;
             std::size_t size() const noexcept;
@@ -871,6 +871,7 @@ namespace e2d
         public:
             scissor_command() = default;
             scissor_command(const b2u& scissor_rect) noexcept;
+            scissor_command(const std::optional<b2u>& scissor_rect) noexcept;
 
             scissor_command& scissor_rect(const b2u& value) noexcept;
             scissor_command& scissoring(bool value) noexcept;
@@ -916,7 +917,7 @@ namespace e2d
             const const_buffer_ptr& constants() const noexcept;
         private:
             const_buffer_ptr cbuffer_;
-            topology topology_ = topology::triangles;
+            topology topology_ = topology(~0u);
             u32 first_vertex_ = 0;
             u32 vertex_count_ = 0;
         };
@@ -941,7 +942,7 @@ namespace e2d
         private:
             const_buffer_ptr cbuffer_;
             index_buffer_ptr index_buffer_;
-            topology topology_ = topology::triangles;
+            topology topology_ = topology(~0u);
             size_t index_offset_ = 0; // in bytes
             u32 index_count_ = 0;
         };
@@ -1074,8 +1075,6 @@ namespace e2d
             const pixel_declaration& color_decl,
             const pixel_declaration& depth_decl,
             render_target::external_texture external_texture);
-        
-        [[nodiscard]] render_queue_ptr create_render_queue();
 
         render& begin_pass(
             const renderpass_desc& desc,

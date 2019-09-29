@@ -8,6 +8,7 @@
 
 #include "render.hpp"
 #include <deque>
+#include <typeindex>
 
 namespace e2d
 {
@@ -23,6 +24,11 @@ namespace e2d
 
         using command_encoder_ptr = std::shared_ptr<command_encoder>;
     public:
+        render_queue(
+            render& r,
+            memory_manager& mem_mngr,
+            resource_cache& res_cache);
+
         [[nodiscard]] command_encoder_ptr create_pass(
             const render::renderpass_desc& desc,
             const render::sampler_block& samplers,
@@ -32,42 +38,18 @@ namespace e2d
     private:
         class render_pass_ final {
         public:
-        private:
-            render_pass_();
-            render::renderpass_desc desc_;
-            render::sampler_block samplers_;
-            const_buffer_ptr constants_;
-            command_encoder_ptr commands_;
+            render::renderpass_desc desc;
+            render::sampler_block samplers;
+            const_buffer_ptr constants;
+            command_encoder_ptr commands;
         };
         std::deque<render_pass_> passes_;
 
         render& render_;
         memory_manager& mem_mngr_;
-        //resource_cache& cache_;
+        resource_cache& res_cache_;
     };
 
-    //
-    // render_queue::memory_manager
-    //
-
-    class render_queue::memory_manager final {
-    public:
-        memory_manager();
-
-        [[nodiscard]] const_buffer_ptr alloc_cbuffer(
-            const cbuffer_template_ptr& templ);
-
-        [[nodiscard]] u8* alloc(size_t size, size_t align);
-
-        void discard();
-        
-    private:
-        struct chunk_ {
-            buffer data;
-            size_t offset;
-        };
-        std::vector<chunk_> chunks_;
-    };
 
     //
     // render_queue::command_encoder
@@ -75,12 +57,13 @@ namespace e2d
 
     class render_queue::command_encoder final {
     public:
-        static constexpr size_t vertex_stride_ = 16;
-        
         using batch_index_t = u16;
         using sort_key = u32;
         using material_ptr = render::material_cptr;
         using topology = render::topology;
+
+        static constexpr size_t vertex_stride_ = 16;
+        static constexpr size_t index_stride_ = sizeof(batch_index_t);
 
         template < typename T >
         class vertex_iterator final {
@@ -115,7 +98,9 @@ namespace e2d
         };
 
     public:
-        command_encoder();
+        command_encoder(
+            render_queue::memory_manager& mem_mngr,
+            render_queue::resource_cache& res_cache);
 
         template < typename BatchType >
         void add_batch(
@@ -140,32 +125,94 @@ namespace e2d
 
         void draw_mesh(
             sort_key key,
-            const material_ptr& mtr);
+            const material_ptr& mtr,
+            const render::bind_vertex_buffers_command& vertex_buffers,
+            const render::draw_indexed_command& draw_cmd,
+            const std::optional<b2u>& scissor = {});
     private:
-        class draw_batch_ {
+        friend class render_queue;
+        void flush_(render& r);
+
+        using gpu_buffers = vector<std::tuple<vertex_buffer_ptr, index_buffer_ptr>>;
+        void upload_batch_data_(render& r, gpu_buffers& buffers);
+        void batches_to_meshes_(const gpu_buffers& buffers);
+    private:
+        struct draw_batch_ {
             material_ptr mtr;
             topology topo;
-            const_buffer_ptr constants;
             vertex_attribs_ptr attribs;
-            u8* data; // vertices, indices
-            u32 vertex_data_size;
-            u32 index_data_size;
+            union {
+                struct {
+                    u8* data; // vertices, indices
+                    u32 index_data_size;
+                    u32 vertex_data_size;
+                };
+                struct {
+                    size_t index_offset;
+                    u32 buffer_index;
+                    u32 index_count;
+                };
+            };
+            std::optional<b2u> scissor;
+
+            const u8* vertices() const noexcept { return data; }
+            const batch_index_t* indices() const noexcept { return reinterpret_cast<const batch_index_t*>(data + vertex_data_size); }
+
+            bool operator==(const draw_batch_& r) const noexcept;
         };
 
-        class draw_mesh_ {
+        struct draw_mesh_ {
             material_ptr mtr;
-            const_buffer_ptr constants;
             render::bind_vertex_buffers_command vertex_buffers;
-            index_buffer_ptr index_buffer_;
-            size_t index_offset; // in bytes
-            u32 index_count;
-            render::topology topo;
+            render::draw_indexed_command draw_cmd;
+            std::optional<b2u> scissor;
         };
     private:
         flat_multimap<sort_key, draw_batch_> batches_;
         flat_multimap<sort_key, draw_mesh_> meshes_;
-        //render_queue::memory_manager& mem_mngr_;
-        //render_queue::resource_cache& cache_;
+        render_queue::memory_manager& mem_mngr_;
+        render_queue::resource_cache& res_cache_;
+    };
+
+    //
+    // render_queue::memory_manager
+    //
+
+    class render_queue::memory_manager final {
+    public:
+        memory_manager();
+
+        [[nodiscard]] const_buffer_ptr alloc_cbuffer(
+            const cbuffer_template_ptr& templ);
+
+        [[nodiscard]] u8* alloc(size_t size, size_t align);
+
+        void discard();
+        
+    private:
+        static constexpr u32 chunk_size_ = 4 << 20; // Mb
+        static constexpr u32 chunk_align_ = sizeof(void*);
+
+        struct chunk_ {
+            buffer memory;
+            size_t offset = 0;
+        };
+        std::vector<chunk_> chunks_;
+    };
+
+    //
+    // render_queue::resource_cache
+    //
+
+    class render_queue::resource_cache final {
+    public:
+        resource_cache(render& r);
+
+        template < typename VertexType >
+        [[nodiscard]] vertex_attribs_ptr create_vertex_attribs();
+    private:
+        render& render_;
+        flat_map<std::type_index, vertex_attribs_ptr> va_cache_;
     };
 }
 
@@ -272,10 +319,29 @@ namespace e2d
     void render_queue::command_encoder::add_batch(
         sort_key key,
         const material_ptr& mtr,
-        const BatchType& batch,
+        const BatchType& src_batch,
         const std::optional<b2u>& scissor)
     {
-        // TODO
+        const size_t vert_stride = math::align_ceil(sizeof(typename BatchType::vertex_type), vertex_stride_);
+        const size_t vb_size = src_batch.vertex_count() * vert_stride;
+        const size_t ib_size = src_batch.index_count() + index_stride_;
+        vertex_attribs_ptr attribs = res_cache_.create_vertex_attribs<typename BatchType::vertex_type>();
+
+        draw_batch_ dst_batch;
+        dst_batch.mtr = mtr;
+        dst_batch.topo = src_batch.topology();
+        dst_batch.data = mem_mngr_.alloc(vb_size + ib_size, math::max(vertex_stride_, index_stride_));
+        dst_batch.vertex_data_size = vb_size;
+        dst_batch.index_data_size = ib_size;
+        dst_batch.attribs = attribs;
+        dst_batch.scissor = scissor;
+        
+        auto vert_iter = vertex_iterator<typename BatchType::vertex_type>(dst_batch.data, vb_size);
+        auto idx_iter = index_iterator(dst_batch.data + vb_size, ib_size);
+        src_batch.get_vertices(vert_iter);
+        src_batch.get_indices(idx_iter);
+
+        batches_.insert({key, dst_batch});
     }
         
     template < typename VertexType >
@@ -288,6 +354,48 @@ namespace e2d
         const material_ptr& mtr,
         const std::optional<b2u>& scissor)
     {
-        // TODO
+        E2D_ASSERT(topo != topology::triangles || (index_count >= 3 && index_count % 3 == 0));
+        E2D_ASSERT(topo != topology::triangles_strip || index_count >= 3);
+        
+        const size_t vert_stride = math::align_ceil(sizeof(VertexType), vertex_stride_);
+        const size_t vb_size = vertex_count * vert_stride;
+        const size_t ib_size = index_count * index_stride_;
+        vertex_attribs_ptr attribs = res_cache_.create_vertex_attribs<VertexType>();
+        
+        draw_batch_ dst_batch;
+        dst_batch.mtr = mtr;
+        dst_batch.topo = topo;
+        dst_batch.data = mem_mngr_.alloc(vb_size + ib_size, math::max(vertex_stride_, index_stride_));
+        dst_batch.vertex_data_size = math::numeric_cast<u32>(vb_size);
+        dst_batch.index_data_size = math::numeric_cast<u32>(ib_size);
+        dst_batch.attribs = attribs;
+        dst_batch.scissor = scissor;
+        batches_.insert({key, dst_batch});
+        
+        allocated_batch<VertexType> result;
+        result.vertices = vertex_iterator<VertexType>(dst_batch.data, vb_size);
+        result.indices = index_iterator(dst_batch.data + vb_size, ib_size);
+        return result;
+    }
+
+    //
+    // render_queue::resource_cache
+    //
+    
+    template < typename VertexType >
+    vertex_attribs_ptr render_queue::resource_cache::create_vertex_attribs() {
+        constexpr auto vertex_stride = render_queue::command_encoder::vertex_stride_;
+
+        std::type_index id = typeid(VertexType);
+        auto iter = va_cache_.find(id);
+        if ( iter != va_cache_.end() ) {
+            return iter->second;
+        }
+
+        vertex_declaration decl = VertexType::decl();
+        size_t stride = math::align_ceil(decl.bytes_per_vertex(), vertex_stride);
+        decl.skip_bytes(stride - decl.bytes_per_vertex());
+        iter = va_cache_.insert({id, render_.create_vertex_attribs(decl)}).first;
+        return iter->second;
     }
 }

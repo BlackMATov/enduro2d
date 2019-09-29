@@ -1,8 +1,8 @@
 {
 	"attributes" : [
 		{ "name": "a_vertex", "index": 0, "type": "v3f" },
-		{ "name": "a_tint",   "index": 1, "type": "v4f" },
-		{ "name": "a_st",     "index": 2, "type": "v2f" }
+		{ "name": "a_color0", "index": 1, "type": "v4f" },
+		{ "name": "a_st0",    "index": 2, "type": "v2f" }
 	],
 	"samplers" : [
 		{ "name": "u_texture", "unit": 0, "scope": "material" }
@@ -10,11 +10,6 @@
 	"render_pass_block" : "block/pass_1.json",
 	
 	"opengl" : [
-        {
-            "vertex" : "gles3/spine_shader.vert",
-            "fragment" : "gles3/spine_shader.frag",
-            "requires" : [ "render.uniform_buffer" ]
-        },
         {
             "vertex" : "gles2/spine_shader.vert",
             "fragment" : "gles2/spine_shader.frag",
