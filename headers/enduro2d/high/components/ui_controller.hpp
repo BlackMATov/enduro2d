@@ -58,6 +58,11 @@ namespace e2d
     class ui_draggable final {
     public:
         ui_draggable() = default;
+
+		v3f start_pos;
+		v3f node_pos;
+        v3f diff;
+		bool started = false;
     };
 
     template <>
