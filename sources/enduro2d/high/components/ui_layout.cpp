@@ -250,13 +250,23 @@ namespace e2d
     stack_layout::stack_origin stack_layout::origin() const noexcept {
         return origin_;
     }
+    
+    stack_layout& stack_layout::spacing(f32 value) noexcept {
+        spacing_ = value;
+        return *this;
+    }
+
+    f32 stack_layout::spacing() const noexcept {
+        return spacing_;
+    }
 
     const char* factory_loader<stack_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [ "origin" ],
         "additionalProperties" : false,
         "properties" : {
-            "origin" : { "$ref": "#/definitions/stack_origin" }
+            "origin" : { "$ref": "#/definitions/stack_origin" },
+            "spacing" : { "type": "number" }
         },
         "definitions" : {
             "stack_origin" : {
@@ -287,6 +297,10 @@ namespace e2d
             component.origin(stack_layout::stack_origin::bottom);
         } else {
             the<debug>().error("STACK_LAYOUT: Incorrect formatting of 'origin' property");
+        }
+
+        if ( ctx.root.HasMember("spacing") ) {
+            component.spacing(ctx.root["spacing"].GetFloat());
         }
         return true;
     }

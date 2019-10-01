@@ -65,7 +65,7 @@ namespace
 
 namespace e2d
 {
-    void input_event_system_raycast::process(ecs::registry& owner, ecs::event_ref) {
+    void input_event_raycast_system::process(ecs::registry& owner, ecs::event_ref) {
         owner.for_joined_components<input_event, camera::input_handler_tag, camera>(
         [&owner](const ecs::const_entity&, const input_event& input_ev, camera::input_handler_tag, const camera&) {
             if ( input_ev.data()->type != input_event::event_type::mouse_move &&

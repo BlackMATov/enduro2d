@@ -164,12 +164,19 @@ namespace
         auto& sl = e.get_component<stack_layout>();
         
         // project childs into stack layout and calculate max size
+        const f32 spacing_sum = sl.spacing() * (math::max<size_t>(1, childs.size()) - 1);
         v2f max_size;
         std::vector<b2f> projected(childs.size());
         for ( size_t i = 0; i < childs.size(); ++i ) {
             b2f r = project_to_parent(childs[i].node, b2f(childs[i].node->size()));
             projected[i] = r;
             max_size += r.size;
+        }
+        switch ( sl.origin() ) {
+            case stack_layout::stack_origin::left: max_size.x += spacing_sum; break;
+            case stack_layout::stack_origin::right: max_size.x += spacing_sum; break;
+            case stack_layout::stack_origin::bottom: max_size.y += spacing_sum; break;
+            case stack_layout::stack_origin::top: max_size.y += spacing_sum; break;
         }
         
         v2f offset;
@@ -182,19 +189,19 @@ namespace
             switch ( sl.origin() ) {
                 case stack_layout::stack_origin::left:
                     item_r += v2f(offset.x, 0.f);
-                    offset.x += item_r.size.x;
+                    offset.x += item_r.size.x + sl.spacing();
                     break;
                 case stack_layout::stack_origin::right:
                     item_r += v2f(max_size.x - offset.x - item_r.size.x, 0.f);
-                    offset.x += item_r.size.x;
+                    offset.x += item_r.size.x + sl.spacing();
                     break;
                 case stack_layout::stack_origin::bottom:
                     item_r += v2f(0.0f, offset.y);
-                    offset.y += item_r.size.y;
+                    offset.y += item_r.size.y + sl.spacing();
                     break;
                 case stack_layout::stack_origin::top:
                     item_r += v2f(0.0f, max_size.y - offset.y - item_r.size.y);
-                    offset.y += item_r.size.y;
+                    offset.y += item_r.size.y + sl.spacing();
                     break;
             }
             c.node->translation(v3f(item_r.position - projected[i].position, c.node->translation().z));
@@ -257,7 +264,7 @@ namespace
         if ( dl.has_dock(dock::center_x) ) {
             region.position.x = (local.size.x - size.x) * 0.5f;
             region.size.x = size.x;
-        } else if ( dl.has_dock(dock::left | dock::right) ) {
+        } else if ( dl.has_dock(dock::fill_x) ) {
             region.position.x = 0.0f;
             region.size.x = local.size.x;
         } else if ( dl.has_dock(dock::left) ) {
@@ -274,7 +281,7 @@ namespace
         if ( dl.has_dock(dock::center_y) ) {
             region.position.y = (local.size.y - size.y) * 0.5f;
             region.size.y = size.y;
-        } else if ( dl.has_dock(dock::top | dock::bottom) ) {
+        } else if ( dl.has_dock(dock::fill_y) ) {
             region.position.y = 0.0f;
             region.size.y = local.size.y;
         } else if ( dl.has_dock(dock::bottom) ) {

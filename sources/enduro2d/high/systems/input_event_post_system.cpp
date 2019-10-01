@@ -12,10 +12,21 @@
 
 namespace e2d
 {
-    void input_event_system_post_update::process(ecs::registry& owner, ecs::event_ref) {
+    //
+    // input_event_post_system::internal_state
+    //
+
+    class input_event_post_system::internal_state {
+    public:
+        void process(ecs::registry& owner);
+    private:
+        u32 frame_id_ = 0;
+    };
+    
+    void input_event_post_system::internal_state::process(ecs::registry& owner) {
         using input_event_type = input_event::event_type;
 
-        const u32 frame_id = the<engine>().frame_count();
+        const u32 frame_id = frame_id_++;
 
         const auto add_mouse_leave_events = [&owner, frame_id](const input_event::data_ptr& ev_data) {
             owner.for_each_component<mouse_over_tag>(
@@ -114,5 +125,18 @@ namespace e2d
         if ( ev_data->type == input_event_type::mouse_move ) {
             add_mouse_leave_events(ev_data);
         }
+    }
+
+    //
+    // input_event_post_system
+    //
+
+    input_event_post_system::input_event_post_system()
+    : state_(std::make_unique<internal_state>()) {}
+
+    input_event_post_system::~input_event_post_system() noexcept = default;
+    
+    void input_event_post_system::process(ecs::registry& owner, ecs::event_ref) {
+        state_->process(owner);
     }
 }

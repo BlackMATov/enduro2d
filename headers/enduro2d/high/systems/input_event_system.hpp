@@ -20,23 +20,28 @@ namespace e2d
         void process(ecs::registry& owner, ecs::event_ref event) override;
     };
 
-    class input_event_system_pre_update final : public ecs::system {
+    class input_event_pre_system final : public ecs::system {
     public:
-        input_event_system_pre_update();
-        ~input_event_system_pre_update() noexcept;
+        input_event_pre_system();
+        ~input_event_pre_system() noexcept;
         void process(ecs::registry& owner, ecs::event_ref event) override;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;
     };
     
-    class input_event_system_raycast final : public ecs::system {
+    class input_event_raycast_system final : public ecs::system {
     public:
         void process(ecs::registry& owner, ecs::event_ref event) override;
     };
     
-    class input_event_system_post_update final : public ecs::system {
+    class input_event_post_system final : public ecs::system {
     public:
+        input_event_post_system();
+        ~input_event_post_system() noexcept;
         void process(ecs::registry& owner, ecs::event_ref event) override;
+    private:
+        class internal_state;
+        std::unique_ptr<internal_state> state_;
     };
 }

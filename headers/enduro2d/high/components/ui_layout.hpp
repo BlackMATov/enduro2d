@@ -185,8 +185,12 @@ namespace e2d
 
         stack_layout& origin(stack_origin value) noexcept;
         stack_origin origin() const noexcept;
+
+        stack_layout& spacing(f32 value) noexcept;
+        f32 spacing() const noexcept;
     private:
         stack_origin origin_ = stack_origin::top;
+        f32 spacing_ = 0.0f;
     };
     
     template <>

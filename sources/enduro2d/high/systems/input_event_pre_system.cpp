@@ -43,7 +43,7 @@ namespace e2d
     // internal_state
     //
 
-    class input_event_system_pre_update::internal_state final {
+    class input_event_pre_system::internal_state final {
     public:
         internal_state() = default;
         ~internal_state() noexcept = default;
@@ -55,7 +55,7 @@ namespace e2d
         u32 frame_id_ = 0;
     };
 
-    void input_event_system_pre_update::internal_state::process(ecs::registry& owner) {
+    void input_event_pre_system::internal_state::process(ecs::registry& owner) {
         owner.remove_all_components<input_event>();
         owner.remove_all_components<touch_down_event>();
         owner.remove_all_components<touch_up_event>();
@@ -147,15 +147,15 @@ namespace e2d
     }
 
     //
-    // input_event_system_pre_update
+    // input_event_pre_system
     //
 
-    input_event_system_pre_update::input_event_system_pre_update()
+    input_event_pre_system::input_event_pre_system()
     : state_(std::make_unique<internal_state>()) {}
 
-    input_event_system_pre_update::~input_event_system_pre_update() = default;
+    input_event_pre_system::~input_event_pre_system() = default;
 
-    void input_event_system_pre_update::process(ecs::registry& owner, ecs::event_ref) {
+    void input_event_pre_system::process(ecs::registry& owner, ecs::event_ref) {
         state_->process(owner);
     }
 }

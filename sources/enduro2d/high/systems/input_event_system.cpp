@@ -10,9 +10,9 @@
 namespace e2d
 {
     void input_event_system::add_systems(ecs::registry& owner) const {
-        owner.assign_system<input_event_system_pre_update, pre_update_evt>();
-        owner.assign_system<input_event_system_raycast, raycast_evt>();
-        owner.assign_system<input_event_system_post_update, post_update_evt>();
+        owner.assign_system<input_event_pre_system, pre_update_evt>();
+        owner.assign_system<input_event_raycast_system, raycast_evt>();
+        owner.assign_system<input_event_post_system, post_update_evt>();
         owner.assign_system<shape_projection_system, ecs::before_event<raycast_evt>>(); // TODO: move somewhere
     }
 
