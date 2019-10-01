@@ -21,7 +21,7 @@ namespace
 
     const char* ui_image_style_asset_schema_source = R"json({
         "type" : "object",
-        "required" : [],
+        "required" : ["idle"],
         "additionalProperties" : false,
         "properties" : {
             "disabled" : { "$ref": "#/common_definitions/address" },
@@ -65,12 +65,18 @@ namespace
             &style_t::disabled, &style_t::idle, &style_t::mouse_over,
             &style_t::touched, &style_t::selected, &style_t::dragging }};
 
-        if ( root.HasMember("disabled") ) {
-            images[0] = library.load_asset_async<T>(path::combine(parent_address, root["disabled"].GetString()));
-        }
-
         if ( root.HasMember("idle") ) {
             images[1] = library.load_asset_async<T>(path::combine(parent_address, root["idle"].GetString()));
+        } else {
+            E2D_ASSERT_MSG(false, "'idle' parameter should be set");
+            return stdex::make_rejected_promise<ui_image_style_templ<typename T::ptr>>(
+                ui_image_style_asset_loading_exception());
+        }
+
+        if ( root.HasMember("disabled") ) {
+            images[0] = library.load_asset_async<T>(path::combine(parent_address, root["disabled"].GetString()));
+        } else {
+            images[0] = images[1];
         }
 
         if ( root.HasMember("mouse_over") ) {
