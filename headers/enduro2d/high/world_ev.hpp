@@ -10,9 +10,13 @@
 
 namespace e2d::world_ev
 {
+    struct update_frame {};
+    struct render_frame {};
+
     struct pre_update {};
     struct update {};
+    struct update_input {};
+    struct update_ui {};
     struct post_update {};
 
-    struct render_frame {};
 }

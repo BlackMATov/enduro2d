@@ -15,7 +15,7 @@ namespace e2d
     }
 
     void ui_system::process(ecs::registry& owner, ecs::event_ref) {
-        owner.set_event(update_controllers_evt());
-        owner.set_event(update_layouts_evt());
+        owner.enque_event(update_controllers_evt());
+        owner.enque_event(update_layouts_evt());
     }
 }

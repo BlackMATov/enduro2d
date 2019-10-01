@@ -48,6 +48,17 @@ namespace
             : modules::initialize<Module>(std::forward<Args>(args)...);
     }
 
+    class update_frame_system final : public ecs::system {
+    public:
+        void process(ecs::registry& owner, ecs::event_ref) override {
+            owner.enque_event(world_ev::pre_update());
+            owner.enque_event(world_ev::update());
+            owner.enque_event(world_ev::update_input());
+            owner.enque_event(world_ev::update_ui());
+            owner.enque_event(world_ev::post_update());
+        }
+    };
+
     class engine_application final : public engine::application {
     public:
         engine_application(starter::application_uptr application)
@@ -55,9 +66,10 @@ namespace
 
         bool initialize() final {
             ecs::registry_filler(the<world>().registry())
+                .system<update_frame_system, world_ev::update_frame>()
                 .system<spine_system, world_ev::update>()
-                .system<ui_system, world_ev::update>()
-                .system<input_event_system, world_ev::update>()
+                .system<input_event_system, world_ev::update_input>()
+                .system<ui_system, world_ev::update_ui>()
                 .system<spine_pre_system, world_ev::update>()
                 .system<flipbook_system, world_ev::update>()
                 .system<label_system, world_ev::post_update>()
@@ -72,9 +84,7 @@ namespace
         }
 
         bool frame_tick() final {
-            the<world>().registry().process_systems(world_ev::pre_update());
-            the<world>().registry().process_systems(world_ev::update());
-            the<world>().registry().process_systems(world_ev::post_update());
+            the<world>().registry().process_systems(world_ev::update_frame());
             return !the<window>().should_close()
                 || (application_ && !application_->on_should_close());
         }

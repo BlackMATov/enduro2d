@@ -17,6 +17,6 @@ namespace e2d
     }
 
     void input_event_system::process(ecs::registry& owner, ecs::event_ref) {
-        owner.set_event(pre_update_evt());
+        owner.enque_event(pre_update_evt());
     }
 }
