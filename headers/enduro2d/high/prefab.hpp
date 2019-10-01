@@ -35,7 +35,8 @@ namespace e2d
 
         ecs::prototype& prototype() noexcept;
         const ecs::prototype& prototype() const noexcept;
-
+        
+        vector<prefab>& children() noexcept;
         const vector<prefab>& children() const noexcept;
     private:
         ecs::prototype prototype_;

@@ -80,6 +80,10 @@ namespace e2d
     const ecs::prototype& prefab::prototype() const noexcept {
         return prototype_;
     }
+    
+    vector<prefab>& prefab::children() noexcept {
+        return children_;
+    }
 
     const vector<prefab>& prefab::children() const noexcept {
         return children_;

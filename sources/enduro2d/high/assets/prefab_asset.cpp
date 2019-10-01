@@ -123,13 +123,12 @@ namespace
         return dependencies.load_async(library);
     }
 
-    prefab parse_prefab(
+    void parse_prefab(
+        prefab& content,
         str_view parent_address,
         const rapidjson::Value& root,
         const asset_group& dependencies)
     {
-        prefab content;
-
         if ( root.HasMember("prototype") ) {
             auto proto_res = dependencies.find_asset<prefab_asset>(
                 path::combine(parent_address, root["prototype"].GetString()));
@@ -167,18 +166,13 @@ namespace
         if ( root.HasMember("children") ) {
             const rapidjson::Value& children_root = root["children"];
 
-            vector<prefab> children;
-            children.reserve(children_root.Size());
+            vector<prefab>& children = content.children();
+            children.resize(math::max(children.size(), size_t(children_root.Size())));
 
             for ( rapidjson::SizeType i = 0; i < children_root.Size(); ++i ) {
-                children.emplace_back(parse_prefab(
-                    parent_address, children_root[i], dependencies));
+                parse_prefab(children[i], parent_address, children_root[i], dependencies);
             }
-
-            content.set_children(std::move(children));
         }
-
-        return content;
     }
 }
 
@@ -221,8 +215,9 @@ namespace e2d
                     library, parent_address, *prefab_data->content());
             })
             .then([parent_address, prefab_data](const asset_group& dependencies){
-                return prefab_asset::create(parse_prefab(
-                    parent_address, *prefab_data->content(), dependencies));
+                prefab content;
+                parse_prefab(content, parent_address, *prefab_data->content(), dependencies);
+                return prefab_asset::create(std::move(content));
             });
         });
     }
