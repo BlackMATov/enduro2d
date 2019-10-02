@@ -322,3 +322,5 @@ if(E2D_BUILD_UNTESTS)
     enable_testing()
     add_subdirectory(untests)
 endif()
+
+add_subdirectory(game)
