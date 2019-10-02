@@ -1,0 +1,41 @@
+{
+    "prototype": "../res/prefabs/ui_cache_prefab.json",
+    "children": [
+        {
+            "children": [
+                {
+                    "children": [
+                        {
+                            "components": {
+                                "label": {
+                                    "text": "21.3m",
+                                    "tint": [ 255, 255, 255, 255 ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "children": [
+                {
+                    "components": {
+                        "label": {
+                            "text": "cache",
+                            "tint": [ 255, 255, 0, 255 ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "children": [
+                {
+                    "components": {
+                    }
+                }
+            ]
+        }
+    ]
+}

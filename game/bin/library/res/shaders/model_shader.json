@@ -1,0 +1,4 @@
+{
+    "vertex" : "model_shader.vert",
+    "fragment" : "model_shader.frag"
+}

@@ -1,0 +1,5 @@
+{
+    "texture" : "green_box_cross.png",
+    "pivot" : { "x" : 0, "y" : 0 },
+    "texrect" : { "x" : 0, "y" : 0, "w" : 38, "h" : 36 }
+}

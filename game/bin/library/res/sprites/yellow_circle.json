@@ -1,0 +1,5 @@
+{
+    "texture" : "yellow_circle.png",
+    "pivot" : { "x" : 0, "y" : 0 },
+    "texrect" : { "x" : 0, "y" : 0, "w" : 36, "h" : 36 }
+}

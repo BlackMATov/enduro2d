@@ -1,0 +1,40 @@
+{
+    "prototype": "sprite_prefab.json",
+    "components": {
+        "actor": {},
+        "fixed_layout": {
+            "size": [ 80, 80 ]
+        },
+        "fixed_layout.dirty": {},
+        "sprite_renderer": {
+            "sprite": "../sprites/dot_white.json"
+        },
+        "ui_button": {},
+        "ui_style": {},
+        "ui_style.style_changed_tag": {},
+        "ui_color_style_comp": {
+            "address": "../styles/main_bottom_btn.json"
+        },
+        "circle_shape": {},
+        "ui_layout.shape2d_update_size_tag": {},
+        "touchable": {
+            "stop_propagation": true
+        }
+    },
+    "children": [
+        {
+            "prototype": "sprite_prefab.json",
+            "components": {
+                "actor": {},
+                "padding_layout": {
+                    "left": 5,
+                    "right": 5,
+                    "top": 5,
+                    "bottom": 5
+                },
+                "padding_layout.dirty": {},
+                "sprite_renderer": {}
+            }
+        }
+    ]
+}

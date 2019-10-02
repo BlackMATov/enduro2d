@@ -1,0 +1,5 @@
+{
+    "texture" : "ico_settings.png",
+    "pivot" : { "x" : 0, "y" : 0 },
+    "texrect" : { "x" : 0, "y" : 0, "w" : 50, "h" : 50 }
+}

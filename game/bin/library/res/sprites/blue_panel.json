@@ -1,0 +1,5 @@
+{
+    "texture" : "blue_panel.png",
+    "pivot" : { "x" : 0, "y" : 0 },
+    "texrect" : { "x" : 0, "y" : 0, "w" : 100, "h" : 100 }
+}

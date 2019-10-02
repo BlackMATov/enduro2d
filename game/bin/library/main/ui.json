@@ -1,0 +1,15 @@
+{
+    "components": {
+        "scene": {},
+        "actor": {},
+        "ui_layout.root_tag": {}
+    },
+    "children": [
+        {
+            "prototype": "ui_top.json"
+        },
+        {
+            "prototype": "ui_bottom.json"
+        }
+    ]
+}

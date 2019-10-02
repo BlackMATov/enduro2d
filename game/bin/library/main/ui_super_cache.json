@@ -1,0 +1,40 @@
+{
+    "prototype": "../res/prefabs/ui_cache_prefab.json",
+    "children": [
+        {
+            "children": [
+                {
+                    "children": [
+                        {
+                            "components": {
+                                "label": {
+                                    "text": "597"
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "children": [
+                {
+                    "components": {
+                        "label": {
+                            "text": "super cache",
+                            "tint": [ 0, 255, 0, 255 ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "children": [
+                {
+                    "components": {
+                    }
+                }
+            ]
+        }
+    ]
+}

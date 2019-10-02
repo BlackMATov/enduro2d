@@ -1,0 +1,17 @@
+{
+    "prototype": "../res/prefabs/ui_round_btn1_prefab.json",
+    "components": {
+        "ui_color_style_comp": {
+            "address": "../res/styles/main_settings_btn.json"
+        }
+    },
+    "children": [
+        {
+            "components": {
+                "sprite_renderer": {
+                    "sprite": "../res/sprites/ico_settings.json"
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,97 @@
+{
+    "prototype": "../res/prefabs/sprite_prefab.json",
+    "components": {
+        "actor": {},
+        "anchor_layout": {
+            "left_bottom": {
+                "position": [ 0, 1 ],
+                "offset": [ 0, -100 ],
+                "relative_offset": false
+            },
+            "right_top": {
+                "position": [ 1, 1 ],
+                "offset": [ 0, 0 ],
+                "relative_offset": false
+            }
+        },
+        "anchor_layout.dirty": {},
+        "sprite_renderer": {
+            "sprite": "../res/sprites/blue_panel.json"
+        }
+    },
+    "children": [
+        {
+            "components": {
+                "actor": {},
+                "dock_layout": {
+                    "hdock": "left",
+                    "vdock": "fill"
+                },
+                "dock_layout.dirty": {}
+            },
+            "children": [
+                {
+                    "components": {
+                        "actor": {},
+                        "stack_layout": {
+                            "origin": "left"
+                        },
+                        "stack_layout.dirty": {}
+                    },
+                    "children": [
+                        {
+                            "components": {
+                                "actor": {},
+                                "fixed_layout": {
+                                    "size": [ 20, 20 ]
+                                },
+                                "fixed_layout.dirty": {}
+                            }
+                        },
+                        {
+                            "prototype": "ui_soft_currency.json"
+                        },
+                        {
+                            "components": {
+                                "actor": {},
+                                "fixed_layout": {
+                                    "size": [ 20, 20 ]
+                                },
+                                "fixed_layout.dirty": {}
+                            }
+                        },
+                        {
+                            "prototype": "ui_super_cache.json"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "components": {
+                "actor": {},
+                "dock_layout": {
+                    "hdock": "right",
+                    "vdock": "center"
+                },
+                "dock_layout.dirty": {}
+            },
+            "children": [
+                {
+                    "components": {
+                        "actor": {},
+                        "margin_layout": {
+                            "right":  20
+                        },
+                        "margin_layout.dirty": {}
+                    },
+                    "children": [
+                        {
+                            "prototype": "ui_settings_btn.json"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

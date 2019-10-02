@@ -1,0 +1,12 @@
+{
+    "prototype": "../res/prefabs/ui_round_btn1_prefab.json",
+    "children": [
+        {
+            "components": {
+                "sprite_renderer": {
+                    "sprite": "../res/sprites/ico_game_view.json"
+                }
+            }
+        }
+    ]
+}
