@@ -37,4 +37,9 @@ namespace e2d
     public:
         void process(ecs::registry& owner, ecs::event_ref event) override;
     };
+
+    class ui_controller_event_system final : public ecs::system {
+    public:
+        void process(ecs::registry& owner, ecs::event_ref event) override;
+    };
 }

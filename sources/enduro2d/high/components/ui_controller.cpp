@@ -34,6 +34,15 @@ namespace e2d
 
 namespace e2d
 {
+    ui_selectable& ui_selectable::selected(bool value) noexcept {
+        selected_ = value;
+        return *this;
+    }
+
+    bool ui_selectable::selected() const noexcept {
+        return selected_;
+    }
+
     const char* factory_loader<ui_selectable>::schema_source = R"json({
         "type" : "object",
         "required" : [],
@@ -76,6 +85,44 @@ namespace e2d
     }
 
     bool factory_loader<ui_draggable>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
+
+namespace e2d
+{
+    ui_controller_event_name& ui_controller_event_name::set_name(str value) {
+        name_ = std::move(value);
+        return *this;
+    }
+
+    const str& ui_controller_event_name::name() const noexcept {
+        return name_;
+    }
+
+    const char* factory_loader<ui_controller_event_name>::schema_source = R"json({
+        "type" : "object",
+        "required" : [ "name" ],
+        "additionalProperties" : false,
+        "properties" : {
+            "name" : { "$ref": "#/common_definitions/name" }
+        }
+    })json";
+
+    bool factory_loader<ui_controller_event_name>::operator()(
+        ui_controller_event_name& component,
+        const fill_context& ctx) const
+    {
+        E2D_ASSERT(ctx.root.HasMember("name"));
+        component.set_name(ctx.root["name"].GetString());
+        return true;
+    }
+
+    bool factory_loader<ui_controller_event_name>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {

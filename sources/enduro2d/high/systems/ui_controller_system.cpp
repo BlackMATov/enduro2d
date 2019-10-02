@@ -21,51 +21,63 @@ namespace
     void process_buttons(ecs::registry& owner, changed_states& changed) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_button, ui_style>(
-        [&changed](ecs::entity_id id, const touch_up_event&, const ui_button&, ui_style& style) {
-            changed[id].set(ui_style_state::touched);
+        [&changed](ecs::entity e, const touch_up_event& touch, const ui_button&, ui_style& style) {
+            changed[e.id()].set(ui_style_state::touched);
             style.set(ui_style_state::touched, false);
+            e.ensure_component<ui_controller_events>()
+                .add_event(ui_button::click_evt{touch.data->center});
         });
     }
 
     void process_selectable(ecs::registry& owner, changed_states& changed) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_selectable, ui_style>(
-        [&changed](ecs::entity_id id, const touch_up_event&, const ui_selectable&, ui_style& style) {
-            changed[id].set(ui_style_state::touched)
+        [&changed](ecs::entity e, const touch_up_event&, ui_selectable& sel, ui_style& style) {
+            changed[e.id()].set(ui_style_state::touched)
                 .set(ui_style_state::selected);
             style.set(ui_style_state::touched, false);
-            style.set(ui_style_state::selected, !style[ui_style_state::selected]);
+            sel.selected(!sel.selected());
+            style.set(ui_style_state::selected, sel.selected());
+            e.ensure_component<ui_controller_events>()
+                .add_event(ui_selectable::changed_evt{sel.selected()});
         });
     }
 
     void process_draggable(ecs::registry& owner, changed_states& changed) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_draggable, ui_style>(
-        [&changed](ecs::entity_id id, const touch_up_event&, ui_draggable& drg, ui_style& style) {
-            changed[id].set(ui_style_state::dragging)
+        [&changed](ecs::entity e, const touch_up_event&, ui_draggable& drg, ui_style& style) {
+            changed[e.id()].set(ui_style_state::dragging)
                 .set(ui_style_state::touched);
             style.set(ui_style_state::dragging, false);
             style.set(ui_style_state::touched, false);
-			drg.started = false;
+
+			if ( drg.started ) {
+                drg.started = false;
+                e.ensure_component<ui_controller_events>()
+                    .add_event(ui_draggable::drag_end_evt{});
+            }
         });
         
         // process touch move events
         owner.for_joined_components<touch_move_event, ui_draggable, ui_style, actor>(
-        [&changed](ecs::entity_id id, const touch_move_event& ev, ui_draggable& drg, ui_style& style, actor& act) {
+        [&changed](ecs::entity e, const touch_move_event& ev, ui_draggable& drg, ui_style& style, actor& act) {
             auto mvp = act.node()->world_matrix() * ev.data->view_proj;
             auto mvp_inv = math::inversed(mvp, 0.0f).first;
             const f32 z = 0.0f;
             v3f new_point = math::unproject(v3f(ev.data->center, z), mvp_inv, ev.data->viewport);
             v3f old_point = math::unproject(v3f(ev.data->center + ev.data->delta, z), mvp_inv, ev.data->viewport);
+            auto& events = e.ensure_component<ui_controller_events>();
 
 			// start dragging
             if ( !drg.started ) {
                 style.set(ui_style_state::dragging, true);
-                changed[id].set(ui_style_state::dragging);
+                changed[e.id()].set(ui_style_state::dragging);
 				drg.started = true;
 				drg.diff = v3f();
                 drg.start_pos = old_point; // touch down point in local coordinates
 				drg.node_pos = act.node()->translation();
+                events.add_event(ui_draggable::drag_begin_evt{});
             }
             
             v3f delta = (old_point - new_point) * act.node()->scale();
@@ -91,6 +103,8 @@ namespace
 
             act.node()->translation(act.node()->translation() + delta);
 			drg.node_pos = act.node()->translation();
+
+            events.add_event(ui_draggable::drag_update_evt{});
         });
     }
 }

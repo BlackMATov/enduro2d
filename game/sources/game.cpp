@@ -44,6 +44,38 @@ namespace
         }
     };
 
+    class ui_event_system final : public ecs::system {
+    public:
+        ui_event_system() {
+            callbacks_["boost_btn"] = [](){ E2D_ASSERT(false); };
+            callbacks_["game_view_btn"] = [](){ E2D_ASSERT(false); };
+            callbacks_["map_btn"] = [](){ E2D_ASSERT(false); };
+            callbacks_["settings_btn"] = [](){ E2D_ASSERT(false); };
+            callbacks_["store_btn"] = [](){ E2D_ASSERT(false); };
+            callbacks_["by_soft_currency_btn"] = [](){ E2D_ASSERT(false); };
+            callbacks_["by_super_cache_btn"] = [](){ E2D_ASSERT(false); };
+        }
+
+        void process(ecs::registry& owner, ecs::event_ref) override {
+            owner.for_joined_components<ui_controller_event_name, ui_controller_events>(
+            [this](const ecs::const_entity&, const ui_controller_event_name& evt_name, const ui_controller_events& events){
+                for ( auto& ev : events.events() ) {
+                    if ( !std::any_cast<ui_button::click_evt>(&ev) ) {
+                        continue;
+                    }
+                    auto iter = callbacks_.find(evt_name.name());
+                    if ( iter == callbacks_.end() ) {
+                        continue;
+                    }
+                    iter->second();
+                }
+            });
+        }
+    private:
+        using callback_t = void (*)();
+        hash_map<str, callback_t> callbacks_;
+    };
+
     class game final : public starter::application {
     public:
         bool initialize() final {
@@ -73,7 +105,8 @@ namespace
         bool create_systems() {
             ecs::registry_filler(the<world>().registry())
                 .system<game_system, world_ev::update>()
-                .system<camera_system, world_ev::pre_update>();
+                .system<camera_system, world_ev::pre_update>()
+                .system<ui_event_system, world_ev::post_update>();
             return true;
         }
     };

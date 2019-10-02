@@ -18,6 +18,11 @@
             ]
         },
         {
+            "components": {
+                "ui_controller_event_name": {
+                    "name": "by_soft_currency_btn"
+                }
+            },
             "children": [
                 {
                     "components": {

@@ -1,6 +1,9 @@
 {
     "prototype": "../res/prefabs/ui_round_btn1_prefab.json",
     "components": {
+        "ui_controller_event_name": {
+            "name": "settings_btn"
+        },
         "ui_color_style_comp": {
             "address": "../res/styles/main_settings_btn.json"
         }
