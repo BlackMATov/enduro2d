@@ -880,10 +880,10 @@ namespace e2d
 
         enum class api_profile {
             unknown,
-            opengles2,
-            opengles3,
-            opengl2_compat,
-            opengl4_compat
+            gles_2_0,
+            gles_3_0,
+            gl_2_1_compat,
+            gl_3_2_compat
         };
 
         struct device_caps {

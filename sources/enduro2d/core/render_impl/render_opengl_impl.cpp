@@ -13,6 +13,86 @@ namespace
 {
     using namespace e2d;
     using namespace e2d::opengl;
+
+    const char* debug_output_severity_to_cstr(GLenum severity) noexcept {
+        switch ( severity ) {
+            case GL_DEBUG_SEVERITY_HIGH: return "high";
+            case GL_DEBUG_SEVERITY_MEDIUM: return "medium";
+            case GL_DEBUG_SEVERITY_LOW: return "low";
+            case GL_DEBUG_SEVERITY_NOTIFICATION: return "notification";
+            default: return "unknown";
+        }
+    }
+
+    const char* debug_output_source_to_cstr(GLenum source) noexcept {
+        switch (source) {
+            case GL_DEBUG_SOURCE_API: return "API";
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "window system";
+            case GL_DEBUG_SOURCE_SHADER_COMPILER: return "shader compiler";
+            case GL_DEBUG_SOURCE_THIRD_PARTY: return "third party";
+            case GL_DEBUG_SOURCE_APPLICATION: return "application";
+            case GL_DEBUG_SOURCE_OTHER: return "other";
+            default: return "unknown";
+        }
+    }
+
+    const char* debug_output_type_to_cstr(GLenum type) noexcept {
+        switch ( type ) {
+            case GL_DEBUG_TYPE_ERROR: return "error";
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "deprecated behavior";
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "undefined behavior";
+            case GL_DEBUG_TYPE_PORTABILITY: return "portability";
+            case GL_DEBUG_TYPE_PERFORMANCE: return "performance";
+            case GL_DEBUG_TYPE_OTHER: return "other";
+            case GL_DEBUG_TYPE_MARKER: return "marker";
+            case GL_DEBUG_TYPE_PUSH_GROUP: return "push group";
+            case GL_DEBUG_TYPE_POP_GROUP: return "pop group";
+            default: return "unknown";
+        }
+    }
+
+    void GLAPIENTRY debug_output_callback(
+        GLenum source,
+        GLenum type,
+        GLuint id,
+        GLenum severity,
+        GLsizei length,
+        const GLchar* message,
+        const void* user_param) noexcept
+    {
+        if ( !length || !message || !user_param ) {
+            return;
+        }
+
+        const_cast<debug*>(static_cast<const debug*>(user_param))->trace(
+            "RENDER: Debug output message:\n"
+            "--> Id: %0\n"
+            "--> Severity: %1\n"
+            "--> Source: %2\n"
+            "--> Type: %3\n"
+            "--> Message: %4",
+            id,
+            debug_output_severity_to_cstr(severity),
+            debug_output_source_to_cstr(source),
+            debug_output_type_to_cstr(type),
+            str_view(message, length));
+    }
+
+    void setup_debug_output(debug& debug) noexcept {
+        if ( !gl_has_extension(debug, "GL_KHR_debug") ) {
+            return;
+        }
+
+        GL_CHECK_CODE(debug, glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS));
+        GL_CHECK_CODE(debug, glDebugMessageCallback(debug_output_callback, &debug));
+        GL_CHECK_CODE(debug, glDebugMessageControl(
+            GL_DONT_CARE,
+            GL_DONT_CARE,
+            GL_DEBUG_SEVERITY_NOTIFICATION,
+            0,
+            nullptr,
+            GL_FALSE));
+    }
 }
 
 namespace e2d
@@ -216,10 +296,10 @@ namespace e2d
         gl_trace_limits(debug_);
         gl_fill_device_caps(debug_, device_caps_);
 
+        setup_debug_output(debug_);
         GL_CHECK_CODE(debug_, glPixelStorei(GL_PACK_ALIGNMENT, 1));
         GL_CHECK_CODE(debug_, glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
 
-        create_debug_output_();
         reset_states();
         reset_shader_program();
         reset_render_target();
@@ -240,7 +320,7 @@ namespace e2d
     const render_target_ptr& render::internal_state::render_target() const noexcept {
         return render_target_;
     }
-    
+
     render::internal_state& render::internal_state::reset_states() noexcept {
         set_depth_state_(state_block_.depth());
         set_stencil_state_(state_block_.stencil());
@@ -308,7 +388,7 @@ namespace e2d
         GL_CHECK_CODE(debug_, glBindFramebuffer(rt_id.target(), *rt_id));
         return *this;
     }
-    
+
     render::internal_state& render::internal_state::set_render_target(const render_target_ptr& rt) noexcept {
         if ( rt == render_target_ ) {
             return *this;
@@ -395,78 +475,6 @@ namespace e2d
         GL_CHECK_CODE(debug_, enable_or_disable(GL_BLEND, cs.blending()));
         GL_CHECK_CODE(debug_, enable_or_disable(GL_DEPTH_TEST, cs.depth_test()));
         GL_CHECK_CODE(debug_, enable_or_disable(GL_STENCIL_TEST, cs.stencil_test()));
-    }
-
-    void render::internal_state::create_debug_output_() noexcept {
-        if ( !gl_has_extension(debug_, "GL_ARB_debug_output") ) {
-            return;
-        }
-
-        GL_CHECK_CODE(debug_, glDebugMessageCallbackARB(debug_output_callback_, this));
-
-        // disable notifications
-        GL_CHECK_CODE(debug_, glDebugMessageControlARB(
-            GL_DONT_CARE,
-            GL_DONT_CARE,
-            GL_DEBUG_SEVERITY_NOTIFICATION,
-            0,
-            nullptr,
-            GL_FALSE));
-    }
-    
-    void render::internal_state::debug_output_callback_(
-        GLenum source,
-        GLenum type,
-        GLuint id,
-        GLenum severity,
-        GLsizei length,
-        const GLchar* message,
-        const void* userParam)
-    {
-        if ( !userParam ) {
-            return;
-        }
-
-        str msg;
-        switch ( severity ) {
-            case GL_DEBUG_SEVERITY_HIGH : msg += "[High]"; break;
-            case GL_DEBUG_SEVERITY_MEDIUM : msg += "[Medium]"; break;
-            case GL_DEBUG_SEVERITY_LOW : msg += "[Low]"; break;
-            case GL_DEBUG_SEVERITY_NOTIFICATION : msg += "[Notification]"; break;
-        }
-
-        msg += " src: ";
-        switch ( source ) {
-            case GL_DEBUG_SOURCE_API : msg += "OpenGL"; break;
-            case GL_DEBUG_SOURCE_WINDOW_SYSTEM : msg += "OS"; break;
-            case GL_DEBUG_SOURCE_SHADER_COMPILER : msg += "GL_Compiler"; break;
-            case GL_DEBUG_SOURCE_THIRD_PARTY : msg += "Third_Party"; break;
-            case GL_DEBUG_SOURCE_APPLICATION : msg += "Application"; break;
-            case GL_DEBUG_SOURCE_OTHER :
-            default : msg += "Other"; break;
-        }
-
-        msg += ", type: ";
-        switch ( type ) {
-            case GL_DEBUG_TYPE_ERROR : msg += "Error"; break;
-            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR : msg += "Deprecated"; break;
-            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR : msg += "Undefined_Behavior"; break;
-            case GL_DEBUG_TYPE_PORTABILITY : msg += "Portability"; break;
-            case GL_DEBUG_TYPE_PERFORMANCE : msg += "Performance"; break;
-            case GL_DEBUG_TYPE_MARKER : msg += "Marker"; break;
-            case GL_DEBUG_TYPE_PUSH_GROUP : msg += "Push_Group"; break;
-            case GL_DEBUG_TYPE_POP_GROUP : msg += "Pop_Group"; break;
-            case GL_DEBUG_TYPE_OTHER :
-            default : msg += "Other"; break;
-        }
-
-        msg += "\n";
-
-        if ( message && length ) {
-            msg += str_view(message, length);
-        }
-
-        static_cast<const internal_state*>(userParam)->debug_.trace(msg);
     }
 }
 

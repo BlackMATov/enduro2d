@@ -1,4 +1,14 @@
 -Iheaders
 -Isources
+
+-Imodules/ecs.hpp/headers
+-Imodules/flat.hpp/headers
+-Imodules/curly.hpp/headers
+-Imodules/promise.hpp/headers
+
+-Imodules/glew/include
+-Imodules/glfw/include
+-Imodules/spine/spine-c/spine-c/include
+
 -std=c++17
 -stdlib=libc++

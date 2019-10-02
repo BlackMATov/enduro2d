@@ -19,6 +19,14 @@ function(add_e2d_tests NAME)
     target_link_libraries(${TESTS_NAME} enduro2d)
     set_target_properties(${TESTS_NAME} PROPERTIES FOLDER untests)
 
+    target_compile_options(${TESTS_NAME}
+        PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:
+            /W3 /MP /bigobj>
+        PRIVATE
+        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
+            -Wall -Wextra -Wpedantic>)
+
     #
     # resources
     #
@@ -36,28 +44,8 @@ function(add_e2d_tests NAME)
     add_test(${TESTS_NAME} ${TESTS_NAME})
 endfunction(add_e2d_tests)
 
-option(E2D_BUILD_BASE_UNTESTS "Build base untests" ON)
-option(E2D_BUILD_CORE_UNTESTS "Build core untests" ON)
-option(E2D_BUILD_HIGH_UNTESTS "Build high untests" ON)
-option(E2D_BUILD_MATH_UNTESTS "Build math untests" ON)
-option(E2D_BUILD_UTILS_UNTESTS "Build utils untests" ON)
-
-if(E2D_BUILD_BASE_UNTESTS)
-    add_e2d_tests(base)
-endif()
-
-if(E2D_BUILD_CORE_UNTESTS)
-    add_e2d_tests(core)
-endif()
-
-if(E2D_BUILD_HIGH_UNTESTS)
-    add_e2d_tests(high)
-endif()
-
-if(E2D_BUILD_MATH_UNTESTS)
-    add_e2d_tests(math)
-endif()
-
-if(E2D_BUILD_UTILS_UNTESTS)
-    add_e2d_tests(utils)
-endif()
+add_e2d_tests(base)
+add_e2d_tests(core)
+add_e2d_tests(high)
+add_e2d_tests(math)
+add_e2d_tests(utils)

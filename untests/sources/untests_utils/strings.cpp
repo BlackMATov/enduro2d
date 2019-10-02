@@ -212,9 +212,9 @@ TEST_CASE("strings") {
 
         REQUIRE(wildcard_match(
             // 你好你好你好你好世界世界世界世界世界世界世界世界彡ಠ
-            mark_string("\u4F60\u597D\u4F60\u597D\u4F60\u597D\u4F60\u597D\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u5F61\u0CA0"),
+            mark_string(u8"\u4F60\u597D\u4F60\u597D\u4F60\u597D\u4F60\u597D\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u4E16\u754C\u5F61\u0CA0"),
             // 你好你好你好你好*世界世界彡*ಠ
-            mark_pattern("\u4F60\u597D\u4F60\u597D\u4F60\u597D\u4F60\u597D*\u4E16\u754C\u4E16\u754C\u5F61*\u0CA0")) == true);
+            mark_pattern(u8"\u4F60\u597D\u4F60\u597D\u4F60\u597D\u4F60\u597D*\u4E16\u754C\u4E16\u754C\u5F61*\u0CA0")) == true);
 
         REQUIRE(wildcard_match("", "") == true);
         REQUIRE(wildcard_match("a", "") == false);

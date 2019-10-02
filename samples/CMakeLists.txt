@@ -19,6 +19,14 @@ function(add_e2d_sample NAME)
     target_link_libraries(${SAMPLE_NAME} enduro2d)
     set_target_properties(${SAMPLE_NAME} PROPERTIES FOLDER samples)
 
+    target_compile_options(${SAMPLE_NAME}
+        PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:
+            /W3 /MP /bigobj>
+        PRIVATE
+        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
+            -Wall -Wextra -Wpedantic>)
+
     #
     # resources
     #

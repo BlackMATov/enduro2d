@@ -19,22 +19,22 @@ namespace
         switch ( profile ) {
         case e2d::render::api_profile::unknown:
             return "";
-        case e2d::render::api_profile::opengles2:
-        case e2d::render::api_profile::opengles3:
+        case e2d::render::api_profile::gles_2_0:
+        case e2d::render::api_profile::gles_3_0:
             return R"glsl(
                 precision highp int;
                 precision highp float;
             )glsl";
-        case e2d::render::api_profile::opengl2_compat:
+        case e2d::render::api_profile::gl_2_1_compat:
             return R"glsl(
                 #version 120
                 #define highp
                 #define mediump
                 #define lowp
             )glsl";
-        case e2d::render::api_profile::opengl4_compat:
+        case e2d::render::api_profile::gl_3_2_compat:
             return R"glsl(
-                #version 410 core
+                #version 150
                 #define texture2D texture
                 #define varying out
                 #define attribute in
@@ -49,22 +49,22 @@ namespace
         switch ( profile ) {
         case e2d::render::api_profile::unknown:
             return "";
-        case e2d::render::api_profile::opengles2:
-        case e2d::render::api_profile::opengles3:
+        case e2d::render::api_profile::gles_2_0:
+        case e2d::render::api_profile::gles_3_0:
             return R"glsl(
                 precision mediump int;
                 precision mediump float;
             )glsl";
-        case e2d::render::api_profile::opengl2_compat:
+        case e2d::render::api_profile::gl_2_1_compat:
             return R"glsl(
                 #version 120
                 #define highp
                 #define mediump
                 #define lowp
             )glsl";
-        case e2d::render::api_profile::opengl4_compat:
+        case e2d::render::api_profile::gl_3_2_compat:
             return R"glsl(
-                #version 410 core
+                #version 150
                 #define texture2D texture
                 #define varying in
             )glsl";
