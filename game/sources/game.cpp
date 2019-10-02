@@ -55,6 +55,8 @@ namespace
             callbacks_["store_btn"] = [](){ E2D_ASSERT(false); };
             callbacks_["by_soft_currency_btn"] = [](){ E2D_ASSERT(false); };
             callbacks_["by_hard_currency_btn"] = [](){ E2D_ASSERT(false); };
+
+            // overview
         }
 
         void process(ecs::registry& owner, ecs::event_ref) override {
@@ -86,7 +88,8 @@ namespace
         }
     private:
         bool create_scene() {
-            auto scene_prefab_res = the<library>().load_asset<prefab_asset>("main/ui.json");
+            //auto scene_prefab_res = the<library>().load_asset<prefab_asset>("main/ui.json");
+            auto scene_prefab_res = the<library>().load_asset<prefab_asset>("overview/ui.json");
             auto scene_go = scene_prefab_res
                 ? the<world>().instantiate(scene_prefab_res->content())
                 : nullptr;

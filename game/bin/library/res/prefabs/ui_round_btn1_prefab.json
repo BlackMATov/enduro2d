@@ -27,10 +27,7 @@
             "components": {
                 "actor": {},
                 "padding_layout": {
-                    "left": 5,
-                    "right": 5,
-                    "top": 5,
-                    "bottom": 5
+                    "padding": 5
                 },
                 "padding_layout.dirty": {},
                 "sprite_renderer": {}

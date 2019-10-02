@@ -704,12 +704,21 @@ namespace e2d
     f32 margin_layout::bottom() const noexcept {
         return bottom_;
     }
+    
+    margin_layout& margin_layout::set_margin(f32 value) noexcept {
+        left_ = value;
+        bottom_ = value;
+        right_ = value;
+        top_ = value;
+        return *this;
+    }
 
     const char* factory_loader<margin_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [],
         "additionalProperties" : false,
         "properties" : {
+            "margin" : { "type" : "number" },
             "left" : { "type" : "number" },
             "top" : { "type" : "number" },
             "right" : { "type" : "number" },
@@ -721,6 +730,15 @@ namespace e2d
         margin_layout& component,
         const fill_context& ctx) const
     {
+        if ( ctx.root.HasMember("margin") ) {
+            component.set_margin(ctx.root["margin"].GetFloat());
+            E2D_ASSERT(!ctx.root.HasMember("left"));
+            E2D_ASSERT(!ctx.root.HasMember("top"));
+            E2D_ASSERT(!ctx.root.HasMember("right"));
+            E2D_ASSERT(!ctx.root.HasMember("bottom"));
+            return true;
+        }
+        
         if ( ctx.root.HasMember("left") ) {
             component.left(ctx.root["left"].GetFloat());
         }
@@ -812,11 +830,20 @@ namespace e2d
         return bottom_;
     }
 
+    padding_layout& padding_layout::set_padding(f32 value) noexcept {
+        left_ = value;
+        bottom_ = value;
+        right_ = value;
+        top_ = value;
+        return *this;
+    }
+
     const char* factory_loader<padding_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [],
         "additionalProperties" : false,
         "properties" : {
+            "padding" : { "type" : "number" },
             "left" : { "type" : "number" },
             "top" : { "type" : "number" },
             "right" : { "type" : "number" },
@@ -828,6 +855,15 @@ namespace e2d
         padding_layout& component,
         const fill_context& ctx) const
     {
+        if ( ctx.root.HasMember("padding") ) {
+            component.set_padding(ctx.root["padding"].GetFloat());
+            E2D_ASSERT(!ctx.root.HasMember("left"));
+            E2D_ASSERT(!ctx.root.HasMember("top"));
+            E2D_ASSERT(!ctx.root.HasMember("right"));
+            E2D_ASSERT(!ctx.root.HasMember("bottom"));
+            return true;
+        }
+
         if ( ctx.root.HasMember("left") ) {
             component.left(ctx.root["left"].GetFloat());
         }

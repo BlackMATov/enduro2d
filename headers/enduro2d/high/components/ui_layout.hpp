@@ -435,6 +435,8 @@ namespace e2d
 
         margin_layout& bottom(f32 value) noexcept;
         f32 bottom() const noexcept;
+
+        margin_layout& set_margin(f32 value) noexcept;
     private:
         f32 left_{0.0f}, bottom_{0.0f}, right_{0.0f}, top_{0.0f};
     };
@@ -488,6 +490,8 @@ namespace e2d
 
         padding_layout& bottom(f32 value) noexcept;
         f32 bottom() const noexcept;
+
+        padding_layout& set_padding(f32 value) noexcept;
     private:
         f32 left_{0.0f}, bottom_{0.0f}, right_{0.0f}, top_{0.0f};
     };

@@ -1,0 +1,16 @@
+{
+    "prototype": "sprite_prefab.json",
+    "components": {
+        "actor": {},
+        "padding_layout": {
+            "left": 100,
+            "right": 100,
+            "bottom": 200,
+            "top": 200
+        },
+        "padding_layout.dirty": {},
+        "sprite_renderer": {
+            "sprite": "../sprites/blue_rect.json"
+        }
+    }
+}

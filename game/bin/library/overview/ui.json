@@ -1,0 +1,12 @@
+{
+    "components": {
+        "scene": {},
+        "actor": {},
+        "ui_layout.root_tag": {}
+    },
+    "children": [
+        {
+            "prototype": "../res/prefabs/window_prefab.json"
+        }
+    ]
+}

@@ -222,8 +222,10 @@ namespace
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
+        const b2f local = project_to_local(node, parent_rect);
         bool post_update = false;
         for (auto& c : childs ) {
+            c.parent_rect = local;
             post_update |= c.depends_on_childs;
         }
 
