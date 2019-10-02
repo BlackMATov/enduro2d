@@ -47,13 +47,14 @@ namespace
     class ui_event_system final : public ecs::system {
     public:
         ui_event_system() {
+            // main menu
             callbacks_["boost_btn"] = [](){ E2D_ASSERT(false); };
             callbacks_["game_view_btn"] = [](){ E2D_ASSERT(false); };
             callbacks_["map_btn"] = [](){ E2D_ASSERT(false); };
             callbacks_["settings_btn"] = [](){ E2D_ASSERT(false); };
             callbacks_["store_btn"] = [](){ E2D_ASSERT(false); };
             callbacks_["by_soft_currency_btn"] = [](){ E2D_ASSERT(false); };
-            callbacks_["by_super_cache_btn"] = [](){ E2D_ASSERT(false); };
+            callbacks_["by_hard_currency_btn"] = [](){ E2D_ASSERT(false); };
         }
 
         void process(ecs::registry& owner, ecs::event_ref) override {

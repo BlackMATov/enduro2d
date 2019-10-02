@@ -4,19 +4,20 @@
         "actor": {},
         "anchor_layout": {
             "left_bottom": {
-                "position": [0, 0],
-                "offset": [0, 0],
+                "position": [ 0, 0 ],
+                "offset": [ 0, 0 ],
                 "relative_offset": false
             },
             "right_top": {
-                "position": [1, 0],
-                "offset": [0, 100],
+                "position": [ 1, 0 ],
+                "offset": [ 0, 100 ],
                 "relative_offset": false
             }
         },
         "anchor_layout.dirty": {},
         "sprite_renderer": {
-            "sprite": "../res/sprites/blue_panel.json"
+            "sprite": "../res/sprites/white_button.json",
+            "tint": [ 0, 0, 200, 255 ]
         }
     },
     "children": [

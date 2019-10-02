@@ -16,7 +16,8 @@
         },
         "anchor_layout.dirty": {},
         "sprite_renderer": {
-            "sprite": "../res/sprites/blue_panel.json"
+            "sprite": "../res/sprites/white_button.json",
+            "tint": [ 0, 0, 200, 255 ]
         }
     },
     "children": [
@@ -61,7 +62,7 @@
                             }
                         },
                         {
-                            "prototype": "ui_super_cache.json"
+                            "prototype": "ui_hard_currency.json"
                         }
                     ]
                 }
@@ -81,7 +82,7 @@
                     "components": {
                         "actor": {},
                         "margin_layout": {
-                            "right":  20
+                            "right": 20
                         },
                         "margin_layout.dirty": {}
                     },

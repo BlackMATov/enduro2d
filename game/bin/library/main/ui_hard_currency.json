@@ -17,11 +17,6 @@
             ]
         },
         {
-            "components": {
-                "ui_controller_event_name": {
-                    "name": "by_super_cache_btn"
-                }
-            },
             "children": [
                 {
                     "components": {
@@ -34,9 +29,14 @@
             ]
         },
         {
+        },
+        {
             "children": [
                 {
                     "components": {
+                        "ui_controller_event_name": {
+                            "name": "by_hard_currency_btn"
+                        }
                     }
                 }
             ]
