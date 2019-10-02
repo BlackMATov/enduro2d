@@ -59,12 +59,8 @@ namespace
     {
         using style_t = ui_image_style_templ<typename T::ptr>;
         using set_image_fn = style_t& (style_t::*)(const typename T::ptr&);
-        using sub_promise_t = typename T::load_async_result;
-        using sub_promise_result_t = typename sub_promise_t::value_type;
-        using image_array_t = std::array<sub_promise_t, 6>;
-        using image_array_iter = typename image_array_t::iterator;
         
-        image_array_t images;
+        std::array<typename T::load_async_result, 6> images;
         const std::array<set_image_fn, 6> set_image_fns = {{
             &style_t::disabled, &style_t::idle, &style_t::mouse_over,
             &style_t::touched, &style_t::selected, &style_t::dragging }};
@@ -107,7 +103,7 @@ namespace
             images[5] = images[1];
         }
 
-        return stdex::make_all_promise<image_array_iter, sub_promise_t, sub_promise_result_t>(images.begin(), images.end())
+        return stdex::make_all_promise(images)
             .then([set_image_fns](const vector<typename T::load_result>& result){
                 style_t style;
                 for ( size_t i = 0; i < result.size(); ++i ) {
