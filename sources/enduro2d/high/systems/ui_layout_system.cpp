@@ -86,9 +86,9 @@ namespace
                 math::abs(r.size.x / aabb_size.x),
                 math::abs(r.size.y / aabb_size.y));
         }
-        return b2f({
+        return b2f(
             math::length(points[3] - points[0]) * scale,
-            math::length(points[1] - points[0]) * scale});
+            math::length(points[1] - points[0]) * scale);
     }
     
     void update_auto_layout2(

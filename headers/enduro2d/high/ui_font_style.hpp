@@ -34,12 +34,12 @@ namespace e2d
         const style& selected() const noexcept;
         const style& dragging() const noexcept;
     private:
-        style disabled_ {color32(125, 125, 125, 255)};
-        style idle_ {color32::white()};
-        style mouse_over_ {color32::white()};
-        style touched_ {color32::white()};
-        style selected_ {color32::white()};
-        style dragging_ {color32::white()};
+        style disabled_ {color32(125, 125, 125, 255), color32(), 0.0f};
+        style idle_ {color32::white(), color32(), 0.0f};
+        style mouse_over_ {color32::white(), color32(), 0.0f};
+        style touched_ {color32::white(), color32(), 0.0f};
+        style selected_ {color32::white(), color32(), 0.0f};
+        style dragging_ {color32::white(), color32(), 0.0f};
     };
 }
 
