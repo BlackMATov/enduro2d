@@ -785,7 +785,7 @@ namespace
         owner.for_joined_components<ui_layout::shape2d_update_size_tag, circle_shape, ui_layout, actor>(
         [](const ecs::const_entity&, ui_layout::shape2d_update_size_tag, circle_shape& cshape, const ui_layout&, const actor& act) {
             if ( act.node() ) {
-                cshape.radius(math::minimum(act.node()->size()));
+                cshape.radius(math::minimum(act.node()->size()) * 0.5f);
             }
         });
     }
