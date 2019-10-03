@@ -21,3 +21,4 @@
 #include "vec2.hpp"
 #include "vec3.hpp"
 #include "vec4.hpp"
+#include "easing.hpp"
