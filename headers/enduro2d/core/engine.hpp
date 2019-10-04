@@ -31,12 +31,12 @@ namespace e2d
         bool start(Args&&... args);
         bool start(application_uptr app);
 
-        f32 time() const noexcept;
-        f32 delta_time() const noexcept;
+        secf time() const noexcept;
+        secf delta_time() const noexcept;
 
         u32 frame_rate() const noexcept;
         u32 frame_count() const noexcept;
-        f32 realtime_time() const noexcept;
+        secf realtime_time() const noexcept;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;

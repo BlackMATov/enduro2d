@@ -28,7 +28,7 @@ namespace e2d
         }
     private:
         void update_animations(ecs::registry& owner) {
-            const float dt = the<engine>().delta_time();
+            const f32 dt = the<engine>().delta_time().value;
             owner.for_each_component<spine_player>([dt](
                 const ecs::const_entity&,
                 spine_player& p)

@@ -13,7 +13,7 @@ namespace
 {
     using namespace e2d;
 
-    void update_flipbook_timers(f32 dt, ecs::registry& owner) {
+    void update_flipbook_timers(secf dt, ecs::registry& owner) {
         owner.for_joined_components<flipbook_player>([dt](
             const ecs::const_entity&,
             flipbook_player& fp)
@@ -30,7 +30,7 @@ namespace
             if ( !sequence || sequence->frames.empty() ) {
                 return;
             }
-            fp.time(fp.time() + dt * fp.speed());
+            fp.time(fp.time() + dt.value * fp.speed());
             if ( sequence->fps > 0.f ) {
                 const f32 loop_time = sequence->frames.size() / sequence->fps;
                 if ( fp.time() >= loop_time ) {

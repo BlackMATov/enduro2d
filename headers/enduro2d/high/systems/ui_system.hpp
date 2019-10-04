@@ -18,6 +18,8 @@ namespace e2d
         };
 
         struct update_layouts_evt {};
+        
+        struct update_animation_evt {};
     public:
         void add_systems(ecs::registry& owner) const override;
         void process(ecs::registry& owner, ecs::event_ref event) override;
@@ -41,5 +43,12 @@ namespace e2d
     class ui_controller_event_system final : public ecs::system {
     public:
         void process(ecs::registry& owner, ecs::event_ref event) override;
+    };
+    
+    class ui_animation_system final : public ecs::system {
+    public:
+        void process(ecs::registry& owner, ecs::event_ref event) override;
+    private:
+        f32 time_scale_ = 1.0f;
     };
 }

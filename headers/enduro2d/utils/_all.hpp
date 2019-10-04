@@ -15,6 +15,7 @@
 #include "filesystem.hpp"
 #include "filesystem.inl"
 #include "font.hpp"
+#include "func_info.hpp"
 #include "image.hpp"
 #include "intrusive_list.hpp"
 #include "intrusive_ptr.hpp"

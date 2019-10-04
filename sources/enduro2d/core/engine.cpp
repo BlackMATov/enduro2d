@@ -283,14 +283,14 @@ namespace e2d
         }
         ~internal_state() noexcept = default;
     public:
-        f32 time() const noexcept {
+        secf time() const noexcept {
             return time::to_seconds(
-                make_microseconds(time_us_.load()).cast_to<f32>()).value;
+                make_microseconds(time_us_.load()).cast_to<f32>());
         }
 
-        f32 delta_time() const noexcept {
+        secf delta_time() const noexcept {
             return time::to_seconds(
-                make_microseconds(delta_time_us_.load()).cast_to<f32>()).value;
+                make_microseconds(delta_time_us_.load()).cast_to<f32>());
         }
 
         u32 frame_rate() const noexcept {
@@ -301,9 +301,9 @@ namespace e2d
             return frame_count_.load();
         }
 
-        f32 realtime_time() const noexcept {
+        secf realtime_time() const noexcept {
             const auto delta_us = time::now_us<u64>() - init_time_;
-            return time::to_seconds(delta_us.cast_to<f32>()).value;
+            return time::to_seconds(delta_us.cast_to<f32>());
         }
     public:
         void calculate_end_frame_timers() noexcept {
@@ -504,11 +504,11 @@ namespace e2d
         return true;
     }
 
-    f32 engine::time() const noexcept {
+    secf engine::time() const noexcept {
         return state_->time();
     }
 
-    f32 engine::delta_time() const noexcept {
+    secf engine::delta_time() const noexcept {
         return state_->delta_time();
     }
 
@@ -520,7 +520,7 @@ namespace e2d
         return state_->frame_count();
     }
 
-    f32 engine::realtime_time() const noexcept {
+    secf engine::realtime_time() const noexcept {
         return state_->realtime_time();
     }
 }

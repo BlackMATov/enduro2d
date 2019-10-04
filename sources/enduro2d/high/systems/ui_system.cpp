@@ -13,6 +13,7 @@ namespace e2d
         owner.assign_system<ui_layout_system, update_layouts_evt>();
         owner.assign_system<ui_controller_system, update_controllers_evt>();
         owner.assign_system<ui_controller_event_system, ecs::before_event<update_controllers_evt>>();
+        owner.assign_system<ui_animation_system, update_animation_evt>();
     }
 
     void ui_system::process(ecs::registry& owner, ecs::event_ref) {
