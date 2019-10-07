@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 #include <enduro2d/high/systems/ui_system.hpp>
+#include <enduro2d/high/single_components/frame_params_comp.hpp>
 
 namespace e2d
 {
@@ -17,7 +18,12 @@ namespace e2d
     }
 
     void ui_system::process(ecs::registry& owner) {
+        auto& params = owner.ensure_single_component<frame_params_comp>();
+        params.delta_time = the<engine>().delta_time(); // TODO
+        params.realtime_time = the<engine>().realtime_time();
+
         owner.enque_event<update_controllers_evt>();
         owner.enque_event<update_layouts_evt>();
+        owner.enque_event<update_animation_evt>();
     }
 }

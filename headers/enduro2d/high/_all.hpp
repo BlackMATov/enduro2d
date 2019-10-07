@@ -51,6 +51,8 @@
 #include "components/ui_layout.hpp"
 #include "components/ui_controller.hpp"
 
+#include "single_components/frame_params_comp.hpp"
+
 #include "systems/flipbook_system.hpp"
 #include "systems/label_system.hpp"
 #include "systems/render_system.hpp"

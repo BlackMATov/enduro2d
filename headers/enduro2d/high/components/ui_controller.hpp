@@ -83,10 +83,10 @@ namespace e2d
         ui_draggable() = default;
 
     public:
-		v3f start_pos;
-		v3f node_pos;
+        v3f start_pos;
+        v3f node_pos;
         v3f diff;
-		bool started = false;
+        bool started = false;
     };
 
     template <>

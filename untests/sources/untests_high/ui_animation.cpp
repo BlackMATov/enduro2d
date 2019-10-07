@@ -70,23 +70,272 @@ TEST_CASE("ui_animation") {
     
     safe_world_initializer initializer;
 
-    SECTION("animation") {
+    SECTION("move animation") {
         gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        const v3f from_pos = {1.0f, 2.0f, 0.0f};
+        const v3f to_pos = {20.0f, 5.0f, 0.1f};
+        const secf dur = secf(2.0f);
+        const secf step {1.0f / 60.0f};
+        fl->entity().assign_component<ui_animation>(ui_animation::move()
+            .from(from_pos)
+            .to(to_pos)
+            .duration(dur));
+
+        ui_layout_system lsystem;
+        ui_animation_system asystem;
+
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = step;
+        params.realtime_time = secf(111.72f);
+
+        for ( u32 i = 0; i < 3*60; ++i ) {
+            params.realtime_time += step;
+
+            REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+            REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
+
+            if ( i == 0 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                auto exp = math::lerp(from_pos, to_pos, v3f(step.value / dur.value));
+                REQUIRE(math::approximately(cur, exp, 0.001f));
+            }
+            if ( i > 2*60 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                REQUIRE(math::approximately(cur, to_pos, 0.001f));
+            }
+        }
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
+    }
+    SECTION("sequential animation") {
+        gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        const secf step {1.0f / 60.0f};
+        u32 tick0 = 0;
+        u32 tick1 = 0;
+        bool is_complete = false;
+        fl->entity().assign_component<ui_animation>(ui_animation::sequential()
+            .add(ui_animation::custom([&tick0]() { ++tick0; }).duration(secf(1.0f)))
+            .add(ui_animation::custom([&tick1]() { ++tick1; }).duration(secf(2.0f)))
+            .on_complete([&is_complete, &tick0, &tick1](auto&) {
+                is_complete = ((tick0 >= 60 && tick0 <= 61) && (tick1 >= 120 && tick1 <= 121));
+            }));
+
+        ui_layout_system lsystem;
+        ui_animation_system asystem;
+        
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = step;
+        params.realtime_time = secf(333.93f);
+
+        for ( u32 i = 0; i < 4*60; ++i ) {
+            params.realtime_time += step;
+
+            REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+            REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
+
+            if ( i <= 60 ) {
+                REQUIRE(tick0 == i+1);
+                REQUIRE(tick1 == 0);
+            }
+            if ( i > 60 && i <= 3*60 ) {
+                bool b_tick0 = (tick0 >= 60 && tick0 <= 61);
+                REQUIRE(b_tick0);
+                REQUIRE(tick1 == i - 60);
+            }
+            if ( i > 3*60 ) {
+                bool b_tick0 = (tick0 >= 60 && tick0 <= 61);
+                REQUIRE(b_tick0);
+                bool b_tick1 = (tick1 >= 120 && tick1 <= 121);
+                REQUIRE(b_tick1);
+            }
+        }
+        REQUIRE(is_complete);
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
+    }
+    SECTION("parallel animation") {
+        gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        const secf step {1.0f / 60.0f};
+        u32 tick0 = 0;
+        u32 tick1 = 0;
+        bool is_complete = false;
+        fl->entity().assign_component<ui_animation>(ui_animation::parallel()
+            .add(ui_animation::custom([&tick0]() { ++tick0; }).duration(secf(1.0f)))
+            .add(ui_animation::custom([&tick1]() { ++tick1; }).duration(secf(2.0f)))
+            .on_complete([&is_complete, &tick0, &tick1](auto&) {
+                is_complete = ((tick0 >= 60 && tick0 <= 61) && (tick1 >= 120 && tick1 <= 121));
+            }));
         
         ui_layout_system lsystem;
         ui_animation_system asystem;
-        for ( u32 i = 0;; ++i ) {
+        
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = step;
+        params.realtime_time = secf(44.61f);
+
+        for ( u32 i = 0; i < 4*60; ++i ) {
+            params.realtime_time += step;
+
+            REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+            REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
+
+            if ( i <= 60 ) {
+                REQUIRE(tick0 == i+1);
+                REQUIRE(tick1 == i+1);
+            } else if ( i <= 2*60 ) {
+                bool b_tick0 = (tick0 >= 60 && tick0 <= 61);
+                REQUIRE(b_tick0);
+                REQUIRE(tick1 == i+1);
+            }
+            if ( i > 2*60 ) {
+                bool b_tick0 = (tick0 >= 60 && tick0 <= 61);
+                REQUIRE(b_tick0);
+                bool b_tick1 = (tick1 >= 120 && tick1 <= 121);
+                REQUIRE(b_tick1);
+            }
+        }
+        REQUIRE(is_complete);
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
+    }
+    SECTION("animation callbacks") {
+        gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        u32 tick = 0;
+        bool is_started = false;
+        bool is_completed = false;
+        const secf step {1.0f / 60.0f};
+        fl->entity().assign_component<ui_animation>(
+            ui_animation::custom([&tick]() { ++tick; })
+                .duration(secf(2.0f))
+                .on_start([&tick, &is_started](auto...) { is_started = (tick == 0); })
+                .on_complete([&tick, &is_completed](auto...) { is_completed = (tick >= 120); }));
+
+        ui_layout_system lsystem;
+        ui_animation_system asystem;
+
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = step;
+        params.realtime_time = secf(626.72f);
+
+        for ( u32 i = 0; i < 3*60; ++i ) {
+            params.realtime_time += step;
+
             REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
             REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
         }
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
+        REQUIRE(is_started);
+        REQUIRE(is_completed);
+    }
+    /*SECTION("exception") {
+        gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        
+        fl->entity().assign_component<ui_animation>(
+            ui_animation::custom([](f32, sprite_renderer& spr) { spr.tint(color32::red()); }));
+
+        ui_layout_system lsystem;
+        ui_animation_system asystem;
+        
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = secf(1.0f / 60.0f);
+        params.realtime_time = secf(45.8f);
+        
+        REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+        REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
+
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
+    }*/
+    SECTION("loops") {
+        gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        const v3f from_pos = {1.0f, 2.0f, 0.0f};
+        const v3f to_pos = {20.0f, 5.0f, 0.1f};
+        const secf dur = secf(1.0f);
+        const secf step {1.0f / 60.0f};
+        fl->entity().assign_component<ui_animation>(ui_animation::move()
+            .from(from_pos)
+            .to(to_pos)
+            .duration(dur)
+            .repeat(1));
+
+        ui_layout_system lsystem;
+        ui_animation_system asystem;
+
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = step;
+        params.realtime_time = secf(391.62f);
+
+        for ( u32 i = 0; i < 3*60; ++i ) {
+            params.realtime_time += step;
+
+            REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+            REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
+
+            if ( i == 0 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                auto exp = math::lerp(from_pos, to_pos, v3f(step.value / dur.value));
+                REQUIRE(math::approximately(cur, exp, 0.001f));
+            }
+            if ( i == 60 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                REQUIRE(math::approximately(cur, to_pos, 0.001f));
+            }
+            if ( i == 61 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                auto exp = math::lerp(from_pos, to_pos, v3f(step.value / dur.value));
+                REQUIRE(math::approximately(cur, exp, 0.001f));
+            }
+            if ( i == 121 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                REQUIRE(math::approximately(cur, to_pos, 0.001f));
+            }
+        }
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
+    }
+    SECTION("inversed repeat") {
+        gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        const v3f from_pos = {1.0f, 2.0f, 0.0f};
+        const v3f to_pos = {20.0f, 5.0f, 0.1f};
+        const secf dur = secf(1.0f);
+        const secf step {1.0f / 60.0f};
+        fl->entity().assign_component<ui_animation>(ui_animation::move()
+            .from(from_pos)
+            .to(to_pos)
+            .duration(dur)
+            .repeat(1)
+            .repeat_inversed());
+
+        ui_layout_system lsystem;
+        ui_animation_system asystem;
+
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = step;
+        params.realtime_time = secf(391.62f);
+
+        for ( u32 i = 0; i < 3*60; ++i ) {
+            params.realtime_time += step;
+
+            REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+            REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
+
+            if ( i == 0 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                auto exp = math::lerp(from_pos, to_pos, v3f(step.value / dur.value));
+                REQUIRE(math::approximately(cur, exp, 0.001f));
+            }
+            if ( i == 60 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                REQUIRE(math::approximately(cur, to_pos, 0.001f));
+            }
+            if ( i == 61 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                auto exp = math::lerp(from_pos, to_pos, v3f(1.0f - step.value / dur.value));
+                REQUIRE(math::approximately(cur, exp, 0.001f));
+            }
+            if ( i == 121 ) {
+                auto cur = fl->get_component<actor>().get().node()->translation();
+                REQUIRE(math::approximately(cur, from_pos, 0.001f));
+            }
+        }
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
     }
 
-    // test any animation
-    // test sequential
-    // test parallel
-    // test loops (with and without inversion)
-    // test easing
-    // test on start callback
-    // test exception
+    // delay
     // multi component animator ?
 }

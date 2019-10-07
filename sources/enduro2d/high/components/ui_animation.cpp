@@ -20,9 +20,9 @@ namespace
         : anim_i(b)
         , animations_(std::move(anims)) {}
 
-        bool update_(secf time, ecs::entity& e) override {
+        bool update_(secf time, secf delta, ecs::entity& e) override {
             for ( auto i = animations_.begin(); i != animations_.end(); ) {
-                if ( (*i)->update(time, e) ) {
+                if ( (*i)->update(time, delta, e) ) {
                     ++i;
                 } else {
                     i = animations_.erase(i);
@@ -42,9 +42,9 @@ namespace
         : anim_i(b)
         , animations_(std::move(anims)) {}
         
-        bool update_(secf time, ecs::entity& e) override {
+        bool update_(secf time, secf delta, ecs::entity& e) override {
             if ( !animations_.empty() ) {
-                if ( animations_.front()->update(time, e) ) {
+                if ( !animations_.front()->update(time, delta, e) ) {
                     animations_.erase(animations_.begin());
                 }
                 return true;
@@ -69,16 +69,21 @@ namespace
         , update_fn_(update_fn)
         , start_fn_(start_fn)
         , duration_(b.duration())
-        , easing_(b.easing()) {}
+        , easing_(b.easing()) {
+            E2D_ASSERT(easing_);
+        }
         
-        bool update_(secf time, ecs::entity& e) override {
+        bool update_(secf time, secf, ecs::entity& e) override {
+            f32 f = 1.0f;
+            bool result = false;
             if ( time < duration_ ) {
-                f32 f = 1.0f - (time.value / duration_.value);
-                f = easing_(f);
-                update_fn_(data_, f, e);
-                return true;
+                f = (time.value / duration_.value);
+                result = true;
             }
-            return false;
+            f = easing_(f);
+            f = inversed_ ? 1.0f - f : f;
+            update_fn_(data_, f, e);
+            return result;
         }
 
         bool start_(ecs::entity& e) override {
@@ -260,39 +265,51 @@ namespace e2d
     , on_complete_(std::move(b.on_complete_))
     , on_step_complete_(std::move(b.on_step_complete_))
     , loops_(b.loops_)
-    , delay_(b.delay_) {}
+    , delay_(b.delay_)
+    , repeat_inversed_(b.repeat_inversed_) {}
 
-    bool ui_animation::anim_i::update(secf t, ecs::entity& e) {
+    bool ui_animation::anim_i::update(secf t, secf dt, ecs::entity& e) {
         if ( canceled_ ) {
             return false;
         }
         if ( started_ ) {
-            t -= start_time_;
-            if ( update_(t, e) ) {
+            secf rel = t - start_time_;
+            if ( update_(rel, dt, e) ) {
                 // on update
+                return true;
             } else {
-                if ( --loops_ == 0 ) {
+                constexpr auto infinite_loops = std::numeric_limits<decltype(loops_)>::max();
+                if ( loops_ != infinite_loops && --loops_ < 0 ) {
                     complete_(e);
-                    safe_call(on_complete_, e);
+                    if ( on_complete_ ) {
+                        on_complete_(e);
+                    }
                     return false;
                 } else {
-                    end_(t, e);
-                    safe_call(on_step_complete_, e);
+                    end_(rel, e);
+                    if ( on_step_complete_ ) {
+                        on_step_complete_(e);
+                    }
+                    inversed_ = repeat_inversed_ ? !inversed_ : inversed_;
+                    start_time_ = t;
+                    return true;
                 }
             }
         } else {
-            delay_ -= t;
+            delay_ -= dt;
             if ( delay_ > secf(0.f) ) {
                 return true;
             }
-            start_time_ = t - delay_;
+            start_time_ = t + delay_;
             if ( !start_(e) ) {
                 return false;
             }
             started_ = true;
-            safe_call(on_start_, e);
+            if ( on_start_ ) {
+                on_start_(e);
+            }
+            return update(t, dt, e);
         }
-        return true;
     }
 
     void ui_animation::anim_i::cancel() {

@@ -109,14 +109,14 @@ namespace e2d
     using func_info = typename detail::func_info_2_<T>::type;
 
     template < typename FN, typename... Args >
-    void safe_call(FN&& fn, Args&& ...args) {
-        using type = std::remove_reference_t<FN>;
+    auto safe_call(FN&& fn, Args&& ...args) {
+        using type = std::remove_reference_t<std::remove_cv_t<FN>>;
         if constexpr( std::is_function_v<type> ) {
             if ( fn ) {
-                fn(std::forward<Args>(args)...);
+                return fn(std::forward<Args>(args)...);
             }
         } else if constexpr( std::is_object_v<type> ) {
-            fn(std::forward<Args>(args)...);
+            return fn(std::forward<Args>(args)...);
         } else {
             static_assert(false, "unsupported invocable type");
         }

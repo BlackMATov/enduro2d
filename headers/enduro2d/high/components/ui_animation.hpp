@@ -38,6 +38,9 @@ namespace e2d
         ui_animation& operator=(ui_animation&&) noexcept = default;
         
         template < typename A >
+        ui_animation(A&& value);
+
+        template < typename A >
         std::enable_if_t<std::is_base_of_v<anim_builder, A>, ui_animation&> set_animation(A&& value) noexcept;
         ui_animation& set_animation(std::unique_ptr<anim_i> value) noexcept;
         anim_i* animation() const noexcept;
@@ -55,16 +58,19 @@ namespace e2d
     class ui_animation::anim_i {
     public:
         anim_i(anim_builder&);
-        bool update(secf t, ecs::entity& e);
+        bool update(secf t, secf dt, ecs::entity& e);
         void cancel();
     protected:
-        virtual bool update_(secf time, ecs::entity& e) = 0;
+        virtual bool update_(secf time, secf delta, ecs::entity& e) = 0;
         virtual bool start_(ecs::entity&) { return true; }
         virtual void end_(secf, ecs::entity&) {}
         virtual void complete_(ecs::entity&) {}
+    protected:
+        bool inversed_ = false;
     private:
         bool started_ = false;
         bool canceled_ = false;
+        const bool repeat_inversed_;
         secf delay_;
         secf start_time_;
         i32 loops_ = 0;
@@ -79,12 +85,13 @@ namespace e2d
 
     class ui_animation::anim_builder {
         friend class ui_animation::anim_i;
-    private:
+    protected:
         std::function<void(ecs::entity&)> on_start_;
         std::function<void(ecs::entity&)> on_complete_;
         std::function<void(ecs::entity&)> on_step_complete_; // when loop cycle complete
         i32 loops_ = 0;
         secf delay_ {0.0f};
+        bool repeat_inversed_ = false;
     };
 
     template < typename T >
@@ -99,8 +106,11 @@ namespace e2d
         template < typename F >
         T&& on_step_complete(F&& fn) &&;
 
-        T&& loops(i32 count) && noexcept;
+        T&& repeat(u32 count) && noexcept;
         T&& delay(secf value) && noexcept;
+        
+        T&& infinite_loops() && noexcept;
+        T&& repeat_inversed() && noexcept;
     };
 
     //
@@ -169,14 +179,17 @@ namespace e2d
         , duration_(duration)
         , easing_(easing) {}
         
-        bool update_(secf time, ecs::entity& e) override {
+        bool update_(secf time, secf, ecs::entity& e) override {
+            f32 f = 1.0f;
+            bool result = false;
             if ( time < duration_ ) {
-                f32 f = 1.0f - (time.value / duration_.value);
-                f = easing_(f);
-                update_fn_(f, e);
-                return true;
+                f = (time.value / duration_.value);
+                result = true;
             }
-            return false;
+            f = easing_(f);
+            f = inversed_ ? 1.0f - f : f;
+            update_fn_(f, e);
+            return result;
         }
     private:
         UpdateFn update_fn_;
@@ -331,11 +344,23 @@ namespace e2d
     }
     
     template < typename T >
-    T&& ui_animation::anim_builder_t<T>::loops(i32 count) && noexcept {
-        loops_ = count;
+    T&& ui_animation::anim_builder_t<T>::repeat(u32 count) && noexcept {
+        loops_ = math::numeric_cast<i32>(count);
         return std::move(static_cast<T&>(*this));
     }
     
+    template < typename T >
+    T&& ui_animation::anim_builder_t<T>::infinite_loops() && noexcept {
+        loops_ = std::numeric_limits<decltype(loops_)>::max();
+        return std::move(static_cast<T&>(*this));
+    }
+    
+    template < typename T >
+    T&& ui_animation::anim_builder_t<T>::repeat_inversed() && noexcept {
+        repeat_inversed_ = true;
+        return std::move(static_cast<T&>(*this));
+    }
+
     template < typename T >
     T&& ui_animation::anim_builder_t<T>::delay(secf value) && noexcept {
         delay_ = value;
@@ -388,7 +413,15 @@ namespace e2d
         animations_.push_back(std::forward<A>(value).build());
         return std::move(*this);
     }
-    
+}
+
+namespace e2d
+{
+    template < typename A >
+    ui_animation::ui_animation(A&& value) {
+        set_animation(std::forward<A>(value));
+    }
+
     template < typename A >
     std::enable_if_t<std::is_base_of_v<ui_animation::anim_builder, A>, ui_animation&>
     ui_animation::set_animation(A&& value) noexcept {
