@@ -249,7 +249,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
 
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
             REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
@@ -264,7 +264,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
 
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
             REQUIRE_FALSE(fl2->get_component<fixed_layout::dirty>().exists());
@@ -289,7 +289,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(sl->get_component<stack_layout::dirty>().exists());
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
@@ -322,7 +322,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(sl->get_component<stack_layout::dirty>().exists());
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
@@ -358,7 +358,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(sl->get_component<stack_layout::dirty>().exists());
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
@@ -399,7 +399,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
 
             REQUIRE_FALSE(sl->get_component<stack_layout::dirty>().exists());
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
@@ -426,7 +426,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
@@ -453,7 +453,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
@@ -490,7 +490,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
             REQUIRE_FALSE(sl->get_component<auto_layout::dirty>().exists());
@@ -517,7 +517,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
         
@@ -542,7 +542,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
             REQUIRE_FALSE(fl1->get_component<fixed_layout::dirty>().exists());
@@ -568,7 +568,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
             REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
@@ -592,7 +592,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
             REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
@@ -616,7 +616,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
             REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
@@ -640,7 +640,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
             REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
@@ -668,7 +668,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
             REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
@@ -694,7 +694,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
             REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
@@ -717,7 +717,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(dl->get_component<dock_layout::dirty>().exists());
         
@@ -741,7 +741,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(il->get_component<image_layout::dirty>().exists());
 
@@ -767,7 +767,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(il->get_component<image_layout::dirty>().exists());
 
@@ -791,7 +791,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(il->get_component<image_layout::dirty>().exists());
 
@@ -821,7 +821,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<auto_layout::dirty>().exists());
             REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
@@ -844,7 +844,7 @@ TEST_CASE("ui_layout") {
         
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(root->get_component<fixed_layout::dirty>().exists());
             REQUIRE_FALSE(pl->get_component<padding_layout::dirty>().exists());
@@ -865,7 +865,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(ml->get_component<margin_layout::dirty>().exists());
             REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
@@ -890,7 +890,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(ml->get_component<margin_layout::dirty>().exists());
             REQUIRE_FALSE(fl->get_component<fixed_layout::dirty>().exists());
@@ -913,7 +913,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<anchor_layout::dirty>().exists());
         
@@ -934,7 +934,7 @@ TEST_CASE("ui_layout") {
 
         ui_layout_system system;
         for ( u32 i = 0; i < 9; ++i ) {
-            REQUIRE_NOTHROW(system.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(system.process(the<world>().registry()));
         
             REQUIRE_FALSE(al->get_component<anchor_layout::dirty>().exists());
         

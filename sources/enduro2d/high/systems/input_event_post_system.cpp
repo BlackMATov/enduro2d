@@ -136,7 +136,7 @@ namespace e2d
 
     input_event_post_system::~input_event_post_system() noexcept = default;
     
-    void input_event_post_system::process(ecs::registry& owner, ecs::event_ref) {
+    void input_event_post_system::process(ecs::registry& owner) {
         state_->process(owner);
     }
 }

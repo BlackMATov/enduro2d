@@ -13,14 +13,14 @@ namespace e2d
     class spine_system final : public ecs::system {
     public:
         void add_systems(ecs::registry& owner) const override;
-        void process(ecs::registry& owner, ecs::event_ref event) override; 
+        void process(ecs::registry& owner) override; 
     };
 
     class spine_pre_system final : public ecs::system {
     public:
         spine_pre_system();
         ~spine_pre_system() noexcept;
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;
@@ -30,7 +30,7 @@ namespace e2d
     public:
         spine_post_system();
         ~spine_post_system() noexcept;
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;

@@ -123,7 +123,7 @@ namespace e2d
             switch ( ev_type ) {
                 case input_event_type::mouse_move:
                 case input_event_type::touch_down:
-                    owner.enque_event(input_event_system::raycast_evt());
+                    owner.enque_event<input_event_system::raycast_evt>();
                     break;
 
                 case input_event_type::touch_up:
@@ -143,7 +143,7 @@ namespace e2d
                     break;
             }
         }
-        owner.enque_event(input_event_system::post_update_evt());
+        owner.enque_event<input_event_system::post_update_evt>();
     }
 
     //
@@ -155,7 +155,7 @@ namespace e2d
 
     input_event_pre_system::~input_event_pre_system() = default;
 
-    void input_event_pre_system::process(ecs::registry& owner, ecs::event_ref) {
+    void input_event_pre_system::process(ecs::registry& owner) {
         state_->process(owner);
     }
 }

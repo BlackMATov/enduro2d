@@ -14,7 +14,7 @@ namespace e2d
     public:
         render_system();
         ~render_system() noexcept;
-        void process(ecs::registry& owner, ecs::event_ref) override;
+        void process(ecs::registry& owner) override;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;

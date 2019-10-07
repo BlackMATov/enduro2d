@@ -173,8 +173,8 @@ namespace
 
 namespace e2d
 {
-    void ui_style_system::process(ecs::registry& owner, ecs::event_ref event) {
-        const auto& changed = event.cast<ecs::after_event<ui_system::update_controllers_evt>>().data.changed;
+    void ui_style_system::process(ecs::registry& owner) {
+        /*const auto& changed = event.cast<ecs::after_event<ui_system::update_controllers_evt>>().data.changed;
         propagate_new_style(owner, changed);
 
         update_sprite_color_style(owner);
@@ -182,6 +182,6 @@ namespace e2d
         update_label_color_style(owner);
         update_label_font_style(owner);
         update_sprite_style(owner);
-        update_sprite_9p_style(owner);
+        update_sprite_9p_style(owner);*/
     }
 }

@@ -50,12 +50,12 @@ namespace
 
     class update_frame_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner, ecs::event_ref) override {
-            owner.enque_event(world_ev::pre_update());
-            owner.enque_event(world_ev::update());
-            owner.enque_event(world_ev::update_input());
-            owner.enque_event(world_ev::update_ui());
-            owner.enque_event(world_ev::post_update());
+        void process(ecs::registry& owner) override {
+            owner.enque_event<world_ev::pre_update>();
+            owner.enque_event<world_ev::update>();
+            owner.enque_event<world_ev::update_input>();
+            owner.enque_event<world_ev::update_ui>();
+            owner.enque_event<world_ev::post_update>();
         }
     };
 
@@ -84,13 +84,13 @@ namespace
         }
 
         bool frame_tick() final {
-            the<world>().registry().process_systems(world_ev::update_frame());
+            the<world>().registry().process_systems<world_ev::update_frame>();
             return !the<window>().should_close()
                 || (application_ && !application_->on_should_close());
         }
 
         void frame_render() final {
-            the<world>().registry().process_systems(world_ev::render_frame());
+            the<world>().registry().process_systems<world_ev::render_frame>();
         }
     private:
         starter::application_uptr application_;

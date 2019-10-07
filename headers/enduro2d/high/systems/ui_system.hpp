@@ -22,32 +22,32 @@ namespace e2d
         struct update_animation_evt {};
     public:
         void add_systems(ecs::registry& owner) const override;
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     };
 
     class ui_style_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     };
     
     class ui_layout_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     };
 
     class ui_controller_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     };
 
     class ui_controller_event_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     };
     
     class ui_animation_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     private:
         f32 time_scale_ = 1.0f;
     };

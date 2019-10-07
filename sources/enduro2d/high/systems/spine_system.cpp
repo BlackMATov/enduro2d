@@ -14,6 +14,6 @@ namespace e2d
         owner.assign_system<spine_post_system, world_ev::post_update>();
     }
 
-    void spine_system::process(ecs::registry&, ecs::event_ref) {
+    void spine_system::process(ecs::registry&) {
     }
 }

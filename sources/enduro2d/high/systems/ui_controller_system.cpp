@@ -111,8 +111,8 @@ namespace
 
 namespace e2d
 {
-    void ui_controller_system::process(ecs::registry& owner, ecs::event_ref event) {
-        auto& changed = event.cast<ui_system::update_controllers_evt>().changed;
+    void ui_controller_system::process(ecs::registry& owner) {
+        /*auto& changed = event.cast<ui_system::update_controllers_evt>().changed;
 
         // process touch down event
         owner.for_joined_components<touch_down_event, ui_style>(
@@ -137,6 +137,6 @@ namespace e2d
 
         process_buttons(owner, changed);
         process_selectable(owner, changed);
-        process_draggable(owner, changed);
+        process_draggable(owner, changed);*/
     }
 }

@@ -16,8 +16,8 @@ namespace e2d
         owner.assign_system<ui_animation_system, update_animation_evt>();
     }
 
-    void ui_system::process(ecs::registry& owner, ecs::event_ref) {
-        owner.enque_event(update_controllers_evt());
-        owner.enque_event(update_layouts_evt());
+    void ui_system::process(ecs::registry& owner) {
+        owner.enque_event<update_controllers_evt>();
+        owner.enque_event<update_layouts_evt>();
     }
 }

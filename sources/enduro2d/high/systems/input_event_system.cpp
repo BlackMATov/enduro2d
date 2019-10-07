@@ -16,7 +16,7 @@ namespace e2d
         owner.assign_system<shape_projection_system, ecs::before_event<raycast_evt>>(); // TODO: move somewhere
     }
 
-    void input_event_system::process(ecs::registry& owner, ecs::event_ref) {
-        owner.enque_event(pre_update_evt());
+    void input_event_system::process(ecs::registry& owner) {
+        owner.enque_event<pre_update_evt>();
     }
 }

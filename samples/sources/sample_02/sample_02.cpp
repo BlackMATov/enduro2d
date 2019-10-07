@@ -208,11 +208,12 @@ namespace
                 framebuffer_size.x / framebuffer_size.y,
                 0.1f,
                 100.f);
-
+            
+            const auto t = the<engine>().time().value;
             const auto MVP =
-                math::make_rotation_matrix4(make_rad(the<engine>().time()), 1.f, 0.f, 0.f) *
-                math::make_rotation_matrix4(make_rad(the<engine>().time()), 0.f, 1.f, 0.f) *
-                math::make_rotation_matrix4(make_rad(the<engine>().time()), 0.f, 0.f, 1.f) *
+                math::make_rotation_matrix4(make_rad(t), 1.f, 0.f, 0.f) *
+                math::make_rotation_matrix4(make_rad(t), 0.f, 1.f, 0.f) *
+                math::make_rotation_matrix4(make_rad(t), 0.f, 0.f, 1.f) *
                 math::make_translation_matrix4(0.f, 0.f, 0.f) *
                 math::make_look_at_lh_matrix4({0.f, 0.f, -2.f}, v3f::zero(), v3f::unit_y()) *
                 projection;

@@ -9,7 +9,7 @@
 
 namespace e2d
 {
-    void ui_controller_event_system::process(ecs::registry& owner, ecs::event_ref) {
+    void ui_controller_event_system::process(ecs::registry& owner) {
         owner.remove_all_components<ui_controller_events>();
     }
 }

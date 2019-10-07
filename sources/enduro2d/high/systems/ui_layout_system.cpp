@@ -795,7 +795,7 @@ namespace
 
 namespace e2d
 {
-    void ui_layout_system::process(ecs::registry& owner, ecs::event_ref) {
+    void ui_layout_system::process(ecs::registry& owner) {
         register_update_fn(owner);
         update_layouts(owner);
         update_shape_size(owner);

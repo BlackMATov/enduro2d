@@ -17,14 +17,14 @@ namespace e2d
         struct post_update_evt {};
     public:
         void add_systems(ecs::registry& owner) const override;
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     };
 
     class input_event_pre_system final : public ecs::system {
     public:
         input_event_pre_system();
         ~input_event_pre_system() noexcept;
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;
@@ -32,14 +32,14 @@ namespace e2d
     
     class input_event_raycast_system final : public ecs::system {
     public:
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     };
     
     class input_event_post_system final : public ecs::system {
     public:
         input_event_post_system();
         ~input_event_post_system() noexcept;
-        void process(ecs::registry& owner, ecs::event_ref event) override;
+        void process(ecs::registry& owner) override;
     private:
         class internal_state;
         std::unique_ptr<internal_state> state_;

@@ -181,7 +181,7 @@ namespace
                 framebuffer_size, 0.f, 1.f);
 
             material_.properties()
-                .property("u_time", the<engine>().time())
+                .property("u_time", the<engine>().time().value)
                 .property("u_MVP", projection);
 
             the<render>().execute(render::command_block<64>()

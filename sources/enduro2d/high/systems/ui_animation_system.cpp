@@ -9,7 +9,7 @@
 
 namespace e2d
 {
-    void ui_animation_system::process(ecs::registry& owner, ecs::event_ref) {
+    void ui_animation_system::process(ecs::registry& owner) {
         const secf t = the<engine>().time();
         vector<ecs::entity_id> to_remove;
 

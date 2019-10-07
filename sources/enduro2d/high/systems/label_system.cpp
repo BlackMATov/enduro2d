@@ -398,7 +398,7 @@ namespace e2d
     : state_(new internal_state()) {}
     label_system::~label_system() noexcept = default;
 
-    void label_system::process(ecs::registry& owner, ecs::event_ref) {
+    void label_system::process(ecs::registry& owner) {
         state_->process(owner);
     }
 }

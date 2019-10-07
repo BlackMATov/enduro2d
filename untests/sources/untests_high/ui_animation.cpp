@@ -55,6 +55,7 @@ namespace
             .component<fixed_layout::dirty>();
         node_iptr fl_node = fl->get_component<actor>().get().node();
         fl_node->translation(v3f(pos.x, pos.y, 0.f));
+        return fl;
     }
 
 
@@ -75,8 +76,8 @@ TEST_CASE("ui_animation") {
         ui_layout_system lsystem;
         ui_animation_system asystem;
         for ( u32 i = 0;; ++i ) {
-            REQUIRE_NOTHROW(lsystem.process(the<world>().registry(), ecs::event_ref()));
-            REQUIRE_NOTHROW(asystem.process(the<world>().registry(), ecs::event_ref()));
+            REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+            REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
         }
     }
 
