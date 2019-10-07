@@ -20,9 +20,10 @@ namespace e2d
         class anim_i;
         class anim_builder;
         template < typename T > class anim_builder_t;
-        template < typename T > class value_anim_builder;
+        template < typename T > class property_anim_builder;
         class scale;
         class move;
+        class size;
         class parallel;
         class sequential;
         
@@ -35,9 +36,11 @@ namespace e2d
         ui_animation(const ui_animation&);
         ui_animation(ui_animation&&) noexcept = default;
         ui_animation& operator=(ui_animation&&) noexcept = default;
-
+        
+        template < typename A >
+        std::enable_if_t<std::is_base_of_v<anim_builder, A>, ui_animation&> set_animation(A&& value) noexcept;
+        ui_animation& set_animation(std::unique_ptr<anim_i> value) noexcept;
         anim_i* animation() const noexcept;
-        ui_animation& reset_animation() noexcept;
     private:
         std::unique_ptr<anim_i> anim_;
     };
@@ -101,11 +104,11 @@ namespace e2d
     };
 
     //
-    // ui_animation::value_anim_builder
+    // ui_animation::property_anim_builder
     //
 
     template < typename T >
-    class ui_animation::value_anim_builder : public anim_builder_t<T> {
+    class ui_animation::property_anim_builder : public anim_builder_t<T> {
     public:
         T&& ease(easing_fn fn) && noexcept;
         T&& duration(secf value) && noexcept;
@@ -162,7 +165,7 @@ namespace e2d
             secf duration,
             easing_fn easing)
         : anim_i(b)
-        , update_fn_(std::forward<F>(fn))
+        , update_fn_(std::forward<UpdateFn>(update_fn))
         , duration_(duration)
         , easing_(easing) {}
         
@@ -186,7 +189,7 @@ namespace e2d
     //
 
     template < typename UpdateFn >
-    class ui_animation::custom_impl final : public value_anim_builder<ui_animation::custom_impl<UpdateFn>>
+    class ui_animation::custom_impl final : public property_anim_builder<ui_animation::custom_impl<UpdateFn>>
     {
         template < typename T >
         friend auto ui_animation::custom(T&& fn);
@@ -246,7 +249,7 @@ namespace e2d
     // ui_animation::scale
     //
 
-    class ui_animation::scale final : public value_anim_builder<ui_animation::scale> {
+    class ui_animation::scale final : public property_anim_builder<ui_animation::scale> {
     public:
         scale() = default;
 
@@ -266,7 +269,7 @@ namespace e2d
     // ui_animation::move
     //
 
-    class ui_animation::move final : public value_anim_builder<ui_animation::move> {
+    class ui_animation::move final : public property_anim_builder<ui_animation::move> {
     public:
         move() = default;
 
@@ -277,6 +280,30 @@ namespace e2d
     private:
         std::optional<v3f> from_pos_;
         std::optional<v3f> to_pos_;
+    };
+
+    //
+    // ui_animation::size
+    //
+
+    class ui_animation::size final : public property_anim_builder<ui_animation::size> {
+    public:
+        size() = default;
+
+        ui_animation::size&& from(const v2f& value) && noexcept;
+        ui_animation::size&& to(const v2f& value) && noexcept;
+        
+        ui_animation::size&& from_width(f32 value) && noexcept;
+        ui_animation::size&& to_width(f32 value) && noexcept;
+        ui_animation::size&& from_height(f32 value) && noexcept;
+        ui_animation::size&& to_height(f32 value) && noexcept;
+        
+        [[nodiscard]] std::unique_ptr<anim_i> build() &&;
+    private:
+        std::optional<f32> from_width_;
+        std::optional<f32> to_width_;
+        std::optional<f32> from_height_;
+        std::optional<f32> to_height_;
     };
 }
 
@@ -319,25 +346,25 @@ namespace e2d
 namespace e2d
 {
     template < typename T >
-    T&& ui_animation::value_anim_builder<T>::duration(secf value) && noexcept {
+    T&& ui_animation::property_anim_builder<T>::duration(secf value) && noexcept {
         duration_ = value;
         return std::move(static_cast<T&>(*this));
     }
 
     template < typename T >
-    T&& ui_animation::value_anim_builder<T>::ease(easing_fn fn) && noexcept {
+    T&& ui_animation::property_anim_builder<T>::ease(easing_fn fn) && noexcept {
         E2D_ASSERT(fn);
         easing_ = fn;
         return std::move(static_cast<T&>(*this));
     }
     
     template < typename T >
-    ui_animation::easing_fn ui_animation::value_anim_builder<T>::easing() const noexcept {
+    ui_animation::easing_fn ui_animation::property_anim_builder<T>::easing() const noexcept {
         return easing_;
     }
     
     template < typename T >
-    secf ui_animation::value_anim_builder<T>::duration() const noexcept {
+    secf ui_animation::property_anim_builder<T>::duration() const noexcept {
         return duration_;
     }
 }
@@ -360,5 +387,11 @@ namespace e2d
     ui_animation::sequential::add(A&& value) && {
         animations_.push_back(std::forward<A>(value).build());
         return std::move(*this);
+    }
+    
+    template < typename A >
+    std::enable_if_t<std::is_base_of_v<ui_animation::anim_builder, A>, ui_animation&>
+    ui_animation::set_animation(A&& value) noexcept {
+        return set_animation(std::forward<A>(value).build());
     }
 }

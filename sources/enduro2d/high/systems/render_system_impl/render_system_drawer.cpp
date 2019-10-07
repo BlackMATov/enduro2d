@@ -67,7 +67,7 @@ namespace e2d::render_system_impl
             .property(matrix_v_property_hash, m_v)
             .property(matrix_p_property_hash, m_p)
             .property(matrix_vp_property_hash, m_v * m_p)
-            .property(time_property_hash, engine.time());
+            .property(time_property_hash, engine.time().value);
 
         render.execute(render::command_block<3>()
             .add_command(render::target_command(cam.target()))

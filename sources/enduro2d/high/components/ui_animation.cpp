@@ -56,11 +56,11 @@ namespace
     };
 
     template < typename UpdateFn, typename StartFn, typename Data >
-    class value_anim : public ui_animation::anim_i {
+    class property_anim : public ui_animation::anim_i {
     public:
         template < typename T >
-        value_anim(
-            ui_animation::value_anim_builder<T>& b,
+        property_anim(
+            ui_animation::property_anim_builder<T>& b,
             Data&& data,
             UpdateFn&& update_fn,
             StartFn&& start_fn)
@@ -93,148 +93,160 @@ namespace
     };
     
     template < typename T, typename UpdateFn, typename StartFn, typename Data >
-    auto make_value_anim(
-        ui_animation::value_anim_builder<T>& b,
+    [[nodiscard]] auto make_property_anim(
+        ui_animation::property_anim_builder<T>& b,
         Data&& data,
         UpdateFn&& update_fn,
         StartFn&& start_fn)
     {
-        using value_anim_t = value_anim<
+        using value_anim_t = property_anim<
             std::remove_reference_t<UpdateFn>,
             std::remove_reference_t<StartFn>,
             std::remove_reference_t<Data>>;
 
-        return std::unique_ptr<ui_animation::anim_i>(new value_anim(
+        return std::unique_ptr<ui_animation::anim_i>(new property_anim(
             b,
             std::forward<Data>(data),
             std::forward<UpdateFn>(update_fn),
             std::forward<StartFn>(start_fn)));
     }
-    
+
     template < typename D, typename F >
-    auto start_fn_adaptor(F&& fn) {
+    [[nodiscard]] auto start_fn_adaptor(F&& fn) {
         // TODO
         return std::forward<F>(fn);
     }
 
     template < typename D, typename F >
-    auto update_fn_adaptor(F&& fn) {
+    [[nodiscard]] auto default_start_fn() {
         using fi = func_info<F>;
-        static_assert(std::tuple_size_v<fi::args> < 3);
-
-        if constexpr( std::tuple_size_v<fi::args> == 0 ) {
-            return
-                [fn = std::forward<F>(fn)](const D&, f32, ecs::entity&) mutable {
-                    fn();
-                };
-        }
-        if constexpr( std::tuple_size_v<fi::args> == 1 ) {
-            static_assert(std::is_same_v<typename std::tuple_element<0, fi::args>::type, f32>);
-            return
-                [fn = std::forward<F>(fn)](const D&, f32 f, ecs::entity&) mutable {
-                    fn(f);
-                };
-        }
-        if constexpr( std::tuple_size_v<fi::args> == 2 ) {
-            using second_t = std::remove_reference_t<std::remove_cv_t<typename std::tuple_element<1, fi::args>::type>>;
-            static_assert(std::is_same_v<typename std::tuple_element<0, fi::args>::type, f32>);
-
-            if constexpr( std::is_same_v<second_t, ecs::entity> ) {
-                return std::forward<F>(fn);
-            } else {
-                // second argument is component type
+        constexpr size_t size = std::tuple_size_v<fi::args>;
+        if ( size > 0 ) {
+            using last_t = std::remove_reference_t<std::remove_cv_t<typename std::tuple_element<size-1, fi::args>::type>>;
+            if constexpr( std::is_same_v<last_t, ecs::entity> ) {
+                return [](D& d, ecs::entity&) { return true; };
+            } else if constexpr( std::is_same_v<last_t, actor> ) {
                 return
-                    [fn = std::forward<F>(fn)](const D&, f32 f, ecs::entity& e) mutable {
-                        auto& comp = e.get_component<second_t>();
-                        fn(d, f, comp);
+                    [](D& d, ecs::entity& e) {
+                        auto* act = e.find_component<actor>();
+                        return act && act->node();
+                    };
+            } else {
+                return
+                    [](D& d, ecs::entity& e) {
+                        return e.find_component<last_t>() != nullptr;
                     };
             }
         }
     }
 
+    template < typename T >
+    struct tuple_pop_front_ {};
+
+    template < typename A0, typename... An >
+    struct tuple_pop_front_<std::tuple<A0, An...>> {
+        using type = std::tuple<An...>;
+    };
+
+    template < typename T >
+    using tuple_pop_front = typename tuple_pop_front_<T>::type;
+
+    template < typename... Ts >
+    [[nodiscard]] auto get_components_from_tuple(ecs::entity& e, std::tuple<Ts...>*) {
+        return e.get_components<std::remove_reference_t<std::remove_cv_t<Ts>>...>();
+    }
+
+    template < typename D, typename F >
+    [[nodiscard]] auto update_fn_adaptor(F&& fn) {
+        using fi = func_info<F>;
+
+        if constexpr( std::tuple_size_v<fi::args> == 0 ) {
+            return
+                [fn = std::forward<F>(fn)](D&, f32, ecs::entity&) mutable {
+                    fn();
+                };
+        } else if constexpr( std::tuple_size_v<fi::args> == 2 ) {
+            using first_t = std::remove_reference_t<std::remove_cv_t<typename std::tuple_element<0, fi::args>::type>>;
+            using second_t = std::remove_reference_t<std::remove_cv_t<typename std::tuple_element<1, fi::args>::type>>;
+
+            if constexpr( std::is_same_v<first_t, D> && std::is_same_v<second_t, f32> ) {
+                // data, factor
+                return
+                    [fn = std::forward<F>(fn)](D& d, f32 f, ecs::entity&) mutable {
+                        fn(d, f);
+                    };
+            } else if constexpr( std::is_same_v<first_t, f32> && std::is_same_v<second_t, ecs::entity> ) {
+                // factor, entity
+                return
+                    [fn = std::forward<F>(fn)](D&, f32 f, ecs::entity& e) mutable {
+                        fn(f, e);
+                    };
+            } else if constexpr( std::is_same_v<first_t, f32> ) {
+                // factor, component
+                return
+                    [fn = std::forward<F>(fn)](D&, f32 f, ecs::entity& e) mutable {
+                        auto& c = e.get_component<second_t>();
+                        fn(f, c);
+                    };
+            }
+        } else if constexpr( std::tuple_size_v<fi::args> == 3 ) {
+            using first_t = std::remove_reference_t<std::remove_cv_t<typename std::tuple_element<0, fi::args>::type>>;
+            using second_t = std::remove_reference_t<std::remove_cv_t<typename std::tuple_element<1, fi::args>::type>>;
+            using third_t = std::remove_reference_t<std::remove_cv_t<typename std::tuple_element<2, fi::args>::type>>;
+            
+            if constexpr( std::is_same_v<first_t, D> && std::is_same_v<second_t, f32> && std::is_same_v<third_t, ecs::entity> ) {
+                // data, factor, entity
+                return std::forward<F>(fn);
+            }
+            else if constexpr( std::is_same_v<first_t, D> && std::is_same_v<second_t, f32> ) {
+                // data, factor, component
+                return
+                    [fn = std::forward<F>(fn)](D& d, f32 f, ecs::entity& e) mutable {
+                        auto& c = e.get_component<third_t>();
+                        fn(d, f, c);
+                    };
+            }
+        } else {
+            // data, factor, components
+            return
+                [fn = std::forward<F>(fn)](D& d, f32 f, ecs::entity& e) mutable {
+                    using components_t = tuple_pop_front<tuple_pop_front<fi::args>>;
+                    std::apply([&fn, &d, f](auto&&... args){
+                            fn(d, f, std::forward<decltype(args)>(args)...);
+                        },
+                        get_components_from_tuple(e, (components_t*)nullptr));
+                };
+        }
+    }
+
     template < typename T, typename UpdateFn, typename StartFn, typename Data >
-    auto make_value_anim_adaptor(
-        ui_animation::value_anim_builder<T>& b,
+    [[nodiscard]] auto make_property_anim_adaptor(
+        ui_animation::property_anim_builder<T>& b,
         Data&& data,
         UpdateFn&& update_fn,
         StartFn&& start_fn)
     {
         using data_t = std::remove_reference_t<Data>;
-        return make_value_anim(
+        return make_property_anim(
             b,
             std::forward<Data>(data),
             update_fn_adaptor<data_t>(std::forward<UpdateFn>(update_fn)),
             start_fn_adaptor<data_t>(std::forward<StartFn>(start_fn)));
     }
 
-    /*
-    class scale_anim final : public value_anim {
-    public:
-        scale_anim(
-            ui_animation::anim_builder& b,
-            secf duration,
-            easing_fn easing,
-            std::optional<v3f> from_scale,
-            std::optional<v3f> to_scale)
-        : value_anim(b)
-        , from_scale_(from_scale)
-        , to_scale_(to_scale) {}
-        
-        bool update_(secf time, ecs::entity& e) override {
-            auto n = e.get_component<actor>().node();
-            n->scale(math::lerp(*from_scale_, *to_scale_, v3f(f)));
-        }
-
-        bool start_(ecs::entity& e) override {
-            auto* act = e.find_component<actor>();
-            if ( act && act->node() ) {
-                if ( !from_scale_.has_value() ) {
-                    from_scale_ = act->node()->scale();
-                }
-                if ( !to_scale_.has_value() ) {
-                    to_scale_ = act->node()->scale();
-                }
-                return true;
-            }
-            return false;
-        }
-    private:
-        std::optional<v3f> from_scale_;
-        std::optional<v3f> to_scale_;
-    };
-
-    class move_anim final : public ui_animation::anim_i {
-    public:
-        scale_anim(
-            ui_animation::anim_builder& b,
-            std::optional<v3f> from_scale,
-            std::optional<v3f> to_scale)
-        : anim_i(b)
-        , from_pos_(from_pos)
-        , to_pos_(to_pos) {}
-        
-        bool update_(secf time, ecs::entity& e) override {
-            auto n = e.get_component<actor>().node();
-            n->translation(math::lerp(*start_pos_, *end_pos_, v3f(f)));
-        }
-
-        bool start_(ecs::entity& e) override {
-            auto* act = e.find_component<actor>();
-            if ( act && act->node() ) {
-                if ( !start_pos_.has_value() ) {
-                    start_pos_ = act->node()->translation();
-                }
-                if ( !end_pos_.has_value() ) {
-                    end_pos_ = act->node()->translation();
-                }
-                return true;
-            }
-            return false;
-        }
-    private:
-        std::optional<v3f> from_pos_;
-        std::optional<v3f> to_pos_;
-    };*/
+    template < typename T, typename UpdateFn, typename Data >
+    [[nodiscard]] auto make_property_anim_adaptor(
+        ui_animation::property_anim_builder<T>& b,
+        Data&& data,
+        UpdateFn&& update_fn)
+    {
+        using data_t = std::remove_reference_t<Data>;
+        return make_property_anim(
+            b,
+            std::forward<Data>(data),
+            update_fn_adaptor<data_t>(std::forward<UpdateFn>(update_fn)),
+            default_start_fn<data_t, UpdateFn>());
+    }
 }
 
 namespace e2d
@@ -314,9 +326,9 @@ namespace e2d
     ui_animation::anim_i* ui_animation::animation() const noexcept {
         return anim_.get();
     }
-
-    ui_animation& ui_animation::reset_animation() noexcept {
-        anim_.reset(nullptr);
+    
+    ui_animation& ui_animation::set_animation(std::unique_ptr<anim_i> value) noexcept {
+        anim_ = std::move(value);
         return *this;
     }
 
@@ -346,14 +358,24 @@ namespace e2d
     
     std::unique_ptr<ui_animation::anim_i> ui_animation::scale::build() && {
         using data_t = std::pair<std::optional<v3f>, std::optional<v3f>>;
-        return make_value_anim(
+        return make_property_anim_adaptor(
             *this,
             data_t(from_scale_, to_scale_),
             [](data_t& d, f32 f, actor& act) {
                 act.node()->scale(math::lerp(*d.first, *d.second, v3f(f)));
             },
             [](data_t& d, ecs::entity& e) {
-                return true;
+                auto* act = e.find_component<actor>();
+                if ( act && act->node() ) {
+                    if ( !d.first.has_value() ) {
+                        d.first = act->node()->scale();
+                    }
+                    if ( !d.second.has_value() ) {
+                        d.second = act->node()->scale();
+                    }
+                    return true;
+                }
+                return false;
             });
     }
 
@@ -374,13 +396,100 @@ namespace e2d
     
     std::unique_ptr<ui_animation::anim_i> ui_animation::move::build() && {
         using data_t = std::pair<std::optional<v3f>, std::optional<v3f>>;
-        return make_value_anim(
+        return make_property_anim_adaptor(
             *this,
             data_t(from_pos_, to_pos_),
-            [](data_t& d, f32 f, ecs::entity& e) {
+            [](data_t& d, f32 f, actor& act) {
+                act.node()->translation(math::lerp(*d.first, *d.second, v3f(f)));
             },
             [](data_t& d, ecs::entity& e) {
-                return true;
+                auto* act = e.find_component<actor>();
+                if ( act && act->node() ) {
+                    if ( !d.first.has_value() ) {
+                        d.first = act->node()->translation();
+                    }
+                    if ( !d.second.has_value() ) {
+                        d.second = act->node()->translation();
+                    }
+                    return true;
+                }
+                return false;
+            });
+    }
+    
+    //
+    // size
+    //
+
+    ui_animation::size&& ui_animation::size::from(const v2f& value) && noexcept {
+        from_width_ = value.x;
+        from_height_ = value.y;
+        return std::move(*this);
+    }
+
+    ui_animation::size&& ui_animation::size::to(const v2f& value) && noexcept {
+        to_width_ = value.x;
+        to_height_ = value.y;
+        return std::move(*this);
+    }
+        
+    ui_animation::size&& ui_animation::size::from_width(f32 value) && noexcept {
+        from_width_ = value;
+        return std::move(*this);
+    }
+
+    ui_animation::size&& ui_animation::size::to_width(f32 value) && noexcept {
+        to_width_ = value;
+        return std::move(*this);
+    }
+
+    ui_animation::size&& ui_animation::size::from_height(f32 value) && noexcept {
+        from_height_ = value;
+        return std::move(*this);
+    }
+
+    ui_animation::size&& ui_animation::size::to_height(f32 value) && noexcept {
+        to_height_ = value;
+        return std::move(*this);
+    }
+        
+    std::unique_ptr<ui_animation::anim_i> ui_animation::size::build() && {
+        struct data_t {
+            std::optional<f32> from_width;
+            std::optional<f32> to_width;
+            std::optional<f32> from_height;
+            std::optional<f32> to_height;
+        };
+        return make_property_anim_adaptor(
+            *this,
+            data_t{from_width_, to_width_, from_height_, to_height_},
+            [](data_t& d, f32 f, actor& act, fixed_layout& fl) {
+                v2f s = fl.size();
+                if ( d.from_width.has_value() & d.to_width.has_value() ) {
+                    s.x = math::lerp(d.from_width.value(), d.to_width.value(), f);
+                }
+                if ( d.from_height.has_value() & d.to_height.has_value() ) {
+                    s.y = math::lerp(d.from_height.value(), d.to_height.value(), f);
+                }
+                fl.size(s);
+                act.node()->size(s);
+            },
+            [](data_t& d, ecs::entity& e) {
+                auto* act = e.find_component<actor>();
+                auto* fl = e.find_component<fixed_layout>();
+                if ( act && act->node() && fl ) {
+                    const v2f s = fl->size();
+                    if ( d.from_width.has_value() || d.to_width.has_value() ) {
+                        d.from_width = d.from_width.value_or(s.x);
+                        d.to_width = d.to_width.value_or(s.x);
+                    }
+                    if ( d.from_height.has_value() || d.to_height.has_value() ) {
+                        d.from_height = d.from_height.value_or(s.x);
+                        d.to_height = d.to_height.value_or(s.x);
+                    }
+                    return true;
+                }
+                return false;
             });
     }
 }
