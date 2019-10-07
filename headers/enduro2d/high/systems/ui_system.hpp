@@ -12,13 +12,8 @@ namespace e2d
 {
     class ui_system final : public ecs::system {
     public:
-        struct update_controllers_evt {
-            using changed_states = flat_map<ecs::entity_id, ui_style::ui_style_state>;
-            mutable changed_states changed;
-        };
-
+        struct update_controllers_evt {};
         struct update_layouts_evt {};
-        
         struct update_animation_evt {};
     public:
         void add_systems(ecs::registry& owner) const override;

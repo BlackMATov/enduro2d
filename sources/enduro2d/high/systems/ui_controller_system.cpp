@@ -16,24 +16,25 @@ namespace
     using namespace e2d;
 
     using ui_style_state = ui_style::ui_style_state;
-    using changed_states = ui_system::update_controllers_evt::changed_states;
 
-    void process_buttons(ecs::registry& owner, changed_states& changed) {
+    void process_buttons(ecs::registry& owner) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_button, ui_style>(
-        [&changed](ecs::entity e, const touch_up_event& touch, const ui_button&, ui_style& style) {
-            changed[e.id()].set(ui_style_state::touched);
+        [](ecs::entity e, const touch_up_event& touch, const ui_button&, ui_style& style) {
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::touched);
             style.set(ui_style_state::touched, false);
             e.ensure_component<ui_controller_events>()
                 .add_event(ui_button::click_evt{touch.data->center});
         });
     }
 
-    void process_selectable(ecs::registry& owner, changed_states& changed) {
+    void process_selectable(ecs::registry& owner) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_selectable, ui_style>(
-        [&changed](ecs::entity e, const touch_up_event&, ui_selectable& sel, ui_style& style) {
-            changed[e.id()].set(ui_style_state::touched)
+        [](ecs::entity e, const touch_up_event&, ui_selectable& sel, ui_style& style) {
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::touched)
                 .set(ui_style_state::selected);
             style.set(ui_style_state::touched, false);
             sel.selected(!sel.selected());
@@ -43,16 +44,17 @@ namespace
         });
     }
 
-    void process_draggable(ecs::registry& owner, changed_states& changed) {
+    void process_draggable(ecs::registry& owner) {
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_draggable, ui_style>(
-        [&changed](ecs::entity e, const touch_up_event&, ui_draggable& drg, ui_style& style) {
-            changed[e.id()].set(ui_style_state::dragging)
+        [](ecs::entity e, const touch_up_event&, ui_draggable& drg, ui_style& style) {
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::dragging)
                 .set(ui_style_state::touched);
             style.set(ui_style_state::dragging, false);
             style.set(ui_style_state::touched, false);
 
-			if ( drg.started ) {
+            if ( drg.started ) {
                 drg.started = false;
                 e.ensure_component<ui_controller_events>()
                     .add_event(ui_draggable::drag_end_evt{});
@@ -61,7 +63,7 @@ namespace
         
         // process touch move events
         owner.for_joined_components<touch_move_event, ui_draggable, ui_style, actor>(
-        [&changed](ecs::entity e, const touch_move_event& ev, ui_draggable& drg, ui_style& style, actor& act) {
+        [](ecs::entity e, const touch_move_event& ev, ui_draggable& drg, ui_style& style, actor& act) {
             auto mvp = act.node()->world_matrix() * ev.data->view_proj;
             auto mvp_inv = math::inversed(mvp, 0.0f).first;
             const f32 z = 0.0f;
@@ -69,20 +71,21 @@ namespace
             v3f old_point = math::unproject(v3f(ev.data->center + ev.data->delta, z), mvp_inv, ev.data->viewport);
             auto& events = e.ensure_component<ui_controller_events>();
 
-			// start dragging
+            // start dragging
             if ( !drg.started ) {
                 style.set(ui_style_state::dragging, true);
-                changed[e.id()].set(ui_style_state::dragging);
-				drg.started = true;
-				drg.diff = v3f();
+                e.ensure_component<ui_style::style_changed_bits>()
+                    .set(ui_style_state::dragging);
+                drg.started = true;
+                drg.diff = v3f();
                 drg.start_pos = old_point; // touch down point in local coordinates
-				drg.node_pos = act.node()->translation();
+                drg.node_pos = act.node()->translation();
                 events.add_event(ui_draggable::drag_begin_evt{});
             }
             
             v3f delta = (old_point - new_point) * act.node()->scale();
             v3f diff = drg.node_pos - act.node()->translation();
-			drg.diff += diff;
+            drg.diff += diff;
  
             auto test = [&](int c) {
                 // draggable component may be clamped to some area,
@@ -102,7 +105,7 @@ namespace
             test(2);
 
             act.node()->translation(act.node()->translation() + delta);
-			drg.node_pos = act.node()->translation();
+            drg.node_pos = act.node()->translation();
 
             events.add_event(ui_draggable::drag_update_evt{});
         });
@@ -112,31 +115,32 @@ namespace
 namespace e2d
 {
     void ui_controller_system::process(ecs::registry& owner) {
-        /*auto& changed = event.cast<ui_system::update_controllers_evt>().changed;
-
         // process touch down event
         owner.for_joined_components<touch_down_event, ui_style>(
-        [&changed](ecs::entity_id id, const touch_down_event&, ui_style& style) {
+        [](ecs::entity e, const touch_down_event&, ui_style& style) {
             style.set(ui_style_state::touched, true);
-            changed[id].set(ui_style_state::touched);
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::touched);
         });
         
         // process mouse enter event
         owner.for_joined_components<mouse_enter_event, ui_style>(
-        [&changed](ecs::entity_id id, const mouse_enter_event&, ui_style& style) {
+        [](ecs::entity e, const mouse_enter_event&, ui_style& style) {
             style.set(ui_style_state::mouse_over, true);
-            changed[id].set(ui_style_state::mouse_over);
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::mouse_over);
         });
         
         // process mouse leave event
         owner.for_joined_components<mouse_leave_event, ui_style>(
-        [&changed](ecs::entity_id id, const mouse_leave_event&, ui_style& style) {
+        [](ecs::entity e, const mouse_leave_event&, ui_style& style) {
             style.set(ui_style_state::mouse_over, false);
-            changed[id].set(ui_style_state::mouse_over);
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::mouse_over);
         });
 
-        process_buttons(owner, changed);
-        process_selectable(owner, changed);
-        process_draggable(owner, changed);*/
+        process_buttons(owner);
+        process_selectable(owner);
+        process_draggable(owner);
     }
 }

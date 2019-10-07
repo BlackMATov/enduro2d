@@ -116,7 +116,6 @@ namespace
     }
     
     using ui_style_state = ui_style::ui_style_state;
-    using changed_states = ui_system::update_controllers_evt::changed_states;
 
     bool copy_flags_to(ui_style_state& changed, const ui_style& src, ui_style& dst) noexcept {
         changed.flags = ui_style::bits(changed.flags.to_ulong() & src.propagate().flags.to_ulong());
@@ -135,9 +134,9 @@ namespace
         return changed.flags.to_ulong() & style.propagate().flags.to_ulong();
     }
 
-    void propagate_new_style(ecs::registry& owner, const changed_states& changed) {
+    void propagate_new_style(ecs::registry& owner) {
         // clear tag
-        //owner.remove_all_components<ui_style::style_changed_tag>();
+        //owner.remove_all_components<ui_style::style_changed_tag>(); // TODO
 
         // propagate style flags to childs
         struct child_visitor {
@@ -158,30 +157,27 @@ namespace
             ui_style_state changed;
         };
 
-        for ( auto&[id, flags] : changed ) {
-            ecs::entity e(owner, id);
+        owner.for_joined_components<ui_style::style_changed_bits, ui_style, actor>(
+        [](ecs::entity e, const ui_style::style_changed_bits& flags, const ui_style& style, actor& act) {
             e.assign_component<ui_style::style_changed_tag>();
+            child_visitor visitor{style, flags.get()};
+            act.node()->for_each_child(visitor);
+        });
 
-            auto[style, act] = e.find_components<ui_style, actor>();
-            if ( style && act && act->node() && should_propagate(*style, flags) ) {
-                child_visitor visitor{*style, flags};
-                act->node()->for_each_child(visitor);
-            }
-        }
+        owner.remove_all_components<ui_style::style_changed_bits>();
     }
 }
 
 namespace e2d
 {
     void ui_style_system::process(ecs::registry& owner) {
-        /*const auto& changed = event.cast<ecs::after_event<ui_system::update_controllers_evt>>().data.changed;
-        propagate_new_style(owner, changed);
+        propagate_new_style(owner);
 
         update_sprite_color_style(owner);
         update_9patch_color_style(owner);
         update_label_color_style(owner);
         update_label_font_style(owner);
         update_sprite_style(owner);
-        update_sprite_9p_style(owner);*/
+        update_sprite_9p_style(owner);
     }
 }

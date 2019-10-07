@@ -36,9 +36,19 @@ namespace e2d
             bits flags;
         };
 
-        class style_changed_tag {};
         using type = ui_style_state::type;
         using bits = ui_style_state::bits;
+    public:
+        class style_changed_bits final {
+        public:
+            style_changed_bits() = default;
+
+            style_changed_bits& set(type flag, bool value = true) noexcept;
+            ui_style_state get() const noexcept;
+        private:
+            ui_style_state value_;
+        };
+        class style_changed_tag final {};
     public:
         ui_style();
         ui_style(const ui_style&) = default;
@@ -250,5 +260,17 @@ namespace e2d
         
     inline ui_style::ui_style_state ui_style::current() const noexcept {
         return bits_;
+    }
+}
+
+namespace e2d
+{
+    inline ui_style::style_changed_bits& ui_style::style_changed_bits::set(type flag, bool value) noexcept {
+        value_.set(flag, value);
+        return *this;
+    }
+
+    inline ui_style::ui_style_state ui_style::style_changed_bits::get() const noexcept {
+        return value_;
     }
 }
