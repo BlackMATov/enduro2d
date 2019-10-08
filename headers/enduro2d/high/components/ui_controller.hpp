@@ -112,9 +112,16 @@ namespace e2d
         };
     public:
         ui_scrollable() = default;
+        
+        ui_scrollable& separate_axes(bool value) noexcept;
+        bool separate_axes() const noexcept;
+        
+        ui_scrollable& overscroll_enabled(bool value) noexcept;
+        bool overscroll_enabled() const noexcept;
     private:
         // only one axis can be changed when scrolling
         bool separate_axes_ = true;
+        bool overscroll_enabled_ = true;
     };
 
     template <>

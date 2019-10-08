@@ -95,12 +95,31 @@ namespace e2d
 
 namespace e2d
 {
+    ui_scrollable& ui_scrollable::separate_axes(bool value) noexcept {
+        separate_axes_ = value;
+        return *this;
+    }
+
+    bool ui_scrollable::separate_axes() const noexcept {
+        return separate_axes_;
+    }
+        
+    ui_scrollable& ui_scrollable::overscroll_enabled(bool value) noexcept {
+        overscroll_enabled_ = value;
+        return *this;
+    }
+
+    bool ui_scrollable::overscroll_enabled() const noexcept {
+        return overscroll_enabled_;
+    }
+
     const char* factory_loader<ui_scrollable>::schema_source = R"json({
         "type" : "object",
         "required" : [],
         "additionalProperties" : false,
         "properties" : {
-            "separate_axes" : { "type" : "boolean" }
+            "separate_axes" : { "type" : "boolean" },
+            "overscroll_enabled" : { "type" : "boolean" }
         }
     })json";
 
@@ -108,6 +127,7 @@ namespace e2d
         ui_scrollable& component,
         const fill_context& ctx) const
     {
+        // TODO
         E2D_UNUSED(component, ctx);
         return true;
     }

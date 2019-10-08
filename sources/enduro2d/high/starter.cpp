@@ -194,6 +194,7 @@ namespace e2d
             .register_component<ui_button>("ui_button")
             .register_component<ui_selectable>("ui_selectable")
             .register_component<ui_draggable>("ui_draggable")
+            .register_component<ui_scrollable>("ui_scrollable")
             .register_component<ui_controller_event_name>("ui_controller_event_name")
             .register_component<ui_style>("ui_style")
             .register_component<ui_style::style_changed_tag>("ui_style.style_changed_tag")
