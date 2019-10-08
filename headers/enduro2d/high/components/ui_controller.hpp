@@ -45,6 +45,7 @@ namespace e2d
     public:
         ui_selectable() = default;
         
+        // TODO: selected state may be changed without event
         ui_selectable& selected(bool value) noexcept;
         bool selected() const noexcept;
     private:
@@ -71,7 +72,6 @@ namespace e2d
     class ui_draggable final {
     public:
         struct drag_begin_evt {
-
         };
 
         struct drag_update_evt {
@@ -81,12 +81,6 @@ namespace e2d
         };
     public:
         ui_draggable() = default;
-
-    public:
-        v3f start_pos;
-        v3f node_pos;
-        v3f diff;
-        bool started = false;
     };
 
     template <>
@@ -96,6 +90,40 @@ namespace e2d
 
         bool operator()(
             ui_draggable& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}
+
+namespace e2d
+{
+    class ui_scrollable final {
+    public:
+        struct scroll_begin_evt {
+        };
+        struct scroll_update_evt {
+        };
+        struct scroll_end_evt {
+        };
+        struct overscroll_evt {
+        };
+    public:
+        ui_scrollable() = default;
+    private:
+        // only one axis can be changed when scrolling
+        bool separate_axes_ = true;
+    };
+
+    template <>
+    class factory_loader<ui_scrollable> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            ui_scrollable& component,
             const fill_context& ctx) const;
             
         bool operator()(

@@ -95,6 +95,34 @@ namespace e2d
 
 namespace e2d
 {
+    const char* factory_loader<ui_scrollable>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {
+            "separate_axes" : { "type" : "boolean" }
+        }
+    })json";
+
+    bool factory_loader<ui_scrollable>::operator()(
+        ui_scrollable& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<ui_scrollable>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
+
+namespace e2d
+{
     ui_controller_event_name& ui_controller_event_name::set_name(str value) {
         name_ = std::move(value);
         return *this;
