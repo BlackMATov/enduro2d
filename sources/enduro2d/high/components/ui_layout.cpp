@@ -942,12 +942,12 @@ namespace e2d
         "definitions" : {
             "anchor" : {
                 "type" : "object",
-                "required" : [ "position", "offset", "relative_offset" ],
+                "required" : [ "position" ],
                 "additionalProperties" : false,
                 "properties" : {
                     "position" : { "$ref": "#/common_definitions/v2" },
-                    "offset" : { "$ref": "#/common_definitions/v2" },
-                    "relative_offset" : { "type" : "boolean" }
+                    "offset_rel" : { "$ref": "#/common_definitions/v2" },
+                    "offset_px" : { "$ref": "#/common_definitions/v2" }
                 }
             }
         }
@@ -955,20 +955,31 @@ namespace e2d
 
     bool parse_anchor(const rapidjson::Value& root, anchor_layout::anchor& a) {
         E2D_ASSERT(root.HasMember("position"));
-        E2D_ASSERT(root.HasMember("offset"));
-        E2D_ASSERT(root.HasMember("relative_offset"));
 
         if ( !json_utils::try_parse_value(root["position"], a.position) ) {
             the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'anchor.position' property");
             return false;
         }
 
-        if ( !json_utils::try_parse_value(root["offset"], a.offset) ) {
-            the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'anchor.offset' property");
+        if ( root.HasMember("offset_rel") ) {
+            E2D_ASSERT(!root.HasMember("offset_px"));
+            a.relative_offset = true;
+            if ( !json_utils::try_parse_value(root["offset_rel"], a.offset) ) {
+                the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'anchor.offset_rel' property");
+                return false;
+            }
+        } else if ( root.HasMember("offset_px") ) {
+            E2D_ASSERT(!root.HasMember("offset_rel"));
+            a.relative_offset = false;
+            if ( !json_utils::try_parse_value(root["offset_px"], a.offset) ) {
+                the<debug>().error("ANCHOR_LAYOUT: Incorrect formatting of 'anchor.offset_px' property");
+                return false;
+            }
+        } else {
+            the<debug>().error("ANCHOR_LAYOUT: One of the property 'offset_px' or 'offset_rel' is required");
             return false;
         }
 
-        a.relative_offset = root["relative_offset"].GetBool();
         return true;
     }
 

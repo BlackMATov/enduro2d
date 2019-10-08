@@ -5,13 +5,11 @@
         "anchor_layout": {
             "left_bottom": {
                 "position": [ 0, 1 ],
-                "offset": [ 0, -100 ],
-                "relative_offset": false
+                "offset_px": [ 0, -100 ]
             },
             "right_top": {
                 "position": [ 1, 1 ],
-                "offset": [ 0, 0 ],
-                "relative_offset": false
+                "offset_px": [ 0, 0 ]
             }
         },
         "anchor_layout.dirty": {},

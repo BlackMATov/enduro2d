@@ -10,7 +10,7 @@
         },
         "padding_layout.dirty": {},
         "sprite_renderer": {
-            "sprite": "../sprites/blue_rect.json"
+            "sprite": "../sprites/blue_panel.json"
         }
     }
 }
