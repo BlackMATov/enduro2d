@@ -14,6 +14,15 @@ namespace
 
     class parallel_anim final : public ui_animation::abstract_anim {
     public:
+        parallel_anim(const parallel_anim& other)
+        : abstract_anim(other) {
+            animations_.resize(other.animations_.size());
+            for ( size_t i = 0; i < animations_.size(); ++i ) {
+                animations_[i] = other.animations_[i]->clone();
+            }
+            complete_animations_.resize(animations_.size(), false);
+        }
+
         parallel_anim(
             ui_animation::anim_builder& b,
             vector<ui_animation::abstract_anim_uptr>&& anims)
@@ -42,10 +51,14 @@ namespace
         }
 
         void end_(secf, ecs::entity&) override {
-            E2D_ASSERT(!inversed_);
+            E2D_ASSERT(!inversed());
             for ( size_t i = 0; i < complete_animations_.size(); ++i ) {
                 complete_animations_[i] = false;
             }
+        }
+
+        ui_animation::abstract_anim_uptr clone() const override {
+            return std::make_unique<parallel_anim>(*this);
         }
     private:
         vector<ui_animation::abstract_anim_uptr> animations_;
@@ -54,6 +67,14 @@ namespace
     
     class sequential_anim final : public ui_animation::abstract_anim {
     public:
+        sequential_anim(const sequential_anim& other)
+        : abstract_anim(other) {
+            animations_.resize(other.animations_.size());
+            for ( size_t i = 0; i < animations_.size(); ++i ) {
+                animations_[i] = other.animations_[i]->clone();
+            }
+        }
+
         sequential_anim(
             ui_animation::anim_builder& b,
             vector<ui_animation::abstract_anim_uptr>&& anims)
@@ -67,7 +88,7 @@ namespace
                 if ( animations_[index_]->update(time, delta, e) ) {
                     return true;
                 } else {
-                    index_ += (inversed_ ? -1 : 1);
+                    index_ += (inversed() ? -1 : 1);
                     return true;
                 }
             }
@@ -80,7 +101,11 @@ namespace
         }
 
         void end_(secf, ecs::entity&) override {
-            index_ = inversed_ ? math::max<size_t>(1, animations_.size())-1 : 0;
+            index_ = inversed() ? math::max<size_t>(1, animations_.size())-1 : 0;
+        }
+        
+        ui_animation::abstract_anim_uptr clone() const override {
+            return std::make_unique<sequential_anim>(*this);
         }
     private:
         vector<ui_animation::abstract_anim_uptr> animations_;
@@ -113,13 +138,18 @@ namespace
                 result = true;
             }
             f = easing_(f);
-            f = inversed_ ? 1.0f - f : f;
+            f = inversed() ? 1.0f - f : f;
             update_fn_(data_, f, e);
             return result;
         }
 
         bool start_(ecs::entity& e) override {
             return start_fn_(data_, e);
+        }
+
+        ui_animation::abstract_anim_uptr clone() const override {
+            // TODO: update_fn_ and start_fn_ should be immutable
+            return std::make_unique<property_anim>(*this);
         }
     private:
         Data data_;
@@ -353,6 +383,10 @@ namespace e2d
     void ui_animation::abstract_anim::cancel() {
         canceled_ = true;
     }
+    
+    bool ui_animation::abstract_anim::inversed() const noexcept {
+        return inversed_;
+    }
 
     //
     // parallel
@@ -376,7 +410,11 @@ namespace e2d
     // ui_animation
     //
 
-    ui_animation::ui_animation(const ui_animation&) {}
+    ui_animation::ui_animation(const ui_animation& other) {
+        if ( other.anim_ ) {
+            anim_ = other.anim_->clone();
+        }
+    }
 
     ui_animation::abstract_anim* ui_animation::animation() const noexcept {
         return anim_.get();

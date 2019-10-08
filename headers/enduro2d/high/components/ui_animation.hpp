@@ -61,16 +61,18 @@ namespace e2d
         abstract_anim(anim_builder&);
         bool update(secf t, secf dt, ecs::entity& e);
         void cancel();
+        [[nodiscard]] virtual abstract_anim_uptr clone() const = 0;
+        bool inversed() const noexcept;
     protected:
+        abstract_anim(const abstract_anim&) = default;
         virtual bool update_(secf time, secf delta, ecs::entity& e) = 0;
         virtual bool start_(ecs::entity&) { return true; }
         virtual void end_(secf, ecs::entity&) {}
         virtual void complete_(ecs::entity&) {}
-    protected:
-        bool inversed_ = false;
     private:
         bool started_ = false;
         bool canceled_ = false;
+        bool inversed_ = false;
         const bool repeat_inversed_;
         secf delay_;
         secf start_time_;
