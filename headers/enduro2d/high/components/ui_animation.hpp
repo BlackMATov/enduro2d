@@ -17,7 +17,8 @@ namespace e2d
     public:
         using easing_fn = f32 (*)(f32 t);
 
-        class anim_i;
+        class abstract_anim;
+        using abstract_anim_uptr = std::unique_ptr<abstract_anim>;
         class anim_builder;
         template < typename T > class anim_builder_t;
         template < typename T > class property_anim_builder;
@@ -42,22 +43,22 @@ namespace e2d
 
         template < typename A >
         std::enable_if_t<std::is_base_of_v<anim_builder, A>, ui_animation&> set_animation(A&& value) noexcept;
-        ui_animation& set_animation(std::unique_ptr<anim_i> value) noexcept;
-        anim_i* animation() const noexcept;
+        ui_animation& set_animation(abstract_anim_uptr value) noexcept;
+        abstract_anim* animation() const noexcept;
     private:
-        std::unique_ptr<anim_i> anim_;
+        abstract_anim_uptr anim_;
     };
 }
 
 namespace e2d
 {
     //
-    // ui_animation::anim_i
+    // ui_animation::abstract_anim
     //
 
-    class ui_animation::anim_i {
+    class ui_animation::abstract_anim {
     public:
-        anim_i(anim_builder&);
+        abstract_anim(anim_builder&);
         bool update(secf t, secf dt, ecs::entity& e);
         void cancel();
     protected:
@@ -74,6 +75,8 @@ namespace e2d
         secf delay_;
         secf start_time_;
         i32 loops_ = 0;
+        const secf const_delay_;
+        const i32 const_loops_;
         std::function<void(ecs::entity&)> on_start_;
         std::function<void(ecs::entity&)> on_complete_;
         std::function<void(ecs::entity&)> on_step_complete_; // when loop cycle complete
@@ -84,7 +87,7 @@ namespace e2d
     //
 
     class ui_animation::anim_builder {
-        friend class ui_animation::anim_i;
+        friend class ui_animation::abstract_anim;
     protected:
         std::function<void(ecs::entity&)> on_start_;
         std::function<void(ecs::entity&)> on_complete_;
@@ -141,9 +144,9 @@ namespace e2d
         template < typename A >
         std::enable_if_t<std::is_base_of_v<anim_builder, A>, parallel&&> add(A&&) &&;
         
-        [[nodiscard]] std::unique_ptr<anim_i> build() &&;
+        [[nodiscard]] abstract_anim_uptr build() &&;
     private:
-        vector<std::unique_ptr<anim_i>> animations_;
+        vector<abstract_anim_uptr> animations_;
     };
 
     //
@@ -157,9 +160,9 @@ namespace e2d
         template < typename A >
         std::enable_if_t<std::is_base_of_v<anim_builder, A>, sequential&&> add(A&&) &&;
         
-        [[nodiscard]] std::unique_ptr<anim_i> build() &&;
+        [[nodiscard]] abstract_anim_uptr build() &&;
     private:
-        vector<std::unique_ptr<anim_i>> animations_;
+        vector<abstract_anim_uptr> animations_;
     };
     
     //
@@ -167,14 +170,14 @@ namespace e2d
     //
     
     template < typename UpdateFn >
-    class ui_animation::custom_anim_i final : public anim_i {
+    class ui_animation::custom_anim_i final : public abstract_anim {
     public:
         custom_anim_i(
             anim_builder& b,
             UpdateFn&& update_fn,
             secf duration,
             easing_fn easing)
-        : anim_i(b)
+        : abstract_anim(b)
         , update_fn_(std::forward<UpdateFn>(update_fn))
         , duration_(duration)
         , easing_(easing) {}
@@ -210,7 +213,7 @@ namespace e2d
         custom_impl(UpdateFn&& update_fn)
         : update_fn_(std::forward<UpdateFn>(update_fn)) {}
 
-        [[nodiscard]] std::unique_ptr<anim_i> build() && {
+        [[nodiscard]] abstract_anim_uptr build() && {
             return std::make_unique<custom_anim_i<UpdateFn>>(
                 *this, std::move(update_fn_), duration_, easing_);
         }
@@ -272,7 +275,7 @@ namespace e2d
         ui_animation::scale&& to(f32 value) && noexcept;
         ui_animation::scale&& to(const v3f& value) && noexcept;
         
-        [[nodiscard]] std::unique_ptr<anim_i> build() &&;
+        [[nodiscard]] abstract_anim_uptr build() &&;
     private:
         std::optional<v3f> from_scale_;
         std::optional<v3f> to_scale_;
@@ -289,7 +292,7 @@ namespace e2d
         ui_animation::move&& from(const v3f& value) && noexcept;
         ui_animation::move&& to(const v3f& value) && noexcept;
         
-        [[nodiscard]] std::unique_ptr<anim_i> build() &&;
+        [[nodiscard]] abstract_anim_uptr build() &&;
     private:
         std::optional<v3f> from_pos_;
         std::optional<v3f> to_pos_;
@@ -311,7 +314,7 @@ namespace e2d
         ui_animation::size&& from_height(f32 value) && noexcept;
         ui_animation::size&& to_height(f32 value) && noexcept;
         
-        [[nodiscard]] std::unique_ptr<anim_i> build() &&;
+        [[nodiscard]] abstract_anim_uptr build() &&;
     private:
         std::optional<f32> from_width_;
         std::optional<f32> to_width_;

@@ -57,17 +57,9 @@ namespace
         fl_node->translation(v3f(pos.x, pos.y, 0.f));
         return fl;
     }
-
-
 }
 
 TEST_CASE("ui_animation") {
-    /*SECTION("custom") {
-        ui_animation::parallel()
-            .add(ui_animation::custom([](f32 f) {}))
-            .add(ui_animation::custom([](f32 f, actor& act) { act.node()->scale(v3f(math::lerp(1.0f, 2.0f, f))); }));
-    }*/
-    
     safe_world_initializer initializer;
 
     SECTION("move animation") {
@@ -135,13 +127,11 @@ TEST_CASE("ui_animation") {
             if ( i <= 60 ) {
                 REQUIRE(tick0 == i+1);
                 REQUIRE(tick1 == 0);
-            }
-            if ( i > 60 && i <= 3*60 ) {
+            } else if ( i <= 3*60 ) {
                 bool b_tick0 = (tick0 >= 60 && tick0 <= 61);
                 REQUIRE(b_tick0);
                 REQUIRE(tick1 == i - 60);
-            }
-            if ( i > 3*60 ) {
+            } else {
                 bool b_tick0 = (tick0 >= 60 && tick0 <= 61);
                 REQUIRE(b_tick0);
                 bool b_tick1 = (tick1 >= 120 && tick1 <= 121);
@@ -184,8 +174,7 @@ TEST_CASE("ui_animation") {
                 bool b_tick0 = (tick0 >= 60 && tick0 <= 61);
                 REQUIRE(b_tick0);
                 REQUIRE(tick1 == i+1);
-            }
-            if ( i > 2*60 ) {
+            } else {
                 bool b_tick0 = (tick0 >= 60 && tick0 <= 61);
                 REQUIRE(b_tick0);
                 bool b_tick1 = (tick1 >= 120 && tick1 <= 121);
@@ -224,7 +213,7 @@ TEST_CASE("ui_animation") {
         REQUIRE(is_started);
         REQUIRE(is_completed);
     }
-    /*SECTION("exception") {
+    SECTION("exception") {
         gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
         
         fl->entity().assign_component<ui_animation>(
@@ -241,7 +230,7 @@ TEST_CASE("ui_animation") {
         REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
 
         REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
-    }*/
+    }
     SECTION("loops") {
         gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
         const v3f from_pos = {1.0f, 2.0f, 0.0f};
@@ -335,7 +324,69 @@ TEST_CASE("ui_animation") {
         }
         REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
     }
+    SECTION("sequential animation loops") {
+        gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        const secf step {1.0f / 60.0f};
+        u32 tick0 = 0;
+        u32 tick1 = 0;
+        bool is_restarted = false;
+        bool is_complete = false;
+        fl->entity().assign_component<ui_animation>(ui_animation::sequential()
+            .add(ui_animation::custom([&tick0]() { ++tick0; }).duration(secf(1.0f)))
+            .add(ui_animation::custom([&tick1]() { ++tick1; }).duration(secf(2.0f)))
+            .on_step_complete([&is_restarted, &tick0, &tick1](auto&) {
+                is_restarted = ((tick0 >= 60 && tick0 <= 61) && (tick1 >= 120 && tick1 <= 121));
+                tick0 = tick1 = 0;
+            })
+            .on_complete([&is_complete, &tick0, &tick1](auto&) {
+                is_complete = ((tick0 >= 60 && tick0 <= 61) && (tick1 >= 120 && tick1 <= 121));
+            })
+            .repeat(1)
+            .repeat_inversed());
 
-    // delay
-    // multi component animator ?
+        ui_layout_system lsystem;
+        ui_animation_system asystem;
+        
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = step;
+        params.realtime_time = secf(333.93f);
+
+        for ( u32 i = 0; i < 7*60; ++i ) {
+            params.realtime_time += step;
+
+            REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+            REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
+        }
+        REQUIRE(is_restarted);
+        REQUIRE(is_complete);
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
+    }
+    SECTION("delay") {
+        gobject_iptr fl = create_fixed_layout(initializer.scene_r, {20.0f, 30.0f}, {100.0f, 200.0f});
+        u32 tick = 0;
+        const secf step {1.0f / 60.0f};
+        fl->entity().assign_component<ui_animation>(ui_animation::custom([&tick]() { ++tick; })
+            .delay(secf(1.0f))
+            .duration(secf(2.0f)));
+
+        ui_layout_system lsystem;
+        ui_animation_system asystem;
+
+        auto& params = the<world>().registry().ensure_single_component<frame_params_comp>();
+        params.delta_time = step;
+        params.realtime_time = secf(626.72f);
+
+        for ( u32 i = 0; i < 4*60; ++i ) {
+            params.realtime_time += step;
+
+            REQUIRE_NOTHROW(lsystem.process(the<world>().registry()));
+            REQUIRE_NOTHROW(asystem.process(the<world>().registry()));
+
+            if ( i < 60 ) {
+                REQUIRE(tick == 0);
+            }
+        }
+        REQUIRE(tick >= 60);
+        REQUIRE_FALSE(fl->entity().find_component<ui_animation>());
+    }
 }

@@ -12,51 +12,83 @@ namespace
 {
     using namespace e2d;
 
-    class parallel_anim final : public ui_animation::anim_i {
+    class parallel_anim final : public ui_animation::abstract_anim {
     public:
         parallel_anim(
             ui_animation::anim_builder& b,
-            vector<std::unique_ptr<anim_i>>&& anims)
-        : anim_i(b)
-        , animations_(std::move(anims)) {}
+            vector<ui_animation::abstract_anim_uptr>&& anims)
+        : abstract_anim(b)
+        , animations_(std::move(anims)) {
+            complete_animations_.resize(animations_.size(), false);
+        }
 
         bool update_(secf time, secf delta, ecs::entity& e) override {
-            for ( auto i = animations_.begin(); i != animations_.end(); ) {
-                if ( (*i)->update(time, delta, e) ) {
-                    ++i;
-                } else {
-                    i = animations_.erase(i);
+            bool updated = false;
+            for ( size_t i = 0; i < animations_.size(); ++i ) {
+                if ( complete_animations_[i] ) {
+                    continue;
                 }
+                complete_animations_[i] = !animations_[i]->update(time, delta, e);
+                updated = true;
             }
-            return !animations_.empty();
+            return updated;
+        }
+
+        bool start_(ecs::entity&) {
+            for ( size_t i = 0; i < complete_animations_.size(); ++i ) {
+                complete_animations_[i] = false;
+            }
+            return true;
+        }
+
+        void end_(secf, ecs::entity&) override {
+            E2D_ASSERT(!inversed_);
+            for ( size_t i = 0; i < complete_animations_.size(); ++i ) {
+                complete_animations_[i] = false;
+            }
         }
     private:
-        vector<std::unique_ptr<anim_i>> animations_;
+        vector<ui_animation::abstract_anim_uptr> animations_;
+        vector<bool> complete_animations_;
     };
     
-    class sequential_anim final : public ui_animation::anim_i {
+    class sequential_anim final : public ui_animation::abstract_anim {
     public:
         sequential_anim(
             ui_animation::anim_builder& b,
-            vector<std::unique_ptr<anim_i>>&& anims)
-        : anim_i(b)
-        , animations_(std::move(anims)) {}
+            vector<ui_animation::abstract_anim_uptr>&& anims)
+        : abstract_anim(b)
+        , animations_(std::move(anims)) {
+            E2D_ASSERT(!animations_.empty());
+        }
         
         bool update_(secf time, secf delta, ecs::entity& e) override {
-            if ( !animations_.empty() ) {
-                if ( !animations_.front()->update(time, delta, e) ) {
-                    animations_.erase(animations_.begin());
+            for (; index_ < animations_.size(); ) {
+                if ( animations_[index_]->update(time, delta, e) ) {
+                    return true;
+                } else {
+                    index_ += (inversed_ ? -1 : 1);
+                    return true;
                 }
-                return true;
             }
             return false;
         }
+        
+        bool start_(ecs::entity&) {
+            index_ = 0;
+            return true;
+        }
+
+        void end_(secf, ecs::entity&) override {
+            index_ = inversed_ ? math::max<size_t>(1, animations_.size())-1 : 0;
+        }
     private:
-        vector<std::unique_ptr<anim_i>> animations_;
+        vector<ui_animation::abstract_anim_uptr> animations_;
+        size_t index_ = 0;
     };
 
     template < typename UpdateFn, typename StartFn, typename Data >
-    class property_anim : public ui_animation::anim_i {
+    class property_anim : public ui_animation::abstract_anim {
     public:
         template < typename T >
         property_anim(
@@ -64,7 +96,7 @@ namespace
             Data&& data,
             UpdateFn&& update_fn,
             StartFn&& start_fn)
-        : anim_i(b)
+        : abstract_anim(b)
         , data_(data)
         , update_fn_(update_fn)
         , start_fn_(start_fn)
@@ -109,7 +141,7 @@ namespace
             std::remove_reference_t<StartFn>,
             std::remove_reference_t<Data>>;
 
-        return std::unique_ptr<ui_animation::anim_i>(new property_anim(
+        return ui_animation::abstract_anim_uptr(new property_anim(
             b,
             std::forward<Data>(data),
             std::forward<UpdateFn>(update_fn),
@@ -257,18 +289,20 @@ namespace
 namespace e2d
 {
     //
-    // anim_i
+    // abstract_anim
     //
 
-    ui_animation::anim_i::anim_i(anim_builder& b)
+    ui_animation::abstract_anim::abstract_anim(anim_builder& b)
     : on_start_(std::move(b.on_start_))
     , on_complete_(std::move(b.on_complete_))
     , on_step_complete_(std::move(b.on_step_complete_))
     , loops_(b.loops_)
     , delay_(b.delay_)
+    , const_delay_(b.delay_)
+    , const_loops_(b.loops_)
     , repeat_inversed_(b.repeat_inversed_) {}
 
-    bool ui_animation::anim_i::update(secf t, secf dt, ecs::entity& e) {
+    bool ui_animation::abstract_anim::update(secf t, secf dt, ecs::entity& e) {
         if ( canceled_ ) {
             return false;
         }
@@ -284,14 +318,18 @@ namespace e2d
                     if ( on_complete_ ) {
                         on_complete_(e);
                     }
+                    // prepare for restarting
+                    delay_ = const_delay_;
+                    started_ = false;
+                    loops_ = 0;
                     return false;
                 } else {
+                    inversed_ = repeat_inversed_ ? !inversed_ : inversed_;
+                    start_time_ = t;
                     end_(rel, e);
                     if ( on_step_complete_ ) {
                         on_step_complete_(e);
                     }
-                    inversed_ = repeat_inversed_ ? !inversed_ : inversed_;
-                    start_time_ = t;
                     return true;
                 }
             }
@@ -312,7 +350,7 @@ namespace e2d
         }
     }
 
-    void ui_animation::anim_i::cancel() {
+    void ui_animation::abstract_anim::cancel() {
         canceled_ = true;
     }
 
@@ -320,7 +358,7 @@ namespace e2d
     // parallel
     //
 
-    std::unique_ptr<ui_animation::anim_i> ui_animation::parallel::build() && {
+    ui_animation::abstract_anim_uptr ui_animation::parallel::build() && {
         return std::make_unique<parallel_anim>(
             *this, std::move(animations_));
     }
@@ -329,7 +367,7 @@ namespace e2d
     // sequential
     //
 
-    std::unique_ptr<ui_animation::anim_i> ui_animation::sequential::build() && {
+    ui_animation::abstract_anim_uptr ui_animation::sequential::build() && {
         return std::make_unique<sequential_anim>(
             *this, std::move(animations_));
     }
@@ -340,11 +378,11 @@ namespace e2d
 
     ui_animation::ui_animation(const ui_animation&) {}
 
-    ui_animation::anim_i* ui_animation::animation() const noexcept {
+    ui_animation::abstract_anim* ui_animation::animation() const noexcept {
         return anim_.get();
     }
     
-    ui_animation& ui_animation::set_animation(std::unique_ptr<anim_i> value) noexcept {
+    ui_animation& ui_animation::set_animation(abstract_anim_uptr value) noexcept {
         anim_ = std::move(value);
         return *this;
     }
@@ -373,7 +411,7 @@ namespace e2d
         return std::move(*this);
     }
     
-    std::unique_ptr<ui_animation::anim_i> ui_animation::scale::build() && {
+    ui_animation::abstract_anim_uptr ui_animation::scale::build() && {
         using data_t = std::pair<std::optional<v3f>, std::optional<v3f>>;
         return make_property_anim_adaptor(
             *this,
@@ -411,7 +449,7 @@ namespace e2d
         return std::move(*this);
     }
     
-    std::unique_ptr<ui_animation::anim_i> ui_animation::move::build() && {
+    ui_animation::abstract_anim_uptr ui_animation::move::build() && {
         using data_t = std::pair<std::optional<v3f>, std::optional<v3f>>;
         return make_property_anim_adaptor(
             *this,
@@ -470,7 +508,7 @@ namespace e2d
         return std::move(*this);
     }
         
-    std::unique_ptr<ui_animation::anim_i> ui_animation::size::build() && {
+    ui_animation::abstract_anim_uptr ui_animation::size::build() && {
         struct data_t {
             std::optional<f32> from_width;
             std::optional<f32> to_width;
