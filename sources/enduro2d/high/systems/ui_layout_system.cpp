@@ -12,6 +12,7 @@
 #include <enduro2d/high/components/sprite_renderer.hpp>
 #include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/components/shape2d.hpp>
+#include <enduro2d/high/components/scissor_comp.hpp>
 #include <enduro2d/high/node.hpp>
 
 using namespace e2d;
@@ -578,6 +579,27 @@ namespace
         return b2f(min, max - min);
     }
 
+    b2u project(const m4f& mvp, const v2f& size, const b2f& viewport) noexcept {
+        const v3f points[] = {
+            math::project(v3f(0.0f,   0.0f,   0.0f), mvp, viewport),
+            math::project(v3f(0.0f,   size.y, 0.0f), mvp, viewport),
+            math::project(v3f(size.x, size.y, 0.0f), mvp, viewport),
+            math::project(v3f(size.x, 0.0f,   0.0f), mvp, viewport)
+        };
+        v2f min = v2f(points[0]);
+        v2f max = min;
+        for ( size_t i = 1; i < std::size(points); ++i ) {
+            min.x = math::min(min.x, points[i].x);
+            min.y = math::min(min.y, points[i].y);
+            max.x = math::max(max.x, points[i].x);
+            max.y = math::max(max.y, points[i].y);
+        }
+        min = math::maximized(min - 0.5f, viewport.position);
+        max = math::minimized(max + 0.5f, viewport.position + viewport.size);
+        return b2f(min, max - min).cast_to<u32>();
+
+    }
+
     std::tuple<m4f,b2f> get_vp_and_viewport(
         const ecs::const_entity& e,
         const camera& cam) noexcept
@@ -777,18 +799,44 @@ namespace
     }
 
     void update_shape_size(ecs::registry& owner) {
-        owner.for_joined_components<ui_layout::shape2d_update_size_tag, rectangle_shape, ui_layout, actor>(
-        [](const ecs::const_entity&, ui_layout::shape2d_update_size_tag, rectangle_shape& rshape, const ui_layout&, const actor& act) {
+        owner.for_joined_components<ui_layout::shape2d_update_size_tag, rectangle_shape, actor>(
+        [](const ecs::const_entity&, ui_layout::shape2d_update_size_tag, rectangle_shape& rshape, const actor& act) {
             if ( act.node() ) {
                 rshape.rectangle(b2f(act.node()->size()));
             }
         });
 
-        owner.for_joined_components<ui_layout::shape2d_update_size_tag, circle_shape, ui_layout, actor>(
-        [](const ecs::const_entity&, ui_layout::shape2d_update_size_tag, circle_shape& cshape, const ui_layout&, const actor& act) {
+        owner.for_joined_components<ui_layout::shape2d_update_size_tag, circle_shape, actor>(
+        [](const ecs::const_entity&, ui_layout::shape2d_update_size_tag, circle_shape& cshape, const actor& act) {
             if ( act.node() ) {
                 cshape.radius(math::minimum(act.node()->size()) * 0.5f);
             }
+        });
+    }
+
+    void update_scissor_rect(ecs::registry& owner) {
+        // get screen size
+        std::tuple<m4f,b2f> vp_and_viewport;
+        owner.for_joined_components<camera>(
+        [&vp_and_viewport](const ecs::const_entity& e, const camera& cam) {
+            if ( cam.target() ) {
+                return;
+            }
+            vp_and_viewport = get_vp_and_viewport(e, cam);
+        });
+
+        if ( math::approximately(std::get<1>(vp_and_viewport).size, v2f()) ) {
+            return;
+        }
+
+        owner.for_joined_components<ui_layout::scissor_update_rect_tag, scissor_comp, actor>(
+        [&vp_and_viewport](const ecs::entity&, ui_layout::scissor_update_rect_tag, scissor_comp& sc, const actor& act) {
+            if ( !act.node() ) {
+                return;
+            }
+            const m4f mvp = act.node()->world_matrix() * std::get<0>(vp_and_viewport);
+            const b2u view = project(mvp, act.node()->size(), std::get<1>(vp_and_viewport));
+            sc.rect(view);
         });
     }
 }
@@ -799,5 +847,6 @@ namespace e2d
         register_update_fn(owner);
         update_layouts(owner);
         update_shape_size(owner);
+        update_scissor_rect(owner);
     }
 }

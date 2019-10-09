@@ -49,6 +49,7 @@ namespace e2d
     class label;
     class model_renderer;
     class renderer;
+    class scissor_comp;
     class scene;
     class spine_player;
     class spine_player_cmd;

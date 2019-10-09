@@ -194,8 +194,7 @@ namespace
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_scrollable, ui_style>(
         [time](ecs::entity e, const touch_up_event&, const ui_scrollable&, ui_style& style) {
-            e.ensure_component<ui_style::style_changed_bits>()
-                .set(ui_style_state::touched);
+            e.ensure_component<ui_style::style_changed_bits>().set(ui_style_state::touched);
             style.set(ui_style_state::touched, false);
 
             auto& scr_p = e.ensure_component<ui_scrollable_private>();
@@ -206,8 +205,9 @@ namespace
                 } else {
                     scr_p.mode = scroll_mode::idle;
                     scr_p.velocity = v3f();
-                    e.ensure_component<ui_controller_events>()
-                        .add_event(ui_scrollable::scroll_end_evt{});
+                    e.ensure_component<ui_style>().set(ui_style_state::dragging, false);
+                    e.ensure_component<ui_style::style_changed_bits>().set(ui_style_state::dragging);
+                    e.ensure_component<ui_controller_events>().add_event(ui_scrollable::scroll_end_evt{});
                 }
             }
         });
@@ -225,8 +225,7 @@ namespace
             // start scrolling
             if ( scr_p.mode == scroll_mode::idle ) {
                 style.set(ui_style_state::dragging, true);
-                e.ensure_component<ui_style::style_changed_bits>()
-                    .set(ui_style_state::dragging);
+                e.ensure_component<ui_style::style_changed_bits>().set(ui_style_state::dragging);
                 scr_p.mode = scroll_mode::manual;
                 events.add_event(ui_scrollable::scroll_begin_evt{});
 
@@ -284,7 +283,7 @@ namespace
                             .add_event(ui_scrollable::scroll_begin_evt{});
                     }
                     if ( scr_p.mode != scroll_mode::manual ) {
-                        v2f d = scroll_delta * v2b(scr.is_horizontal(), scr.is_vertical()).cast_to<f32>();
+                        v2f d = -scroll_delta * v2b(scr.is_horizontal(), scr.is_vertical()).cast_to<f32>();
                         scr_p.velocity = scr_p.velocity + v3f(d, 0.0f) * ui_scrollable_private::wheel_scale;
                     }
                 });
@@ -326,6 +325,8 @@ namespace
                 if ( old_dir != new_dir || !has_vel || is_overscroll.x || is_overscroll.y || is_overscroll.z ) {
                     scr_p.mode = scroll_mode::idle;
                     scr_p.velocity = v3f();
+                    e.ensure_component<ui_style>().set(ui_style_state::dragging, false);
+                    e.ensure_component<ui_style::style_changed_bits>().set(ui_style_state::dragging);
                     events.add_event(ui_scrollable::scroll_end_evt{});
                     return;
                 }

@@ -17,6 +17,7 @@
 #include <enduro2d/high/components/label.hpp>
 #include <enduro2d/high/components/model_renderer.hpp>
 #include <enduro2d/high/components/renderer.hpp>
+#include <enduro2d/high/components/scissor_comp.hpp>
 #include <enduro2d/high/components/scene.hpp>
 #include <enduro2d/high/components/spine_player.hpp>
 #include <enduro2d/high/components/spine_player_cmd.hpp>
@@ -169,6 +170,7 @@ namespace e2d
             .register_component<sprite_9p_renderer>("sprite_9p_renderer")
             .register_component<ui_layout::root_tag>("ui_layout.root_tag")
             .register_component<ui_layout::shape2d_update_size_tag>("ui_layout.shape2d_update_size_tag")
+            .register_component<ui_layout::scissor_update_rect_tag>("ui_layout.scissor_update_rect_tag")
             .register_component<fixed_layout>("fixed_layout")
             .register_component<fixed_layout::dirty>("fixed_layout.dirty")
             .register_component<auto_layout>("auto_layout")
@@ -205,7 +207,8 @@ namespace e2d
             .register_component<rectangle_shape>("rectangle_shape")
             .register_component<circle_shape>("circle_shape")
             .register_component<polygon_shape>("polygon_shape")
-            .register_component<touchable>("touchable");
+            .register_component<touchable>("touchable")
+            .register_component<scissor_comp>("scissor_comp");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }

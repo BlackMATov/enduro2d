@@ -9,6 +9,7 @@
 #include <enduro2d/high/components/actor.hpp>
 #include <enduro2d/high/components/camera.hpp>
 #include <enduro2d/high/components/scene.hpp>
+#include <enduro2d/high/components/scissor_comp.hpp>
 
 #include "render_system_impl/render_system_base.hpp"
 #include "render_system_impl/render_system_batcher.hpp"
@@ -19,20 +20,53 @@ namespace
     using namespace e2d;
     using namespace e2d::render_system_impl;
 
-    template < typename F >
-    void for_each_by_nodes(const const_node_iptr& root, F&& f) {
-        static vector<const_node_iptr> temp_nodes;
+    void for_each_by_nodes(const const_node_iptr& root, drawer::context& ctx) {
+        struct item {
+            const_node_iptr node;
+            u32 depth;
+        };
+        struct scissor {
+            b2u rect;
+            u32 depth;
+        };
+        static vector<item> pending_nodes, temp_nodes;
+        static vector<scissor> scissor_stack;
         try {
-            if ( root ) {
-                root->extract_all_nodes(std::back_inserter(temp_nodes));
-                for ( const const_node_iptr& node : temp_nodes ) {
-                    f(node);
+            scissor_stack.clear();
+            scissor_stack.push_back({b2u(~0u, ~0u), 0});
+            pending_nodes.push_back({root, 1});
+
+            for (; !pending_nodes.empty(); ) {
+                auto curr = pending_nodes.back();
+                pending_nodes.pop_back();
+                
+                if ( scissor_stack.back().depth == curr.depth ) {
+                    scissor_stack.pop_back();
+                    E2D_ASSERT(!scissor_stack.empty());
+                    ctx.set_scissor(scissor_stack.back().rect);
                 }
+                if ( auto* sc = curr.node->owner()->entity().find_component<scissor_comp>() ) {
+                    scissor_stack.push_back({sc->rect(), curr.depth});
+                    ctx.set_scissor(scissor_stack.back().rect);
+                }
+
+                ctx.draw(curr.node);
+                
+                curr.node->for_each_child([&curr](const const_node_iptr& n) {
+                    temp_nodes.push_back({n, curr.depth + 1});
+                });
+
+                for ( auto i = temp_nodes.rbegin(); i != temp_nodes.rend(); ++i ) {
+                    pending_nodes.push_back(*i);
+                }
+                temp_nodes.clear();
             }
         } catch (...) {
+            pending_nodes.clear();
             temp_nodes.clear();
             throw;
         }
+        pending_nodes.clear();
         temp_nodes.clear();
     }
 
@@ -67,9 +101,7 @@ namespace
         const auto func = [&ctx](const ecs::const_entity& scn_e, const scene&) {
             const actor* scn_a = scn_e.find_component<actor>();
             if ( scn_a && scn_a->node() ) {
-                for_each_by_nodes(scn_a->node(), [&ctx](const const_node_iptr& node){
-                    ctx.draw(node);
-                });
+                for_each_by_nodes(scn_a->node(), ctx);
             }
         };
         for_each_by_sorted_components<scene>(owner, comp, func);

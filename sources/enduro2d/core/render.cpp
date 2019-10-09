@@ -128,6 +128,10 @@ namespace
         void operator()(const render::viewport_command& command) const {
             render_.execute(command);
         }
+
+        void operator()(const render::scissor_command& command) const {
+            render_.execute(command);
+        }
     private:
         render& render_;
     };
@@ -1092,7 +1096,7 @@ namespace e2d
     const render_target_ptr& render::target_command::target() const noexcept {
         return target_;
     }
-
+    
     //
     // viewport_command
     //
@@ -1100,48 +1104,38 @@ namespace e2d
     render::viewport_command::viewport_command(const b2u& viewport_rect) noexcept
     : viewport_rect_(viewport_rect) {}
 
-    render::viewport_command::viewport_command(const b2u& viewport_rect, const b2u& scissor_rect) noexcept
-    : viewport_rect_(viewport_rect)
-    , scissor_rect_(scissor_rect)
-    , scissoring_(true) {}
-
     render::viewport_command& render::viewport_command::viewport_rect(const b2u& value) noexcept {
         viewport_rect_ = value;
         return *this;
     }
 
-    render::viewport_command& render::viewport_command::scissor_rect(const b2u& value) noexcept {
+    const b2u& render::viewport_command::viewport_rect() const noexcept {
+        return viewport_rect_;
+    }
+    
+    //
+    // scissor_command
+    //
+
+    render::scissor_command::scissor_command(const b2u& scissor_rect) noexcept
+    : scissor_rect_(scissor_rect)
+    , scissoring_(true) {}
+
+    render::scissor_command& render::scissor_command::scissor_rect(const b2u& value) noexcept {
         scissor_rect_ = value;
-        scissoring_ = true;
         return *this;
     }
 
-    render::viewport_command& render::viewport_command::scissoring(bool value) noexcept {
+    render::scissor_command& render::scissor_command::scissoring(bool value) noexcept {
         scissoring_ = value;
         return *this;
     }
 
-    b2u& render::viewport_command::viewport_rect() noexcept {
-        return viewport_rect_;
-    }
-
-    b2u& render::viewport_command::scissor_rect() noexcept {
+    const b2u& render::scissor_command::scissor_rect() const noexcept {
         return scissor_rect_;
     }
 
-    bool& render::viewport_command::scissoring() noexcept {
-        return scissoring_;
-    }
-
-    const b2u& render::viewport_command::viewport_rect() const noexcept {
-        return viewport_rect_;
-    }
-
-    const b2u& render::viewport_command::scissor_rect() const noexcept {
-        return scissor_rect_;
-    }
-
-    bool render::viewport_command::scissoring() const noexcept {
+    bool render::scissor_command::scissoring() const noexcept {
         return scissoring_;
     }
 

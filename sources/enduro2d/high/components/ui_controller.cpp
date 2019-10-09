@@ -152,11 +152,12 @@ namespace e2d
         if ( ctx.root.HasMember("allowed_directions") ) {
             auto& json_dir = ctx.root["allowed_directions"];
             E2D_ASSERT(json_dir.IsString());
-            if ( json_dir.GetString() == "vertical" ) {
+            str_view value = json_dir.GetString();
+            if ( value == "vertical" ) {
                 component.allowed_directions(ui_scrollable::direction::vertical);
-            } else if ( json_dir.GetString() == "horizontal" ) {
+            } else if ( value == "horizontal" ) {
                 component.allowed_directions(ui_scrollable::direction::horizontal);
-            } else if ( json_dir.GetString() == "all" ) {
+            } else if ( value == "all" ) {
                 component.allowed_directions(ui_scrollable::direction::all);
             } else {
                 the<debug>().error("UI_SCROLLABLE: Incorrect formatting of 'allowed_directions' property");

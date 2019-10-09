@@ -612,6 +612,11 @@ namespace e2d::render_system_impl
     void drawer::context::flush() {
         batcher_.flush();
     }
+    
+    void drawer::context::set_scissor(const b2u& sc) {
+        flush();
+        render_.execute(render::scissor_command(sc));
+    }
 
     //
     // drawer

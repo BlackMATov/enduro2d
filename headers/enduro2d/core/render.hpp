@@ -832,26 +832,29 @@ namespace e2d
         private:
             render_target_ptr target_;
         };
-
+        
         class viewport_command final {
         public:
             viewport_command() = delete;
             viewport_command(const b2u& viewport_rect) noexcept;
-            viewport_command(const b2u& viewport_rect, const b2u& scissor_rect) noexcept;
 
             viewport_command& viewport_rect(const b2u& value) noexcept;
-            viewport_command& scissor_rect(const b2u& value) noexcept;
-            viewport_command& scissoring(bool value) noexcept;
-
-            b2u& viewport_rect() noexcept;
-            b2u& scissor_rect() noexcept;
-            bool& scissoring() noexcept;
-
             const b2u& viewport_rect() const noexcept;
+        private:
+            b2u viewport_rect_ = b2u::zero();
+        };
+
+        class scissor_command final {
+        public:
+            scissor_command() = default;
+            scissor_command(const b2u& scissor_rect) noexcept;
+
+            scissor_command& scissor_rect(const b2u& value) noexcept;
+            scissor_command& scissoring(bool value) noexcept;
+
             const b2u& scissor_rect() const noexcept;
             bool scissoring() const noexcept;
         private:
-            b2u viewport_rect_ = b2u::zero();
             b2u scissor_rect_ = b2u::zero();
             bool scissoring_ = false;
         };
@@ -861,7 +864,8 @@ namespace e2d
             draw_command,
             clear_command,
             target_command,
-            viewport_command>;
+            viewport_command,
+            scissor_command>;
 
         template < std::size_t N >
         class command_block final {
@@ -966,6 +970,7 @@ namespace e2d
         render& execute(const clear_command& command);
         render& execute(const target_command& command);
         render& execute(const viewport_command& command);
+        render& execute(const scissor_command& command);
 
         render& update_buffer(
             const index_buffer_ptr& ibuffer,

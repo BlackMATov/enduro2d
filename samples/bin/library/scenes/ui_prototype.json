@@ -22,7 +22,9 @@
             "sprite_renderer" : {
                 "sprite" : "../sprites/rect_sprite.json",
                 "tint" :  [255, 0, 0, 255]
-            }
+            },
+            "scissor_comp" :  {},
+            "ui_layout.scissor_update_rect_tag" :  {}
         },
         "children" : [{
             "prototype" : "../prefabs/sprite_prefab.json",
@@ -37,7 +39,10 @@
                 "sprite_renderer" : {
                     "sprite" : "../sprites/scrollable_sprite.json"
                 },
-                "ui_scrollable" : {},
+                "ui_scrollable" : {
+                    "separate_axes" :  true,
+                    "allowed_directions" :  "vertical"
+                },
                 "ui_style" : {
                     "propagate" : "all"
                 },

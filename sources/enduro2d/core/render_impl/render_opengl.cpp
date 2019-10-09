@@ -1019,6 +1019,13 @@ namespace e2d
             math::numeric_cast<GLsizei>(viewport.size.x),
             math::numeric_cast<GLsizei>(viewport.size.y)));
 
+        GL_CHECK_CODE(state_->dbg(), glDisable(GL_SCISSOR_TEST));
+        return *this;
+    }
+    
+    render& render::execute(const scissor_command& command) {
+        E2D_ASSERT(is_in_main_thread());
+
         if ( command.scissoring() ) {
             const b2u scissor = math::make_minmax_rect(command.scissor_rect());
             GL_CHECK_CODE(state_->dbg(), glScissor(
@@ -1030,7 +1037,6 @@ namespace e2d
         } else {
             GL_CHECK_CODE(state_->dbg(), glDisable(GL_SCISSOR_TEST));
         }
-
         return *this;
     }
 

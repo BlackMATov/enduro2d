@@ -251,6 +251,11 @@ namespace e2d
         return *this;
     }
     
+    render& render::execute(const scissor_command& command) {
+        E2D_UNUSED(command);
+        return *this;
+    }
+
     render& render::update_buffer(
         const index_buffer_ptr& ibuffer,
         buffer_view indices,
