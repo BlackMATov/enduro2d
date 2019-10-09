@@ -103,14 +103,22 @@ namespace e2d
     bool ui_scrollable::separate_axes() const noexcept {
         return separate_axes_;
     }
-        
-    ui_scrollable& ui_scrollable::overscroll_enabled(bool value) noexcept {
-        overscroll_enabled_ = value;
+    
+    ui_scrollable& ui_scrollable::allowed_directions(direction value) noexcept {
+        allowed_directions_ = value;
         return *this;
     }
 
-    bool ui_scrollable::overscroll_enabled() const noexcept {
-        return overscroll_enabled_;
+    ui_scrollable::direction ui_scrollable::allowed_directions() const noexcept {
+        return allowed_directions_;
+    }
+    
+    bool ui_scrollable::is_vertical() const noexcept {
+        return u32(allowed_directions_) & u32(direction::vertical);
+    }
+
+    bool ui_scrollable::is_horizontal() const noexcept {
+        return u32(allowed_directions_) & u32(direction::horizontal);
     }
 
     const char* factory_loader<ui_scrollable>::schema_source = R"json({
@@ -119,7 +127,17 @@ namespace e2d
         "additionalProperties" : false,
         "properties" : {
             "separate_axes" : { "type" : "boolean" },
-            "overscroll_enabled" : { "type" : "boolean" }
+            "allowed_directions" : { "$ref": "#/definitions/direction" }
+        },
+        "definitions" : {
+            "direction" : {
+                "type" : "string",
+                "enum" : [
+                    "vertical",
+                    "horizontal",
+                    "all"
+                ]
+            }
         }
     })json";
 
@@ -127,8 +145,25 @@ namespace e2d
         ui_scrollable& component,
         const fill_context& ctx) const
     {
-        // TODO
-        E2D_UNUSED(component, ctx);
+        if ( ctx.root.HasMember("separate_axes") ) {
+            component.separate_axes(ctx.root["separate_axes"].GetBool());
+        }
+        
+        if ( ctx.root.HasMember("allowed_directions") ) {
+            auto& json_dir = ctx.root["allowed_directions"];
+            E2D_ASSERT(json_dir.IsString());
+            if ( json_dir.GetString() == "vertical" ) {
+                component.allowed_directions(ui_scrollable::direction::vertical);
+            } else if ( json_dir.GetString() == "horizontal" ) {
+                component.allowed_directions(ui_scrollable::direction::horizontal);
+            } else if ( json_dir.GetString() == "all" ) {
+                component.allowed_directions(ui_scrollable::direction::all);
+            } else {
+                the<debug>().error("UI_SCROLLABLE: Incorrect formatting of 'allowed_directions' property");
+                return false;
+            }
+        }
+
         return true;
     }
 

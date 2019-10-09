@@ -11,11 +11,11 @@
             "anchor_layout" : {
                 "left_bottom" : {
                     "position" : [0,0],
-                    "offset_rel" : [0.05, 0.05]
+                    "offset_rel" : [0.25, 0.05]
                 },
                 "right_top" : {
                     "position" : [1,1],
-                    "offset_rel" : [-0.05, -0.05]
+                    "offset_rel" : [-0.25, -0.05]
                 }
             },
             "anchor_layout.dirty" : {},
@@ -28,7 +28,7 @@
             "prototype" : "../prefabs/sprite_prefab.json",
             "components" : {
                 "actor" : {
-                    "translation" :  [-100, -500, 0]
+                    "translation" :  [0, 0, 0]
                 },
                 "fixed_layout" :  {
                     "size" :  [563, 1794]

@@ -102,9 +102,17 @@ namespace e2d
 {
     class ui_scrollable final {
     public:
+        enum class direction : u8 {
+            vertical = 1 << 0,
+            horizontal = 1 << 1,
+            all = vertical | horizontal,
+        };
+
         struct scroll_begin_evt {
         };
         struct scroll_update_evt {
+            v3f delta;
+            v3f overscroll;
         };
         struct scroll_end_evt {
         };
@@ -115,13 +123,15 @@ namespace e2d
         
         ui_scrollable& separate_axes(bool value) noexcept;
         bool separate_axes() const noexcept;
-        
-        ui_scrollable& overscroll_enabled(bool value) noexcept;
-        bool overscroll_enabled() const noexcept;
+
+        ui_scrollable& allowed_directions(direction value) noexcept;
+        direction allowed_directions() const noexcept;
+        bool is_vertical() const noexcept;
+        bool is_horizontal() const noexcept;
     private:
         // only one axis can be changed when scrolling
         bool separate_axes_ = true;
-        bool overscroll_enabled_ = true;
+        direction allowed_directions_ = direction::all;
     };
 
     template <>

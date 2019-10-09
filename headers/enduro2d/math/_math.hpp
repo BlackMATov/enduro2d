@@ -58,6 +58,7 @@ namespace e2d
     using v2u = vec2<u32>;
     using v2hi = vec2<i16>;
     using v2hu = vec2<u16>;
+    using v2b = vec2<bool>;
 
     using v3d = vec3<f64>;
     using v3f = vec3<f32>;
@@ -65,6 +66,7 @@ namespace e2d
     using v3u = vec3<u32>;
     using v3hi = vec3<i16>;
     using v3hu = vec3<u16>;
+    using v3b = vec3<bool>;
 
     using v4d = vec4<f64>;
     using v4f = vec4<f32>;
@@ -72,6 +74,7 @@ namespace e2d
     using v4u = vec4<u32>;
     using v4hi = vec4<i16>;
     using v4hu = vec4<u16>;
+    using v4b = vec4<bool>;
 
     using m2d = mat2<f64>;
     using m2f = mat2<f32>;
