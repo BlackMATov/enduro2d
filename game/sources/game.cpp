@@ -60,9 +60,8 @@ namespace
         }
 
         void process(ecs::registry& owner) override {
-            // TODO
-            /*owner.for_joined_components<ui_controller_event_name, ui_controller_events>(
-            [this](const ecs::const_entity&, const ui_controller_event_name& evt_name, const ui_controller_events& events){
+            owner.for_joined_components<name_comp, ui_controller_events>(
+            [this](const ecs::const_entity&, const name_comp& evt_name, const ui_controller_events& events){
                 for ( auto& ev : events.events() ) {
                     if ( !std::any_cast<ui_button::click_evt>(&ev) ) {
                         continue;
@@ -73,11 +72,11 @@ namespace
                     }
                     iter->second();
                 }
-            });*/
+            });
         }
     private:
         using callback_t = void (*)();
-        hash_map<str, callback_t> callbacks_;
+        hash_map<str_hash, callback_t> callbacks_;
     };
 
     class game final : public starter::application {
@@ -89,8 +88,8 @@ namespace
         }
     private:
         bool create_scene() {
-            //auto scene_prefab_res = the<library>().load_asset<prefab_asset>("main/ui.json");
-            auto scene_prefab_res = the<library>().load_asset<prefab_asset>("overview/ui.json");
+            auto scene_prefab_res = the<library>().load_asset<prefab_asset>("main/ui.json");
+            //auto scene_prefab_res = the<library>().load_asset<prefab_asset>("overview/ui.json");
             auto scene_go = scene_prefab_res
                 ? the<world>().instantiate(scene_prefab_res->content())
                 : nullptr;

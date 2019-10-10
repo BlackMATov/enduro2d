@@ -1,7 +1,7 @@
 {
     "prototype": "../res/prefabs/ui_round_btn1_prefab.json",
     "components": {
-        "ui_controller_event_name": {
+        "name_comp": {
             "name": "boost_btn"
         }
     },

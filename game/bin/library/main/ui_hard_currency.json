@@ -34,7 +34,7 @@
             "children": [
                 {
                     "components": {
-                        "ui_controller_event_name": {
+                        "name_comp": {
                             "name": "by_hard_currency_btn"
                         }
                     }
