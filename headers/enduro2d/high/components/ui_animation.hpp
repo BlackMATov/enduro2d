@@ -69,10 +69,11 @@ namespace e2d
         virtual bool start_(ecs::entity&) { return true; }
         virtual void end_(secf, ecs::entity&) {}
         virtual void complete_(ecs::entity&) {}
+    protected:
+        bool inversed_ = false;
     private:
         bool started_ = false;
         bool canceled_ = false;
-        bool inversed_ = false;
         const bool repeat_inversed_;
         secf delay_;
         secf start_time_;
@@ -183,6 +184,12 @@ namespace e2d
         , update_fn_(std::forward<UpdateFn>(update_fn))
         , duration_(duration)
         , easing_(easing) {}
+
+        custom_anim_i(const custom_anim_i& other)
+        : abstract_anim(other)
+        , update_fn_(other.update_fn_)
+        , duration_(other.duration_)
+        , easing_(other.easing_) {}
         
         bool update_(secf time, secf, ecs::entity& e) override {
             f32 f = 1.0f;
@@ -195,6 +202,10 @@ namespace e2d
             f = inversed_ ? 1.0f - f : f;
             update_fn_(f, e);
             return result;
+        }
+
+        ui_animation::abstract_anim_uptr clone() const override {
+            return std::make_unique<custom_anim_i<UpdateFn>>(*this);
         }
     private:
         UpdateFn update_fn_;
