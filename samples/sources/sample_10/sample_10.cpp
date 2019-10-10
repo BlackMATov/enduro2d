@@ -51,15 +51,13 @@ namespace
                 return;
             }
             auto& anim = objs.front()->entity().assign_component<ui_animation>();
-            anim.set_animation(
-                ui_animation::custom([](f32 f, ecs::entity& e) {
+            anim.add(ui_animation::custom([](f32 f, ecs::entity& e) {
                     auto& spr = e.get_component<sprite_renderer>();
                     color32 c = spr.tint();
                     c.a = u8(255.0f * math::sin(f * math::pi<f32>()));
                     spr.tint(c);
                 })
-                .duration(secf(2.0f))
-            );
+                .duration(secf(2.0f)));
         }
     };
 

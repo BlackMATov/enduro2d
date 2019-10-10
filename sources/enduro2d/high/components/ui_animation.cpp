@@ -67,6 +67,8 @@ namespace
     
     class sequential_anim final : public ui_animation::abstract_anim {
     public:
+        sequential_anim() = default;
+
         sequential_anim(const sequential_anim& other)
         : abstract_anim(other) {
             animations_.resize(other.animations_.size());
@@ -88,7 +90,7 @@ namespace
                 if ( animations_[index_]->update(time, delta, e) ) {
                     return true;
                 } else {
-                    index_ += (inversed() ? -1 : 1);
+                    inversed() ? --index_ : ++index_;
                     return true;
                 }
             }
@@ -106,6 +108,10 @@ namespace
         
         ui_animation::abstract_anim_uptr clone() const override {
             return std::make_unique<sequential_anim>(*this);
+        }
+
+        void append(ui_animation::abstract_anim_uptr anim) {
+            animations_.push_back(std::move(anim));
         }
     private:
         vector<ui_animation::abstract_anim_uptr> animations_;
@@ -321,6 +327,11 @@ namespace e2d
     //
     // abstract_anim
     //
+    
+    ui_animation::abstract_anim::abstract_anim()
+    : repeat_inversed_(false)
+    , const_delay_()
+    , const_loops_(0) {}
 
     ui_animation::abstract_anim::abstract_anim(anim_builder& b)
     : on_start_(std::move(b.on_start_))
@@ -333,9 +344,6 @@ namespace e2d
     , repeat_inversed_(b.repeat_inversed_) {}
 
     bool ui_animation::abstract_anim::update(secf t, secf dt, ecs::entity& e) {
-        if ( canceled_ ) {
-            return false;
-        }
         if ( started_ ) {
             secf rel = t - start_time_;
             if ( update_(rel, dt, e) ) {
@@ -379,10 +387,6 @@ namespace e2d
             return update(t, dt, e);
         }
     }
-
-    void ui_animation::abstract_anim::cancel() {
-        canceled_ = true;
-    }
     
     bool ui_animation::abstract_anim::inversed() const noexcept {
         return inversed_;
@@ -420,8 +424,20 @@ namespace e2d
         return anim_.get();
     }
     
-    ui_animation& ui_animation::set_animation(abstract_anim_uptr value) noexcept {
-        anim_ = std::move(value);
+    ui_animation& ui_animation::add(abstract_anim_uptr value) noexcept {
+        if ( !value ) {
+            E2D_ASSERT(false);
+            return *this;
+        }
+        if ( !anim_ ) {
+            anim_ = std::make_unique<sequential_anim>();
+        }
+        static_cast<sequential_anim*>(anim_.get())->append(std::move(value));
+        return *this;
+    }
+    
+    ui_animation& ui_animation::clear() noexcept {
+        anim_.reset();
         return *this;
     }
 
@@ -471,7 +487,6 @@ namespace e2d
                 return false;
             });
     }
-
 
     //
     // move

@@ -16,8 +16,8 @@ namespace e2d
         const secf t = params.realtime_time * params.animation_time_scale;
         const secf dt = params.delta_time * params.animation_time_scale;
         vector<ecs::entity_id> to_remove;
-
-        owner.for_joined_components<ui_animation>(
+        
+        owner.for_each_component<ui_animation>(
         [t, dt, &to_remove](ecs::entity e, ui_animation& anim) noexcept {
             try {
                 if ( !anim.animation() ||

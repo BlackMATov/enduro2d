@@ -12,9 +12,6 @@ namespace e2d
 {
     class ui_animation final {
     public:
-        class cancel_tag final {};
-
-    public:
         using easing_fn = f32 (*)(f32 t);
 
         class abstract_anim;
@@ -42,8 +39,10 @@ namespace e2d
         ui_animation(A&& value);
 
         template < typename A >
-        std::enable_if_t<std::is_base_of_v<anim_builder, A>, ui_animation&> set_animation(A&& value) noexcept;
-        ui_animation& set_animation(abstract_anim_uptr value) noexcept;
+        std::enable_if_t<std::is_base_of_v<anim_builder, A>, ui_animation&> add(A&& value) noexcept;
+        ui_animation& add(abstract_anim_uptr value) noexcept;
+        ui_animation& clear() noexcept;
+
         abstract_anim* animation() const noexcept;
     private:
         abstract_anim_uptr anim_;
@@ -60,10 +59,10 @@ namespace e2d
     public:
         abstract_anim(anim_builder&);
         bool update(secf t, secf dt, ecs::entity& e);
-        void cancel();
         [[nodiscard]] virtual abstract_anim_uptr clone() const = 0;
         bool inversed() const noexcept;
     protected:
+        abstract_anim();
         abstract_anim(const abstract_anim&) = default;
         virtual bool update_(secf time, secf delta, ecs::entity& e) = 0;
         virtual bool start_(ecs::entity&) { return true; }
@@ -73,7 +72,6 @@ namespace e2d
         bool inversed_ = false;
     private:
         bool started_ = false;
-        bool canceled_ = false;
         const bool repeat_inversed_;
         secf delay_;
         secf start_time_;
@@ -435,12 +433,12 @@ namespace e2d
 {
     template < typename A >
     ui_animation::ui_animation(A&& value) {
-        set_animation(std::forward<A>(value));
+        add(std::forward<A>(value));
     }
 
     template < typename A >
     std::enable_if_t<std::is_base_of_v<ui_animation::anim_builder, A>, ui_animation&>
-    ui_animation::set_animation(A&& value) noexcept {
-        return set_animation(std::forward<A>(value).build());
+    ui_animation::add(A&& value) noexcept {
+        return add(std::forward<A>(value).build());
     }
 }
