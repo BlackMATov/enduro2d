@@ -332,6 +332,15 @@ namespace
         update_dock_layout2(e, parent_rect, node, childs);
     }
 
+    void update_sized_dock_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        // TODO
+    }
+
     void update_image_layout(
         ecs::entity& e,
         const b2f& parent_rect,
@@ -738,6 +747,14 @@ namespace
         });
         owner.remove_all_components<dock_layout::dirty>();
         
+        owner.for_joined_components<sized_dock_layout::dirty, sized_dock_layout>(
+        [](ecs::entity e, sized_dock_layout::dirty, const sized_dock_layout&) {
+            auto& layout = e.assign_component<ui_layout>();
+            layout.update_fn(&update_sized_dock_layout);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<sized_dock_layout::dirty>();
+
         owner.for_joined_components<image_layout::dirty, image_layout, sprite_renderer, actor>(
         [](ecs::entity e, image_layout::dirty, image_layout& img_layout, const sprite_renderer& spr, actor& act) {
             auto& layout = e.assign_component<ui_layout>();

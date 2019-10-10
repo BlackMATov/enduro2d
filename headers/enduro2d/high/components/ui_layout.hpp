@@ -100,7 +100,7 @@ namespace e2d
         class dirty final {};
     public:
         fixed_layout() = default;
-        fixed_layout(const v2f& size);
+        explicit fixed_layout(const v2f& size);
 
         fixed_layout& size(const v2f& value) noexcept;
         const v2f& size() const noexcept;
@@ -198,7 +198,7 @@ namespace e2d
         };
     public:
         stack_layout() = default;
-        stack_layout(stack_origin value);
+        explicit stack_layout(stack_origin value);
 
         stack_layout& origin(stack_origin value) noexcept;
         stack_origin origin() const noexcept;
@@ -259,7 +259,7 @@ namespace e2d
         };
     public:
         dock_layout() = default;
-        dock_layout(dock_type dock);
+        explicit dock_layout(dock_type dock);
         
         dock_layout& dock(dock_type value) noexcept;
         dock_type dock() const noexcept;
@@ -291,6 +291,57 @@ namespace e2d
 
         bool operator()(
             dock_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}
+
+namespace e2d
+{
+    class sized_dock_layout final {
+    public:
+        class dirty final {};
+
+        using dock_type = dock_layout::dock_type;
+    public:
+        sized_dock_layout() = default;
+        
+        sized_dock_layout& dock(dock_type value) noexcept;
+        dock_type dock() const noexcept;
+        bool has_dock(dock_type value) const noexcept;
+
+        sized_dock_layout& size(const v2f& value) noexcept;
+        const v2f& size() const noexcept;
+    private:
+        dock_type dock_ = dock_type::none;
+        v2f size_;
+
+    };
+    
+    template <>
+    class factory_loader<sized_dock_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            sized_dock_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+    
+    template <>
+    class factory_loader<sized_dock_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            sized_dock_layout::dirty& component,
             const fill_context& ctx) const;
             
         bool operator()(
@@ -438,7 +489,7 @@ namespace e2d
         class dirty final {};
     public:
         margin_layout() = default;
-        margin_layout(f32 margin);
+        explicit margin_layout(f32 margin);
         margin_layout(f32 left, f32 bottom, f32 right, f32 top);
 
         margin_layout& left(f32 value) noexcept;

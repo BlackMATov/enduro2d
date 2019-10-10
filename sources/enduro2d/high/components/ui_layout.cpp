@@ -320,6 +320,7 @@ namespace e2d
             component.origin(stack_layout::stack_origin::bottom);
         } else {
             the<debug>().error("STACK_LAYOUT: Incorrect formatting of 'origin' property");
+            return false;
         }
 
         if ( ctx.root.HasMember("spacing") ) {
@@ -412,6 +413,42 @@ namespace e2d
             }
         }
     })json";
+    
+    using dock_type = dock_layout::dock_type;
+
+    bool parse_hdock(const rapidjson::Value& root, dock_type& dock) {
+        E2D_ASSERT(root.IsString());
+        str_view hdock = root.GetString();
+        if ( hdock == "left" ) {
+            dock = dock | dock_type::left;
+        } else if ( hdock == "right" ) {
+            dock = dock | dock_type::right;
+        } else if ( hdock == "center" ) {
+            dock = dock | dock_type::center_x;
+        } else if ( hdock == "fill" ) {
+            dock = dock | dock_type::fill_x;
+        } else {
+            return false;
+        }
+        return true;
+    }
+    
+    bool parse_vdock(const rapidjson::Value& root, dock_type& dock) {
+        E2D_ASSERT(root.IsString());
+        str_view vdock = root.GetString();
+        if ( vdock == "top" ) {
+            dock = dock | dock_type::top;
+        } else if ( vdock == "bottom" ) {
+            dock = dock | dock_type::bottom;
+        } else if ( vdock == "center" ) {
+            dock = dock | dock_type::center_y;
+        } else if ( vdock == "fill" ) {
+            dock = dock | dock_type::fill_y;
+        } else {
+            return false;
+        }
+        return true;
+    }
 
     bool factory_loader<dock_layout>::operator()(
         dock_layout& component,
@@ -420,32 +457,15 @@ namespace e2d
         E2D_ASSERT(ctx.root.HasMember("hdock"));
         E2D_ASSERT(ctx.root.HasMember("vdock"));
 
-        str_view hdock = ctx.root["hdock"].GetString();
-        str_view vdock = ctx.root["vdock"].GetString();
-        dock_layout::dock_type dock = dock_layout::dock_type::none;
+        dock_type dock = dock_type::none;
 
-        if ( hdock == "left" ) {
-            dock = dock | dock_layout::dock_type::left;
-        } else if ( hdock == "right" ) {
-            dock = dock | dock_layout::dock_type::right;
-        } else if ( hdock == "center" ) {
-            dock = dock | dock_layout::dock_type::center_x;
-        } else if ( hdock == "fill" ) {
-            dock = dock | dock_layout::dock_type::fill_x;
-        } else {
+        if ( !parse_hdock(ctx.root["hdock"], dock) ) {
             the<debug>().error("DOCK_LAYOUT: Incorrect formatting of 'hdock' property");
+            return false;
         }
-        
-        if ( vdock == "top" ) {
-            dock = dock | dock_layout::dock_type::top;
-        } else if ( vdock == "bottom" ) {
-            dock = dock | dock_layout::dock_type::bottom;
-        } else if ( vdock == "center" ) {
-            dock = dock | dock_layout::dock_type::center_y;
-        } else if ( vdock == "fill" ) {
-            dock = dock | dock_layout::dock_type::fill_y;
-        } else {
+        if ( !parse_vdock(ctx.root["vdock"], dock) ) {
             the<debug>().error("DOCK_LAYOUT: Incorrect formatting of 'vdock' property");
+            return false;
         }
 
         component.dock(dock);
@@ -476,6 +496,115 @@ namespace e2d
     }
 
     bool factory_loader<dock_layout::dirty>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
+
+namespace e2d
+{
+    sized_dock_layout& sized_dock_layout::dock(dock_type value) noexcept {
+        dock_ = value;
+        return *this;
+    }
+
+    sized_dock_layout::dock_type sized_dock_layout::dock() const noexcept {
+        return dock_;
+    }
+    
+    bool sized_dock_layout::has_dock(dock_type value) const noexcept {
+        auto mask = utils::enum_to_underlying(value);
+        return (utils::enum_to_underlying(dock_) & mask) == mask;
+    }
+
+    const char* factory_loader<sized_dock_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [ "hdock", "vdock" ],
+        "additionalProperties" : false,
+        "properties" : {
+            "hdock" : { "$ref": "#/definitions/horizontal_dock_type" },
+            "vdock" : { "$ref": "#/definitions/vertical_dock_type" },
+            "size" : { "$ref": "#/common_definitions/v2" }
+        },
+        "definitions" : {
+            "horizontal_dock_type" : {
+                "type" : "string",
+                "enum" : [
+                    "left",
+                    "right",
+                    "center",
+                    "fill"
+                ]
+            },
+            "vertical_dock_type" : {
+                "type" : "string",
+                "enum" : [
+                    "bottom",
+                    "top",
+                    "center",
+                    "fill"
+                ]
+            }
+        }
+    })json";
+
+    bool factory_loader<sized_dock_layout>::operator()(
+        sized_dock_layout& component,
+        const fill_context& ctx) const
+    {
+        E2D_ASSERT(ctx.root.HasMember("hdock"));
+        E2D_ASSERT(ctx.root.HasMember("vdock"));
+
+        dock_type dock = dock_type::none;
+
+        if ( !parse_hdock(ctx.root["hdock"], dock) ) {
+            the<debug>().error("SIZED_DOCK_LAYOUT: Incorrect formatting of 'hdock' property");
+            return false;
+        }
+        if ( !parse_vdock(ctx.root["vdock"], dock) ) {
+            the<debug>().error("SIZED_DOCK_LAYOUT: Incorrect formatting of 'vdock' property");
+            return false;
+        }
+        component.dock(dock);
+
+        if ( ctx.root.HasMember("size") ) {
+            v2f size;
+            if ( !json_utils::try_parse_value(ctx.root["size"], size) ) {
+                the<debug>().error("SIZED_DOCK_LAYOUT: Incorrect formatting of 'size' property");
+                return false;
+            }
+            component.size(size);
+        }
+        return true;
+    }
+
+    bool factory_loader<sized_dock_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+
+    const char* factory_loader<sized_dock_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<sized_dock_layout::dirty>::operator()(
+        sized_dock_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<sized_dock_layout::dirty>::operator()(
         asset_dependencies& dependencies,
         const collect_context& ctx) const
     {

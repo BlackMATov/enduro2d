@@ -182,6 +182,8 @@ namespace e2d
             .register_component<stack_layout::dirty>("stack_layout.dirty")
             .register_component<dock_layout>("dock_layout")
             .register_component<dock_layout::dirty>("dock_layout.dirty")
+            .register_component<sized_dock_layout>("sized_dock_layout")
+            .register_component<sized_dock_layout::dirty>("sized_dock_layout.dirty")
             .register_component<image_layout>("image_layout")
             .register_component<image_layout::dirty>("image_layout.dirty")
             .register_component<margin_layout>("margin_layout")
