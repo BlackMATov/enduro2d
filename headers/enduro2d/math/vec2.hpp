@@ -394,6 +394,18 @@ namespace e2d::math
     }
 
     //
+    // is_near_zero
+    //
+
+    template < typename T >
+    bool is_near_zero(
+        const vec2<T>& v,
+        T precision = math::default_precision<T>()) noexcept
+    {
+        return approximately(v, vec2<T>(), precision);
+    }
+
+    //
     // dot
     //
 

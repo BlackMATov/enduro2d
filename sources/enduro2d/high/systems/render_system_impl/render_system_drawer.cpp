@@ -426,7 +426,7 @@ namespace e2d::render_system_impl
         const renderer& node_r,
         const sprite_renderer& spr_r)
     {
-        if ( !spr_r.sprite() ) {
+        if ( !spr_r.sprite() || math::is_near_zero(size) ) {
             return;
         }
 
@@ -520,7 +520,7 @@ namespace e2d::render_system_impl
         const renderer& node_r,
         const sprite_9p_renderer& spr_r)
     {
-        if ( !spr_r.sprite() || node_r.materials().empty() ) {
+        if ( !spr_r.sprite() || math::is_near_zero(size) ) {
             return;
         }
         

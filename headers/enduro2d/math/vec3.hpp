@@ -432,6 +432,18 @@ namespace e2d::math
             math::approximately(l.y, r.y, precision) &&
             math::approximately(l.z, r.z, precision);
     }
+    
+    //
+    // is_near_zero
+    //
+
+    template < typename T >
+    bool is_near_zero(
+        const vec3<T>& v,
+        T precision = math::default_precision<T>()) noexcept
+    {
+        return approximately(v, vec3<T>(), precision);
+    }
 
     //
     // dot
