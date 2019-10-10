@@ -174,30 +174,3 @@ namespace e2d
         return events_;
     }
 }
-
-namespace e2d
-{
-    class ui_controller_event_name final {
-    public:
-        ui_controller_event_name() = default;
-
-        ui_controller_event_name& set_name(str value);
-        const str& name() const noexcept;
-    private:
-        str name_;
-    };
-    
-    template <>
-    class factory_loader<ui_controller_event_name> final : factory_loader<> {
-    public:
-        static const char* schema_source;
-
-        bool operator()(
-            ui_controller_event_name& component,
-            const fill_context& ctx) const;
-            
-        bool operator()(
-            asset_dependencies& dependencies,
-            const collect_context& ctx) const;
-    };
-}

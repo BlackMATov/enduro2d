@@ -9,6 +9,8 @@
 #include <enduro2d/high/node.hpp>
 #include <enduro2d/high/components/actor.hpp>
 
+#include <enduro2d/high/single_components/name_map_comp.hpp>
+
 namespace e2d
 {
     world::~world() noexcept {
@@ -106,5 +108,43 @@ namespace e2d
         return iter != gobjects_.end()
             ? iter->second
             : nullptr;
+    }
+
+    vector<gobject_iptr> world::find_gobject(str_hash name) const noexcept {
+        auto* name_map = registry_.find_single_component<name_map_comp>();
+        if ( !name_map ) {
+            return {};
+        }
+        return name_map->find_all(name);
+    }
+
+    node_iptr world::find_node(const node_iptr& root, str_hash name) const noexcept {
+        if ( !root ) {
+            return nullptr;
+        }
+        vector<node_iptr> pending;
+        vector<node_iptr> temp;
+        pending.push_back(root);
+
+        for (; !pending.empty(); ) {
+            auto curr = pending.front();
+            pending.erase(pending.begin());
+
+            if ( auto* comp = curr->owner()->entity().find_component<name_comp>() ) {
+                if ( comp->name() == name ) {
+                    return curr;
+                }
+            }
+
+            curr->for_each_child([&temp](const node_iptr& n) {
+                temp.push_back(n);
+            });
+
+            for ( auto i = temp.rbegin(); i != temp.rend(); ++i ) {
+                pending.push_back(*i);
+            }
+            temp.clear();
+        }
+        return nullptr;
     }
 }

@@ -26,6 +26,40 @@ namespace
             if ( k.is_key_pressed(keyboard_key::lsuper) && k.is_key_just_released(keyboard_key::enter) ) {
                 the<window>().toggle_fullscreen(!the<window>().fullscreen());
             }
+
+            owner.for_joined_components<ui_controller_events, ui_scrollable, name_comp>(
+            [this](const ecs::entity& e, const ui_controller_events& events, const ui_scrollable&, const name_comp& name) {
+                if ( name.name() != str_hash("scrollable") ) {
+                    return;
+                }
+                for ( auto& ev : events.events() ) {
+                    if ( auto* upd = std::any_cast<ui_scrollable::scroll_update_evt>(&ev) ) {
+                        if ( math::abs(upd->overscroll.y) > 0.1f ) {
+                            overscroll_animation_(e, upd->overscroll.y);
+                        }
+                    }
+                }
+            });
+        }
+    private:
+        void overscroll_animation_(const ecs::entity&, f32 ov) {
+            auto objs = the<world>().find_gobject(ov > 0.0f ? "viewport.top" : "viewport.bottom");
+            if ( objs.empty() ) {
+                return;
+            }
+            if ( objs.front()->entity().find_component<ui_animation>() ) {
+                return;
+            }
+            auto& anim = objs.front()->entity().assign_component<ui_animation>();
+            anim.set_animation(
+                ui_animation::custom([](f32 f, ecs::entity& e) {
+                    auto& spr = e.get_component<sprite_renderer>();
+                    color32 c = spr.tint();
+                    c.a = u8(255.0f * math::sin(f * math::pi<f32>()));
+                    spr.tint(c);
+                })
+                .duration(secf(2.0f))
+            );
         }
     };
 

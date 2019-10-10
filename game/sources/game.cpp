@@ -60,7 +60,8 @@ namespace
         }
 
         void process(ecs::registry& owner) override {
-            owner.for_joined_components<ui_controller_event_name, ui_controller_events>(
+            // TODO
+            /*owner.for_joined_components<ui_controller_event_name, ui_controller_events>(
             [this](const ecs::const_entity&, const ui_controller_event_name& evt_name, const ui_controller_events& events){
                 for ( auto& ev : events.events() ) {
                     if ( !std::any_cast<ui_button::click_evt>(&ev) ) {
@@ -72,7 +73,7 @@ namespace
                     }
                     iter->second();
                 }
-            });
+            });*/
         }
     private:
         using callback_t = void (*)();

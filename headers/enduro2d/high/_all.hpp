@@ -36,6 +36,7 @@
 #include "components/flipbook_player.hpp"
 #include "components/label.hpp"
 #include "components/model_renderer.hpp"
+#include "components/name_comp.hpp"
 #include "components/renderer.hpp"
 #include "components/scissor_comp.hpp"
 #include "components/scene.hpp"
@@ -53,6 +54,7 @@
 #include "components/ui_controller.hpp"
 
 #include "single_components/frame_params_comp.hpp"
+#include "single_components/name_map_comp.hpp"
 
 #include "systems/flipbook_system.hpp"
 #include "systems/label_system.hpp"

@@ -24,32 +24,85 @@
                 "tint" :  [255, 0, 0, 255]
             },
             "scissor_comp" :  {},
-            "ui_layout.scissor_update_rect_tag" :  {}
+            "ui_layout.scissor_update_rect_tag": {}
         },
         "children" : [{
             "prototype" : "../prefabs/sprite_prefab.json",
-            "components" : {
-                "actor" : {
-                    "translation" :  [0, 0, 0]
+            "components": {
+                "actor": {
+                    "translation": [ 0, 0, 0 ]
                 },
-                "fixed_layout" :  {
-                    "size" :  [563, 1794]
+                "fixed_layout": {
+                    "size": [ 563, 1794 ]
                 },
-                "fixed_layout.dirty" :  {},
-                "sprite_renderer" : {
-                    "sprite" : "../sprites/scrollable_sprite.json"
+                "fixed_layout.dirty": {},
+                "sprite_renderer": {
+                    "sprite": "../sprites/scrollable_sprite.json"
                 },
-                "ui_scrollable" : {
-                    "separate_axes" :  true,
-                    "allowed_directions" :  "vertical"
+                "ui_scrollable": {
+                    "separate_axes": true,
+                    "allowed_directions": "vertical"
                 },
-                "ui_style" : {
-                    "propagate" : "all"
+                "ui_style": {
+                    "propagate": "all"
                 },
-                "rectangle_shape" : {},
-                "ui_layout.shape2d_update_size_tag" : {},
-                "touchable" : {
-                    "stop_propagation" : true
+                "rectangle_shape": {},
+                "ui_layout.shape2d_update_size_tag": {},
+                "touchable": {
+                    "stop_propagation": true
+                },
+                "name_comp": {
+                    "name": "scrollable"
+                }
+            }
+        }, {
+            "prototype" : "../prefabs/sprite_prefab.json",
+            "components": {
+                "actor": {
+                    "translation": [ 0, 0, 0 ]
+                },
+                "anchor_layout" : {
+                    "left_bottom" : {
+                        "position" : [0,0],
+                        "offset_px" : [0, 0]
+                    },
+                    "right_top" : {
+                        "position" : [1,0],
+                        "offset_px" : [0, 100]
+                    }
+                },
+                "anchor_layout.dirty" : {},
+                "sprite_renderer": {
+                    "sprite": "../sprites/rect_sprite.json",
+                    "tint": [255, 0, 0, 0]
+                },
+                "name_comp": {
+                    "name": "viewport.bottom"
+                }
+            }
+        }, {
+            "prototype" : "../prefabs/sprite_prefab.json",
+            "components": {
+                "actor": {
+                    "translation": [ 0, 0, 0 ]
+                },
+                "anchor_layout" : {
+                    "left_bottom" : {
+                        "position" : [0,1],
+                        "offset_px" : [0, -100]
+                    },
+                    "right_top" : {
+                        "position" : [1,1],
+                        "offset_px" : [0, 0]
+                    }
+                },
+                "anchor_layout.dirty" : {},
+                "sprite_renderer": {
+                    "sprite": "../sprites/rect_sprite.json",
+                    "tint": [0, 255, 0, 0]
+                },
+                "name_comp": {
+                    "name": "viewport.top"
                 }
             }
         }]

@@ -10,6 +10,7 @@
 
 #include "prefab.hpp"
 #include "gobject.hpp"
+#include "node.hpp"
 
 namespace e2d
 {
@@ -27,6 +28,9 @@ namespace e2d
 
         gobject_iptr resolve(ecs::entity_id ent) const noexcept;
         gobject_iptr resolve(const ecs::const_entity& ent) const noexcept;
+
+        vector<gobject_iptr> find_gobject(str_hash name) const noexcept;
+        node_iptr find_node(const node_iptr& root, str_hash name) const noexcept;
     private:
         ecs::registry registry_;
         hash_map<ecs::entity_id, gobject_iptr> gobjects_;

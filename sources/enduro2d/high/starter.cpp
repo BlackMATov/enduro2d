@@ -29,6 +29,7 @@
 #include <enduro2d/high/components/ui_layout.hpp>
 #include <enduro2d/high/components/ui_controller.hpp>
 #include <enduro2d/high/components/ui_style.hpp>
+#include <enduro2d/high/components/name_comp_impl.hpp>
 
 #include <enduro2d/high/systems/flipbook_system.hpp>
 #include <enduro2d/high/systems/label_system.hpp>
@@ -37,6 +38,7 @@
 #include <enduro2d/high/systems/shape_projection_system.hpp>
 #include <enduro2d/high/systems/input_event_system.hpp>
 #include <enduro2d/high/systems/ui_system.hpp>
+#include <enduro2d/high/systems/name_comp_system.hpp>
 
 namespace
 {
@@ -74,6 +76,7 @@ namespace
                 .system<spine_pre_system, world_ev::update>()
                 .system<flipbook_system, world_ev::update>()
                 .system<label_system, world_ev::post_update>()
+                .system<name_comp_system, world_ev::pre_update>()
                 .system<render_system, world_ev::render_frame>();
             return !application_ || application_->initialize();
         }
@@ -197,7 +200,6 @@ namespace e2d
             .register_component<ui_selectable>("ui_selectable")
             .register_component<ui_draggable>("ui_draggable")
             .register_component<ui_scrollable>("ui_scrollable")
-            .register_component<ui_controller_event_name>("ui_controller_event_name")
             .register_component<ui_style>("ui_style")
             .register_component<ui_style::style_changed_tag>("ui_style.style_changed_tag")
             .register_component<ui_color_style_comp>("ui_color_style_comp")
@@ -208,7 +210,8 @@ namespace e2d
             .register_component<circle_shape>("circle_shape")
             .register_component<polygon_shape>("polygon_shape")
             .register_component<touchable>("touchable")
-            .register_component<scissor_comp>("scissor_comp");
+            .register_component<scissor_comp>("scissor_comp")
+            .register_component<name_comp_impl>("name_comp");
         safe_module_initialize<library>(params.library_root(), the<deferrer>());
         safe_module_initialize<world>();
     }
