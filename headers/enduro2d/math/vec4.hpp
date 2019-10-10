@@ -640,4 +640,16 @@ namespace e2d::math
             !math::is_finite(v.z) ||
             !math::is_finite(v.w);
     }
+
+    //
+    // any, all
+    //
+
+    inline bool any(const vec4<bool>& v) noexcept {
+        return v.x | v.y | v.z | v.w;
+    }
+
+    inline bool all(const vec4<bool>& v) noexcept {
+        return v.x & v.y & v.z & v.w;
+    }
 }

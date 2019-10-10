@@ -130,15 +130,20 @@ namespace
         };
 
         v3f velocity;
-        secf last_touch;
+        secf last_touch_time;
+        v2f last_touch_pos;
         scroll_mode mode = scroll_mode::idle;
         v2b touch_axis_mask {false};
+        secf last_update_time;
         
         //static constexpr f32 v2_friction = 0.1f;
         static constexpr f32 v_friction = 0.7f;
         static constexpr f32 c_friction = 400.0f;
         static constexpr f32 wheel_scale = 50.0f;
         static constexpr f32 min_velocity = 1.0f;
+        static constexpr f32 min_touch_delta2 = 4.0f * 4.0f;
+        static constexpr f32 update_step = 1.0f / 60.0f; // seconds
+        static constexpr u32 max_update_steps = 10;
     };
 
     v3i int_direction(const v3f& v, f32 precission = 1.0e-4f) noexcept {
@@ -183,12 +188,13 @@ namespace
 
         // process touch down event
         owner.for_joined_components<touch_down_event, ui_scrollable>(
-        [](ecs::entity e, const touch_down_event&, const ui_scrollable&) {
+        [](ecs::entity e, const touch_down_event& ev, const ui_scrollable&) {
             auto& scr_p = e.ensure_component<ui_scrollable_private>();
             if ( scr_p.mode == scroll_mode::inertion ) {
                 // continue scrolling
                 scr_p.mode = scroll_mode::manual;
             }
+            scr_p.last_touch_pos = ev.data->center;
         });
 
         // process touch up event
@@ -199,8 +205,8 @@ namespace
 
             auto& scr_p = e.ensure_component<ui_scrollable_private>();
             if ( scr_p.mode == scroll_mode::manual ) {
-                scr_p.velocity *= velocity_attenuation(time - scr_p.last_touch);
-                if ( math::abs(math::length(scr_p.velocity)) > ui_scrollable_private::min_velocity ) {
+                scr_p.velocity *= velocity_attenuation(time - scr_p.last_touch_time);
+                if ( math::length(scr_p.velocity) > ui_scrollable_private::min_velocity ) {
                     scr_p.mode = scroll_mode::inertion;
                 } else {
                     scr_p.mode = scroll_mode::idle;
@@ -218,17 +224,16 @@ namespace
             auto mvp = act.node()->world_matrix() * ev.data->view_proj;
             auto mvp_inv = math::inversed(mvp, 0.0f).first;
             const f32 z = 0.0f;
-            v2f touch_delta = ev.data->delta;
             auto& scr_p = e.ensure_component<ui_scrollable_private>();
             auto& events = e.ensure_component<ui_controller_events>();
+            v2f touch_delta = ev.data->center - scr_p.last_touch_pos;
 
             // start scrolling
             if ( scr_p.mode == scroll_mode::idle ) {
-                style.set(ui_style_state::dragging, true);
-                e.ensure_component<ui_style::style_changed_bits>().set(ui_style_state::dragging);
-                scr_p.mode = scroll_mode::manual;
-                events.add_event(ui_scrollable::scroll_begin_evt{});
-
+                if ( math::length_squared(touch_delta) < ui_scrollable_private::min_touch_delta2 ) {
+                    // touch delta in too small to select primary axis
+                    return;
+                }
                 if ( scr.separate_axes() ) {
                     const bool vertical_only = scr.allowed_directions() == ui_scrollable::direction::vertical;
                     const bool horizontal_only = scr.allowed_directions() == ui_scrollable::direction::horizontal;
@@ -239,20 +244,26 @@ namespace
                     } else if ( vertical_only || (!is_deltax_bigger && scr.is_vertical()) ) {
                         scr_p.touch_axis_mask = v2b(false, true);
                     } else {
-                        E2D_ASSERT(false);
-                        scr_p.touch_axis_mask = v2b(false);
+                        // can't select axis, will try again at next time
+                        return;
                     }
                 } else {
-                    scr_p.touch_axis_mask = v2b(true);
+                    scr_p.touch_axis_mask = v2b(scr.is_horizontal(), scr.is_vertical());
                 }
+
+                style.set(ui_style_state::dragging, true);
+                e.ensure_component<ui_style::style_changed_bits>().set(ui_style_state::dragging);
+                scr_p.mode = scroll_mode::manual;
+                events.add_event(ui_scrollable::scroll_begin_evt{});
             }
             touch_delta *= scr_p.touch_axis_mask.cast_to<f32>();
 
-            // TODO
-            if ( math::is_near_zero(touch_delta.x) && math::is_near_zero(touch_delta.y) ) {
+            if ( math::is_near_zero(touch_delta.x, 0.1f) & math::is_near_zero(touch_delta.y, 0.1f) ) {
                 return;
             }
             
+            scr_p.last_touch_pos = ev.data->center;
+
             v3f new_point = math::unproject(v3f(ev.data->center, z), mvp_inv, ev.data->viewport);
             v3f old_point = math::unproject(v3f(ev.data->center + touch_delta, z), mvp_inv, ev.data->viewport);
             v3f delta = (old_point - new_point) * act.node()->scale();
@@ -266,49 +277,54 @@ namespace
             act.node()->translation(pos);
             events.add_event(ui_scrollable::scroll_update_evt{delta, overscroll});
 
-            scr_p.velocity = (scr_p.velocity * velocity_attenuation(time - scr_p.last_touch) + (delta / dt)) * 0.5f;
-            scr_p.last_touch = time;
+            scr_p.velocity = (scr_p.velocity * velocity_attenuation(time - scr_p.last_touch_time) + (delta / dt)) * 0.5f;
+            scr_p.last_touch_time = time;
         });
 
-        // temp
-        {
-            const v2f scroll_delta = the<input>().mouse().scroll_delta();
-
-            if ( !math::is_near_zero(scroll_delta.x) || !math::is_near_zero(scroll_delta.y) ) {
-                owner.for_joined_components<ui_scrollable, ui_scrollable_private>(
-                [scroll_delta](ecs::entity e, const ui_scrollable& scr, ui_scrollable_private& scr_p) {
-                    if ( scr_p.mode == scroll_mode::idle ) {
-                        scr_p.mode = scroll_mode::inertion;
-                        e.ensure_component<ui_controller_events>()
-                            .add_event(ui_scrollable::scroll_begin_evt{});
-                    }
-                    if ( scr_p.mode != scroll_mode::manual ) {
-                        v2f d = -scroll_delta * v2b(scr.is_horizontal(), scr.is_vertical()).cast_to<f32>();
-                        scr_p.velocity = scr_p.velocity + v3f(d, 0.0f) * ui_scrollable_private::wheel_scale;
-                    }
-                });
-            }
+        // process mouse wheel
+        const v2f scroll_delta = the<input>().mouse().scroll_delta();
+        if ( !math::is_near_zero(scroll_delta.x) || !math::is_near_zero(scroll_delta.y) ) {
+            owner.for_joined_components<mouse_over_tag, ui_scrollable>(
+            [scroll_delta](ecs::entity e, const mouse_over_tag&, const ui_scrollable& scr) {
+                auto& scr_p = e.ensure_component<ui_scrollable_private>();
+                if ( scr_p.mode == scroll_mode::idle ) {
+                    scr_p.mode = scroll_mode::inertion;
+                    e.ensure_component<ui_controller_events>()
+                        .add_event(ui_scrollable::scroll_begin_evt{});
+                }
+                if ( scr_p.mode != scroll_mode::manual ) {
+                    v2f d = -scroll_delta * v2b(scr.is_horizontal(), scr.is_vertical()).cast_to<f32>();
+                    scr_p.velocity = scr_p.velocity + v3f(d, 0.0f) * ui_scrollable_private::wheel_scale;
+                }
+            });
         }
 
         // update
         owner.for_joined_components<ui_scrollable, ui_scrollable_private, actor>(
-        [dt](ecs::entity e, const ui_scrollable&, ui_scrollable_private& scr_p, actor& act) {
+        [time](ecs::entity e, const ui_scrollable&, ui_scrollable_private& scr_p, actor& act) {
             if ( scr_p.mode == scroll_mode::inertion ) {
                 auto& events = e.ensure_component<ui_controller_events>();
                 v3f& vel = scr_p.velocity;
                 const v3i old_dir = int_direction(vel);
                 const f32 vel_l = math::length(vel);
-                const bool has_vel = math::abs(vel_l) > ui_scrollable_private::min_velocity;
+                const bool has_vel = vel_l > ui_scrollable_private::min_velocity;
                 v3b is_overscroll {false};
 
                 if ( has_vel ) {
+                    const f32 dt = ui_scrollable_private::update_step;
+                    const f32 time_delta = (time - scr_p.last_update_time).value / dt;
+                    const u32 steps = math::clamp(u32(time_delta),
+                        1u,
+                        ui_scrollable_private::max_update_steps);
                     v3f pos = act.node()->translation();
-                    v3f accel = -(vel * ui_scrollable_private::v_friction + (vel / vel_l) * ui_scrollable_private::c_friction);
 
-                    // uniformly accelerated motion
-                    pos += vel * dt * 0.5f;
-                    vel += accel * dt;
-                    pos += vel * dt * 0.5f;
+                    for ( u32 i = 0; i < steps; ++i ) {
+                        v3f accel = -vel * ui_scrollable_private::v_friction
+                            - (vel / vel_l) * ui_scrollable_private::c_friction;
+                        pos += vel * dt * 0.5f;
+                        vel += accel * dt;
+                        pos += vel * dt * 0.5f;
+                    }
 
                     v3f overscroll;
                     std::tie(overscroll, is_overscroll) = calc_overscroll(act, pos);
@@ -319,10 +335,14 @@ namespace
                     events.add_event(ui_scrollable::scroll_update_evt{
                         pos - act.node()->translation(),
                         overscroll});
+
+                    scr_p.last_update_time = time - secf(time_delta - math::floor(time_delta)) * dt;
+                } else {
+                    scr_p.last_update_time = time;
                 }
 
                 const v3i new_dir = int_direction(vel);
-                if ( old_dir != new_dir || !has_vel || is_overscroll.x || is_overscroll.y || is_overscroll.z ) {
+                if ( old_dir != new_dir || !has_vel || math::any(is_overscroll) ) {
                     scr_p.mode = scroll_mode::idle;
                     scr_p.velocity = v3f();
                     e.ensure_component<ui_style>().set(ui_style_state::dragging, false);

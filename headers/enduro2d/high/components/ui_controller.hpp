@@ -110,13 +110,13 @@ namespace e2d
 
         struct scroll_begin_evt {
         };
+
         struct scroll_update_evt {
             v3f delta;
             v3f overscroll;
         };
+
         struct scroll_end_evt {
-        };
-        struct overscroll_evt {
         };
     public:
         ui_scrollable() = default;
