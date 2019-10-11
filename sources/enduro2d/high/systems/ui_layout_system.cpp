@@ -125,7 +125,8 @@ namespace
 
             // update child transformation
             for ( auto& c : childs ) {
-                c.node->translation(c.node->translation() + v3f(-region.position, c.node->translation().z));
+
+                c.node->translation(c.node->translation() + v3f(-region.position, 0.0f));
                 c.parent_rect = b2f(region.size);
             }
         } else {
@@ -155,14 +156,16 @@ namespace
             layout.depends_on_childs(),
             layout.depends_on_parent()});
     }
-    
+
     void update_stack_layout2(
         ecs::entity& e,
-        const b2f&,
+        const b2f& parent_rect,
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
+        using origin = stack_layout::stack_origin;
         auto& sl = e.get_component<stack_layout>();
+        const b2f local = project_to_local(node, parent_rect);
         
         // project childs into stack layout and calculate max size
         const f32 spacing_sum = sl.spacing() * (math::max<size_t>(1, childs.size()) - 1);
@@ -174,10 +177,10 @@ namespace
             max_size += r.size;
         }
         switch ( sl.origin() ) {
-            case stack_layout::stack_origin::left: max_size.x += spacing_sum; break;
-            case stack_layout::stack_origin::right: max_size.x += spacing_sum; break;
-            case stack_layout::stack_origin::bottom: max_size.y += spacing_sum; break;
-            case stack_layout::stack_origin::top: max_size.y += spacing_sum; break;
+            case origin::left: max_size.x += spacing_sum; break;
+            case origin::right: max_size.x += spacing_sum; break;
+            case origin::bottom: max_size.y += spacing_sum; break;
+            case origin::top: max_size.y += spacing_sum; break;
         }
         
         v2f offset;
@@ -188,24 +191,27 @@ namespace
 
             // place into stack
             switch ( sl.origin() ) {
-                case stack_layout::stack_origin::left:
+                case origin::left:
                     item_r += v2f(offset.x, 0.f);
                     offset.x += item_r.size.x + sl.spacing();
                     break;
-                case stack_layout::stack_origin::right:
+                case origin::right:
                     item_r += v2f(max_size.x - offset.x - item_r.size.x, 0.f);
                     offset.x += item_r.size.x + sl.spacing();
                     break;
-                case stack_layout::stack_origin::bottom:
+                case origin::bottom:
                     item_r += v2f(0.0f, offset.y);
                     offset.y += item_r.size.y + sl.spacing();
                     break;
-                case stack_layout::stack_origin::top:
+                case origin::top:
                     item_r += v2f(0.0f, max_size.y - offset.y - item_r.size.y);
                     offset.y += item_r.size.y + sl.spacing();
                     break;
             }
-            c.node->translation(v3f(item_r.position - projected[i].position, c.node->translation().z));
+
+            const v2f pos = item_r.position - projected[i].position;
+            c.node->translation(v3f(pos, c.node->translation().z));
+            c.parent_rect = b2f(pos, local.size);
 
             if ( &c != childs.data() ) {
                 join_rect(local_r, item_r);
@@ -297,7 +303,7 @@ namespace
             E2D_ASSERT_MSG(false, "undefined vertical docking");
         }
         
-        v2f off = project_to_parent(node, b2f(region.size)).position;
+        v2f off = project_to_parent(node, b2f(region.size)).position - parent_rect.position;
 
         node->translation(v3f(region.position - off, node->translation().z));
         node->size(region.size);
@@ -378,10 +384,14 @@ namespace
             region.size.y = size.y;
         }
         
-        v2f off = project_to_parent(node, b2f(region.size)).position;
+        v2f off = project_to_parent(node, b2f(region.size)).position - parent_rect.position;
 
         node->translation(v3f(region.position - off, node->translation().z));
         node->size(region.size);
+
+        for ( auto& c : childs ) {
+            c.parent_rect = b2f(region.size);
+        }
     }
 
     void update_image_layout(
@@ -402,7 +412,8 @@ namespace
             ? v3f(math::minimum(parent_rect.size / region.size))
             : v3f(parent_rect.size / region.size, 1.0f);
 
-        node->translation(v3f(-region.position * v2f(scale), node->translation().z));
+        const v2f pos = -region.position * v2f(scale) - parent_rect.position;
+        node->translation(v3f(pos, node->translation().z));
         node->scale(scale);
     }
 
@@ -510,10 +521,11 @@ namespace
         const v2f pad_size = v2f(pl.left() + pl.right(), pl.bottom() + pl.top());
 
         if ( local.size.x > pad_size.x && local.size.y > pad_size.y ) {
-            node->translation(v3f(pl.left(), pl.bottom(), node->translation().z));
+            const v2f pos = v2f(pl.left(), pl.bottom()) + parent_rect.position;
+            node->translation(v3f(pos, node->translation().z));
             node->size(local.size - pad_size);
         } else {
-            node->translation(v3f(0.0f, 0.0f, node->translation().z));
+            node->translation(v3f(parent_rect.position, node->translation().z));
             node->size(v2f());
         }
 
@@ -539,8 +551,9 @@ namespace
             (al.right_top().relative_offset
                 ? local.size * al.right_top().offset
                 : al.right_top().offset);
+        const v2f pos = lb + parent_rect.position;
 
-        node->translation(v3f(lb, node->translation().z));
+        node->translation(v3f(pos, node->translation().z));
         node->size(math::maximized(rt - lb, v2f(0.0f)));
 
         for ( auto& c : childs ) {
@@ -794,6 +807,7 @@ namespace
         [](ecs::entity e, sized_dock_layout::dirty, const sized_dock_layout&) {
             auto& layout = e.assign_component<ui_layout>();
             layout.update_fn(&update_sized_dock_layout);
+            layout.depends_on_parent(true);
             layout.depends_on_parent(true);
         });
         owner.remove_all_components<sized_dock_layout::dirty>();
