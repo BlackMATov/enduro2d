@@ -338,7 +338,50 @@ namespace
         const node_iptr& node,
         std::vector<ui_layout::layout_state>& childs)
     {
-        // TODO
+        using dock = dock_layout::dock_type;
+        auto& dl = e.get_component<sized_dock_layout>();
+        const b2f local = project_to_local(node, parent_rect);
+        const v2f size = dl.size();
+        b2f region;
+
+        // horizontal docking
+        if ( dl.has_dock(dock::center_x) ) {
+            region.position.x = (local.size.x - size.x) * 0.5f;
+            region.size.x = size.x;
+        } else if ( dl.has_dock(dock::fill_x) ) {
+            region.position.x = 0.0f;
+            region.size.x = local.size.x;
+        } else if ( dl.has_dock(dock::left) ) {
+            region.position.x = 0.0f;
+            region.size.x = size.x;
+        } else if ( dl.has_dock(dock::right) ) {
+            region.position.x = local.size.x - size.x;
+            region.size.x = size.x;
+        } else {
+            region.size.x = size.x;
+        }
+
+        // vertical docking
+        if ( dl.has_dock(dock::center_y) ) {
+            region.position.y = (local.size.y - size.y) * 0.5f;
+            region.size.y = size.y;
+        } else if ( dl.has_dock(dock::fill_y) ) {
+            region.position.y = 0.0f;
+            region.size.y = local.size.y;
+        } else if ( dl.has_dock(dock::bottom) ) {
+            region.position.y = 0.0f;
+            region.size.y = size.y;
+        } else if ( dl.has_dock(dock::top) ) {
+            region.position.y = local.size.y - size.y;
+            region.size.y = size.y;
+        } else {
+            region.size.y = size.y;
+        }
+        
+        v2f off = project_to_parent(node, b2f(region.size)).position;
+
+        node->translation(v3f(region.position - off, node->translation().z));
+        node->size(region.size);
     }
 
     void update_image_layout(

@@ -427,7 +427,7 @@ namespace e2d
             dock = dock | dock_type::center_x;
         } else if ( hdock == "fill" ) {
             dock = dock | dock_type::fill_x;
-        } else {
+        } else if ( hdock != "none" ) {
             return false;
         }
         return true;
@@ -444,7 +444,7 @@ namespace e2d
             dock = dock | dock_type::center_y;
         } else if ( vdock == "fill" ) {
             dock = dock | dock_type::fill_y;
-        } else {
+        } else if ( vdock != "none" ) {
             return false;
         }
         return true;
@@ -519,6 +519,15 @@ namespace e2d
         auto mask = utils::enum_to_underlying(value);
         return (utils::enum_to_underlying(dock_) & mask) == mask;
     }
+    
+    sized_dock_layout& sized_dock_layout::size(const v2f& value) noexcept {
+        size_ = value;
+        return *this;
+    }
+
+    const v2f& sized_dock_layout::size() const noexcept {
+        return size_;
+    }
 
     const char* factory_loader<sized_dock_layout>::schema_source = R"json({
         "type" : "object",
@@ -536,7 +545,8 @@ namespace e2d
                     "left",
                     "right",
                     "center",
-                    "fill"
+                    "fill",
+                    "none"
                 ]
             },
             "vertical_dock_type" : {
@@ -545,7 +555,8 @@ namespace e2d
                     "bottom",
                     "top",
                     "center",
-                    "fill"
+                    "fill",
+                    "none"
                 ]
             }
         }
