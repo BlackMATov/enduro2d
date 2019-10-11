@@ -18,84 +18,69 @@
             "tint": [ 0, 0, 200, 255 ]
         }
     },
-    "children": [
-        {
-            "components": {
-                "actor": {},
-                "dock_layout": {
-                    "vdock": "center",
-                    "hdock": "left"
-                },
-                "dock_layout.dirty": {}
+    "children": [{
+        "components": {
+            "actor": {},
+            "dock_layout": {
+                "vdock": "center",
+                "hdock": "left"
             },
-            "children": [
-                {
-                    "components": {
-                        "actor": {},
-                        "stack_layout": {
-                            "origin": "left",
-                            "spacing": 20
-                        },
-                        "stack_layout.dirty": {}
-                    },
-                    "children": [
-                        {
-                            "components": {
-                                "actor": {},
-                                "fixed_layout": {
-                                    "size": [ 20, 0 ]
-                                },
-                                "fixed_layout.dirty": {}
-                            }
-                        },
-                        {
-                            "prototype": "ui_store_btn.json"
-                        },
-                        {
-                            "prototype": "ui_boost_btn.json"
-                        }
-                    ]
-                }
-            ]
+            "dock_layout.dirty": {}
         },
-        {
+        "children": [{
             "components": {
                 "actor": {},
-                "dock_layout": {
-                    "vdock": "center",
-                    "hdock": "right"
+                "stack_layout": {
+                    "origin": "left",
+                    "spacing": 20
                 },
-                "dock_layout.dirty": {}
+                "stack_layout.dirty": {}
             },
-            "children": [
-                {
-                    "components": {
-                        "actor": {},
-                        "stack_layout": {
-                            "origin": "left",
-                            "spacing": 20
-                        },
-                        "stack_layout.dirty": {}
+            "children": [{
+                "components": {
+                    "actor": {},
+                    "fixed_layout": {
+                        "size": [ 20, 0 ]
                     },
-                    "children": [
-                        {
-                            "prototype": "ui_game_view_btn.json"
-                        },
-                        {
-                            "prototype": "ui_map_btn.json"
-                        },
-                        {
-                            "components": {
-                                "actor": {},
-                                "fixed_layout": {
-                                    "size": [ 20, 0 ]
-                                },
-                                "fixed_layout.dirty": {}
-                            }
-                        }
-                    ]
+                    "fixed_layout.dirty": {}
                 }
-            ]
-        }
-    ]
+            }, {
+                "prototype": "ui_store_btn.json"
+            }, {
+                "prototype": "ui_boost_btn.json"
+            }]
+        }]
+    }, {
+        "components": {
+            "actor": {},
+            "dock_layout": {
+                "vdock": "center",
+                "hdock": "right"
+            },
+            "dock_layout.dirty": {}
+        },
+        "children": [{
+            "components": {
+                "actor": {},
+                "stack_layout": {
+                    "origin": "left",
+                    "spacing": 20
+                },
+                "stack_layout.dirty": {}
+            },
+            "children": [{
+                "prototype": "ui_game_view_btn.json"
+            }, {
+                "prototype": "ui_map_btn.json"
+            }, {
+                "components": {
+                    "actor": {},
+                    "fixed_layout": {
+                        "size": [ 20, 0 ]
+                    },
+                    "fixed_layout.dirty": {}
+                }
+            }]
+        }]
+    }]
 }

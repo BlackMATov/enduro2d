@@ -2,97 +2,170 @@
     "prototype" : "sprite_prefab.json",
     "components" : {
         "actor" : {},
-        "padding_layout" : {
-            "left": 100,
-            "right": 100,
-            "bottom": 200,
-            "top": 200
+        "dock_layout" : {
+            "vdock" : "fill",
+            "hdock" : "fill"
         },
-        "padding_layout.dirty" : {},
+        "dock_layout.dirty" : {},
         "sprite_renderer" : {
-            "sprite" : "../sprites/blue_panel.json"
+            "sprite" : "../sprites/blue_panel.json",
+            "tint" : [0, 0, 0, 120]
+        },
+        "ui_button" : {},
+        "rectangle_shape": {},
+        "ui_layout.shape2d_update_size_tag": {},
+        "touchable": {
+            "stop_propagation": true
+        },
+        "name_comp" : {
+            "name" : "window_bg_mask"
         }
     },
     "children" : [{
         "prototype" : "sprite_prefab.json",
         "components" : {
-            "actor" : {},
-            "dock_layout" : {
-                "vdock" : "top",
-                "hdock" :  "fill"
+            "actor" : {
+                "pivot" : [0.5, 0.5]
             },
-            "dock_layout.dirty" : {}
+            "padding_layout" : {
+                "left": 100,
+                "right": 100,
+                "bottom": 200,
+                "top": 200
+            },
+            "padding_layout.dirty" : {},
+            "sprite_renderer" : {
+                "sprite" : "../sprites/blue_panel.json"
+            },
+            "name_comp" : {
+                "name" : "window_form"
+            }
         },
         "children" : [{
             "prototype" : "sprite_prefab.json",
             "components" : {
                 "actor" : {},
-                "stack_layout" : {
-                    "origin" : "top"
+                "anchor_layout" : {
+                    "left_bottom" : {
+                        "position" : [0, 1],
+                        "offset_px" : [0, -100]
+                    },
+                    "right_top" : {
+                        "position" : [1, 1],
+                        "offset_px" : [0, 0]
+                    }
                 },
-                "stack_layout.dirty" : {},
+                "anchor_layout.dirty" : {},
                 "sprite_renderer" : {
                     "sprite" : "../sprites/white_button.json",
                     "tint" : [255, 0, 0, 255]
                 }
             },
             "children" : [{
-                "prototype" : "sprite_prefab.json",
+                "prototype": "label_sdf_prefab.json",
+                "components" : {
+                    "actor" : {},
+                    "label_autoscale_layout": {
+                        "min_scale" : 0.5,
+                        "max_scale" : 1.0
+                    },
+                    "label_autoscale_layout.dirty" : {},
+                    "label" : {
+                        "text" : "title",
+                        "halign" : "center",
+                        "valign" : "center",
+                        "tint" : [255, 255, 255, 255]
+                    },
+                    "name_comp" : {
+                        "name" : "window_title"
+                    }
+                }
+            }, {
                 "components" : {
                     "actor" : {},
                     "sized_dock_layout" : {
-                        "vdock" : "none",
-                        "hdock" : "fill",
-                        "size" : [0, 100]
+                        "vdock" : "center",
+                        "hdock" : "right",
+                        "size" :  [80, 80]
                     },
                     "sized_dock_layout.dirty" : {}
                 },
                 "children" : [{
-                    "prototype": "label_sdf_prefab.json",
+                    "prototype" : "sprite_prefab.json",
                     "components" : {
                         "actor" : {},
-                        "label_autoscale_layout": {
-                            "min_scale" : 0.5,
-                            "max_scale" : 1.0
+                        "padding_layout" : {
+                            "padding" : 10
                         },
-                        "label_autoscale_layout.dirty" : {},
-                        "label" : {
-                            "text" : "title",
-                            "halign" : "center",
-                            "valign" : "center",
-                            "tint" : [255, 255, 255, 255]
+                        "padding_layout.dirty" : {},
+                        "sprite_renderer" : {
+                            "sprite" : "../sprites/cross.json"
+                        },
+                        "ui_button": {},
+                        "ui_style": {},
+                        "ui_style.style_changed_tag": {},
+                        "ui_color_style_comp": {
+                            "address": "../styles/close_window_btn.json"
+                        },
+                        "rectangle_shape": {},
+                        "ui_layout.shape2d_update_size_tag": {},
+                        "touchable": {
+                            "stop_propagation": true
                         },
                         "name_comp" : {
-                            "name" : "window_title"
+                            "name" : "close_window_btn"
                         }
                     }
-                }, {
-                    "components" : {
-                        "actor" : {},
-                        "sized_dock_layout" : {
-                            "vdock" : "center",
-                            "hdock" : "right",
-                            "size" :  [80, 80]
-                        },
-                        "sized_dock_layout.dirty" : {}
-                    },
-                    "children" : [{
-                        "prototype" : "sprite_prefab.json",
-                        "components" : {
-                            "actor" : {},
-                            "padding_layout" : {
-                                "padding" : 10
-                            },
-                            "padding_layout.dirty" : {},
-                            "sprite_renderer" : {
-                                "sprite" : "../sprites/cross.json"
-                            },
-                            "name_comp" : {
-                                "name" : "close_window_btn"
-                            }
-                        }
-                    }]
                 }]
+            }]
+        }, {
+            "prototype" : "sprite_prefab.json",
+            "components" : {
+                "actor" : {},
+                "anchor_layout" : {
+                    "left_bottom" : {
+                        "position" : [0, 0],
+                        "offset_px" : [20, 20]
+                    },
+                    "right_top" : {
+                        "position" : [1, 1],
+                        "offset_px" : [-20, -120]
+                    }
+                },
+                "anchor_layout.dirty" : {},
+                "sprite_renderer" : {
+                    "sprite" : "../sprites/white_button.json",
+                    "tint" : [0, 0, 0, 255]
+                },
+                "scissor_comp" : {},
+                "ui_layout.scissor_update_rect_tag": {},
+                "name_comp" : {
+                    "name" : "window_main_scrollview"
+                }
+            },
+            "children" : [{
+                "prototype" : "sprite_prefab.json",
+                "components": {
+                    "actor": {},
+                    "fixed_layout": {
+                        "size": [10, 10]
+                    },
+                    "fixed_layout.dirty": {},
+                    "ui_scrollable": {
+                        "allowed_directions": "vertical"
+                    },
+                    "ui_style": {
+                        "propagate": "all"
+                    },
+                    "rectangle_shape": {},
+                    "ui_layout.shape2d_update_size_tag": {},
+                    "touchable": {
+                        "stop_propagation": true
+                    },
+                    "name_comp": {
+                        "name": "window_main_scrollable"
+                    }
+                }
             }]
         }]
     }]

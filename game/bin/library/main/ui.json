@@ -1,15 +1,15 @@
 {
     "components": {
-        "scene": {},
         "actor": {},
-        "ui_layout.root_tag": {}
-    },
-    "children": [
-        {
-            "prototype": "ui_top.json"
+        "sized_dock_layout" : {
+            "vdock" : "fill",
+            "hdock" : "fill"
         },
-        {
-            "prototype": "ui_bottom.json"
-        }
-    ]
+        "sized_dock_layout.dirty" : {}
+    },
+    "children": [{
+        "prototype": "ui_top.json"
+    }, {
+        "prototype": "ui_bottom.json"
+    }]
 }

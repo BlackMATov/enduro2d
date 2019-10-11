@@ -65,7 +65,7 @@ namespace e2d::render_system_impl
                 const renderer& node_r,
                 const sprite_9p_renderer& spr_r);
 
-            void set_scissor(const b2u& sc);
+            void set_scissor(const b2u& sc, bool enabled);
 
             void flush();
         private:

@@ -5,13 +5,11 @@
             "name": "store_btn"
         }
     },
-    "children": [
-        {
-            "components": {
-                "sprite_renderer": {
-                    "sprite": "../res/sprites/ico_store.json"
-                }
+    "children": [{
+        "components": {
+            "sprite_renderer": {
+                "sprite": "../res/sprites/ico_store.json"
             }
         }
-    ]
+    }]
 }

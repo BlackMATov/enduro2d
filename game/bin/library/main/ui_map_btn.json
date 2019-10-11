@@ -5,13 +5,11 @@
             "name": "map_btn"
         }
     },
-    "children": [
-        {
-            "components": {
-                "sprite_renderer": {
-                    "sprite": "../res/sprites/ico_map.json"
-                }
+    "children": [{
+        "components": {
+            "sprite_renderer": {
+                "sprite": "../res/sprites/ico_map.json"
             }
         }
-    ]
+    }]
 }

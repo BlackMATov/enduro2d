@@ -91,6 +91,8 @@ namespace e2d::math
     color32 clamped(const color32& c, const color32& cmin, const color32& cmax) noexcept;
 
     bool contains_nan(const color32& c) noexcept;
+
+    color32 lerp(const color32& l, const color32& r, f32 v) noexcept;
 }
 
 namespace e2d::colors

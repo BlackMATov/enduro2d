@@ -5,13 +5,11 @@
             "name": "game_view_btn"
         }
     },
-    "children": [
-        {
-            "components": {
-                "sprite_renderer": {
-                    "sprite": "../res/sprites/ico_game_view.json"
-                }
+    "children": [{
+        "components": {
+            "sprite_renderer": {
+                "sprite": "../res/sprites/ico_game_view.json"
             }
         }
-    ]
+    }]
 }

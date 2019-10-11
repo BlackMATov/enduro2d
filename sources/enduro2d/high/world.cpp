@@ -118,7 +118,7 @@ namespace e2d
         return name_map->find_all(name);
     }
 
-    node_iptr world::find_node(const node_iptr& root, str_hash name) const noexcept {
+    node_iptr world::find_child_node(const node_iptr& root, str_hash name) const noexcept {
         if ( !root ) {
             return nullptr;
         }
@@ -144,6 +144,20 @@ namespace e2d
                 pending.push_back(*i);
             }
             temp.clear();
+        }
+        return nullptr;
+    }
+
+    node_iptr world::find_root_node(const node_iptr& child, str_hash name) const noexcept {
+        if ( !child ) {
+            return nullptr;
+        }
+        for (node_iptr n = child->parent(); n; n = n->parent()) {
+            if ( auto* comp = n->owner()->entity().find_component<name_comp>() ) {
+                if ( comp->name() == name ) {
+                    return n;
+                }
+            }
         }
         return nullptr;
     }

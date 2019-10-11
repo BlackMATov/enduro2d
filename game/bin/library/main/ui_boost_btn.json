@@ -5,13 +5,11 @@
             "name": "boost_btn"
         }
     },
-    "children": [
-        {
-            "components": {
-                "sprite_renderer": {
-                    "sprite": "../res/sprites/ico_boost.json"
-                }
+    "children": [{
+        "components": {
+            "sprite_renderer": {
+                "sprite": "../res/sprites/ico_boost.json"
             }
         }
-    ]
+    }]
 }

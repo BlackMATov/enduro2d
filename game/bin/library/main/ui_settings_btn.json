@@ -8,13 +8,11 @@
             "address": "../res/styles/main_settings_btn.json"
         }
     },
-    "children": [
-        {
-            "components": {
-                "sprite_renderer": {
-                    "sprite": "../res/sprites/ico_settings.json"
-                }
+    "children": [{
+        "components": {
+            "sprite_renderer": {
+                "sprite": "../res/sprites/ico_settings.json"
             }
         }
-    ]
+    }]
 }

@@ -1,8 +1,11 @@
 {
     "components": {
-        "scene": {},
         "actor": {},
-        "ui_layout.root_tag": {}
+        "sized_dock_layout" : {
+            "vdock" : "fill",
+            "hdock" : "fill"
+        },
+        "sized_dock_layout.dirty" : {}
     },
     "children": [{
         "prototype": "../res/prefabs/window_prefab.json"

@@ -316,6 +316,15 @@ namespace e2d::math
             || !math::is_finite(c.b)
             || !math::is_finite(c.a);
     }
+    
+    //
+    // lerp
+    //
+
+    color32 lerp(const color32& l, const color32& r, f32 v) noexcept {
+        auto c = math::lerp(make_vec4(l).cast_to<f32>(), make_vec4(r).cast_to<f32>(), v);
+        return color32(color(c.x, c.y, c.z, c.w));
+    }
 }
 
 namespace e2d::colors

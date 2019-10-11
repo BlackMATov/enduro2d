@@ -21,17 +21,15 @@
             "stop_propagation": true
         }
     },
-    "children": [
-        {
-            "prototype": "sprite_prefab.json",
-            "components": {
-                "actor": {},
-                "padding_layout": {
-                    "padding": 5
-                },
-                "padding_layout.dirty": {},
-                "sprite_renderer": {}
-            }
+    "children": [{
+        "prototype": "sprite_prefab.json",
+        "components": {
+            "actor": {},
+            "padding_layout": {
+                "padding": 5
+            },
+            "padding_layout.dirty": {},
+            "sprite_renderer": {}
         }
-    ]
+    }]
 }

@@ -1,0 +1,16 @@
+{
+    "children" : [{             
+        "components": {
+            "scene": {},
+            "actor": {},
+            "ui_layout.root_tag": {}
+        }
+    }, {  
+        "components" : {
+            "camera" : {
+                "background" : [1.0, 0.4, 0.0, 1.0]
+            },
+            "camera.input_handler_tag" : {}
+        }
+    }]
+}

@@ -613,9 +613,9 @@ namespace e2d::render_system_impl
         batcher_.flush();
     }
     
-    void drawer::context::set_scissor(const b2u& sc) {
+    void drawer::context::set_scissor(const b2u& sc, bool enabled) {
         flush();
-        render_.execute(render::scissor_command(sc));
+        render_.execute(render::scissor_command(sc).scissoring(enabled));
     }
 
     //

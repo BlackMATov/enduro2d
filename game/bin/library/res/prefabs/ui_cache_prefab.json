@@ -6,148 +6,133 @@
         },
         "fixed_layout.dirty": {}
     },
-    "children": [
-        {
-            "prototype": "sprite_prefab.json",
-            "components": {
-                "actor": {},
-                "padding_layout": {
-                    "left": 60,
-                    "right": 40,
-                    "bottom": 25,
-                    "top": 25
-                },
-                "padding_layout.dirty": {},
-                "sprite_renderer": {
-                    "sprite": "../sprites/white_button.json",
-                    "tint": [ 0, 100, 255, 255 ]
-                }
+    "children": [{
+        "prototype": "sprite_prefab.json",
+        "components": {
+            "actor": {},
+            "padding_layout": {
+                "left": 60,
+                "right": 40,
+                "bottom": 25,
+                "top": 25
             },
-            "children": [
-                {
-                    "components": {
-                        "actor": {},
-                        "padding_layout": {
-                            "left": 20,
-                            "right": 20,
-                            "bottom": 5,
-                            "top": 5
-                        },
-                        "padding_layout.dirty": {}
-                    },
-                    "children": [
-                        {
-                            "prototype": "label_sdf_prefab.json",
-                            "components": {
-                                "actor": {},
-                                "label_autoscale_layout": {
-                                    "min_scale": 0.5,
-                                    "max_scale": 1.0
-                                },
-                                "label_autoscale_layout.dirty": {},
-                                "label": {
-                                    "text": "597",
-                                    "halign": "center",
-                                    "valign": "center",
-                                    "tint": [ 255, 255, 255, 255 ]
-                                }
-                            }
-                        }
-                    ]
-                }
-            ]
+            "padding_layout.dirty": {},
+            "sprite_renderer": {
+                "sprite": "../sprites/white_button.json",
+                "tint": [ 0, 100, 255, 255 ]
+            }
         },
-        {
+        "children": [{
             "components": {
                 "actor": {},
                 "padding_layout": {
-                    "left": 70,
-                    "right": 50,
-                    "bottom": 70,
-                    "top": 0
+                    "left": 20,
+                    "right": 20,
+                    "bottom": 5,
+                    "top": 5
                 },
                 "padding_layout.dirty": {}
             },
-            "children": [
-                {
-                    "prototype": "label_sdf_prefab.json",
-                    "components": {
-                        "actor": {},
-                        "label_autoscale_layout": {
-                            "min_scale": 0.5,
-                            "max_scale": 1.0
-                        },
-                        "label_autoscale_layout.dirty": {},
-                        "label": {
-                            "text": "super cache",
-                            "halign": "center",
-                            "valign": "center",
-                            "tint": [ 0, 255, 0, 255 ]
-                        }
+            "children": [{
+                "prototype": "label_sdf_prefab.json",
+                "components": {
+                    "actor": {},
+                    "label_autoscale_layout": {
+                        "min_scale": 0.5,
+                        "max_scale": 1.0
+                    },
+                    "label_autoscale_layout.dirty": {},
+                    "label": {
+                        "text": "597",
+                        "halign": "center",
+                        "valign": "center",
+                        "tint": [ 255, 255, 255, 255 ]
                     }
                 }
-            ]
+            }]
+        }]
+    }, {
+        "components": {
+            "actor": {},
+            "padding_layout": {
+                "left": 70,
+                "right": 50,
+                "bottom": 70,
+                "top": 0
+            },
+            "padding_layout.dirty": {}
         },
-        {
+        "children": [{
+            "prototype": "label_sdf_prefab.json",
             "components": {
                 "actor": {},
-                "dock_layout": {
-                    "hdock": "left",
-                    "vdock": "center"
+                "label_autoscale_layout": {
+                    "min_scale": 0.5,
+                    "max_scale": 1.0
                 },
-                "dock_layout.dirty": {}
-            },
-            "children": [
-                {
-                    "prototype": "sprite_prefab.json",
-                    "components": {
-                        "actor": {},
-                        "fixed_layout": {
-                            "size": [ 70, 70 ]
-                        },
-                        "fixed_layout.dirty": {},
-                        "sprite_renderer": {
-                            "sprite": "../sprites/yellow_circle.json"
-                        }
-                    }
+                "label_autoscale_layout.dirty": {},
+                "label": {
+                    "text": "super cache",
+                    "halign": "center",
+                    "valign": "center",
+                    "tint": [ 0, 255, 0, 255 ]
                 }
-            ]
+            }
+        }]
+    }, {
+        "components": {
+            "actor": {},
+            "dock_layout": {
+                "hdock": "left",
+                "vdock": "center"
+            },
+            "dock_layout.dirty": {}
         },
-        {
+        "children": [{
+            "prototype": "sprite_prefab.json",
             "components": {
                 "actor": {},
-                "dock_layout": {
-                    "hdock": "right",
-                    "vdock": "center"
+                "fixed_layout": {
+                    "size": [ 70, 70 ]
                 },
-                "dock_layout.dirty": {}
-            },
-            "children": [
-                {
-                    "prototype": "sprite_prefab.json",
-                    "components": {
-                        "actor": {},
-                        "fixed_layout": {
-                            "size": [ 50, 50 ]
-                        },
-                        "fixed_layout.dirty": {},
-                        "sprite_renderer": {
-                            "sprite": "../sprites/green_box_cross.json"
-                        },
-                        "ui_button": {},
-                        "ui_style": {},
-                        "ui_style.style_changed_tag": {},
-                        "ui_color_style_comp": {
-                            "address": "../styles/add_cache_btn.json"
-                        },
-                        "rectangle_shape": {},
-                        "ui_layout.shape2d_update_size_tag": {},
-                        "touchable": {
-                            "stop_propagation": true
-                        }
-                    }
+                "fixed_layout.dirty": {},
+                "sprite_renderer": {
+                    "sprite": "../sprites/yellow_circle.json"
                 }
-            ]
-        }
-    ]
+            }
+        }]
+    }, {
+        "components": {
+            "actor": {},
+            "dock_layout": {
+                "hdock": "right",
+                "vdock": "center"
+            },
+            "dock_layout.dirty": {}
+        },
+        "children": [{
+            "prototype": "sprite_prefab.json",
+            "components": {
+                "actor": {},
+                "fixed_layout": {
+                    "size": [ 50, 50 ]
+                },
+                "fixed_layout.dirty": {},
+                "sprite_renderer": {
+                    "sprite": "../sprites/green_box_cross.json"
+                },
+                "ui_button": {},
+                "ui_style": {},
+                "ui_style.style_changed_tag": {},
+                "ui_color_style_comp": {
+                    "address": "../styles/add_cache_btn.json"
+                },
+                "rectangle_shape": {},
+                "ui_layout.shape2d_update_size_tag": {},
+                "touchable": {
+                    "stop_propagation": true
+                }
+            }
+        }]
+    }]
 }

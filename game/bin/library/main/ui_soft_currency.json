@@ -1,47 +1,34 @@
 {
     "prototype": "../res/prefabs/ui_cache_prefab.json",
-    "children": [
-        {
-            "children": [
-                {
-                    "children": [
-                        {
-                            "components": {
-                                "label": {
-                                    "text": "21.3m",
-                                    "tint": [ 255, 255, 255, 255 ]
-                                }
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "children": [
-                {
-                    "components": {
-                        "label": {
-                            "text": "cache",
-                            "tint": [ 255, 255, 0, 255 ]
-                        }
+    "children": [{
+        "children": [{
+            "children": [{
+                "components": {
+                    "label": {
+                        "text": "21.3m",
+                        "tint": [ 255, 255, 255, 255 ]
                     }
                 }
-            ]
-        },
-        {
-            "children": []
-        },
-        {
-            "children": [
-                {
-                    "components": {
-                        "name_comp": {
-                            "name": "by_soft_currency_btn"
-                        }
-                    }
+            }]
+        }]
+    }, {
+        "children": [{
+            "components": {
+                "label": {
+                    "text": "cache",
+                    "tint": [ 255, 255, 0, 255 ]
                 }
-            ]
-        }
-    ]
+            }
+        }]
+    }, {
+        "children": []
+    }, {
+        "children": [{
+            "components": {
+                "name_comp": {
+                    "name": "by_soft_currency_btn"
+                }
+            }
+        }]
+    }]
 }

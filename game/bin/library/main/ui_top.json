@@ -18,79 +18,65 @@
             "tint": [ 0, 0, 200, 255 ]
         }
     },
-    "children": [
-        {
-            "components": {
-                "actor": {},
-                "dock_layout": {
-                    "hdock": "left",
-                    "vdock": "fill"
-                },
-                "dock_layout.dirty": {}
+    "children": [{
+        "components": {
+            "actor": {},
+            "dock_layout": {
+                "hdock": "left",
+                "vdock": "fill"
             },
-            "children": [
-                {
-                    "components": {
-                        "actor": {},
-                        "stack_layout": {
-                            "origin": "left"
-                        },
-                        "stack_layout.dirty": {}
-                    },
-                    "children": [
-                        {
-                            "components": {
-                                "actor": {},
-                                "fixed_layout": {
-                                    "size": [ 20, 20 ]
-                                },
-                                "fixed_layout.dirty": {}
-                            }
-                        },
-                        {
-                            "prototype": "ui_soft_currency.json"
-                        },
-                        {
-                            "components": {
-                                "actor": {},
-                                "fixed_layout": {
-                                    "size": [ 20, 20 ]
-                                },
-                                "fixed_layout.dirty": {}
-                            }
-                        },
-                        {
-                            "prototype": "ui_hard_currency.json"
-                        }
-                    ]
-                }
-            ]
+            "dock_layout.dirty": {}
         },
-        {
+        "children": [{
             "components": {
                 "actor": {},
-                "dock_layout": {
-                    "hdock": "right",
-                    "vdock": "center"
+                "stack_layout": {
+                    "origin": "left"
                 },
-                "dock_layout.dirty": {}
+                "stack_layout.dirty": {}
             },
-            "children": [
-                {
-                    "components": {
-                        "actor": {},
-                        "margin_layout": {
-                            "right": 20
-                        },
-                        "margin_layout.dirty": {}
+            "children": [{
+                "components": {
+                    "actor": {},
+                    "fixed_layout": {
+                        "size": [ 20, 20 ]
                     },
-                    "children": [
-                        {
-                            "prototype": "ui_settings_btn.json"
-                        }
-                    ]
+                    "fixed_layout.dirty": {}
                 }
-            ]
-        }
-    ]
+            }, {
+                "prototype": "ui_soft_currency.json"
+            }, {
+                "components": {
+                    "actor": {},
+                    "fixed_layout": {
+                        "size": [ 20, 20 ]
+                    },
+                    "fixed_layout.dirty": {}
+                }
+            }, {
+                "prototype": "ui_hard_currency.json"
+            }]
+        }]
+    }, {
+        "components": {
+            "actor": {},
+            "dock_layout": {
+                "hdock": "right",
+                "vdock": "center"
+            },
+            "dock_layout.dirty": {}
+        },
+        "children": [{
+            "components": {
+                "actor": {},
+                "margin_layout": {
+                    "right": 20
+                },
+                "margin_layout.dirty": {}
+            },
+            "children": [{
+                "prototype": "ui_settings_btn.json"
+            }]
+        }]
+    }]
 }

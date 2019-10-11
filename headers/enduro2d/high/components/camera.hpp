@@ -50,6 +50,20 @@ namespace e2d
             asset_dependencies& dependencies,
             const collect_context& ctx) const;
     };
+
+    template <>
+    class factory_loader<camera::input_handler_tag> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            camera::input_handler_tag& component,
+            const fill_context& ctx) const;
+
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
 }
 
 namespace e2d

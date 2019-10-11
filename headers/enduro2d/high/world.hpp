@@ -30,7 +30,8 @@ namespace e2d
         gobject_iptr resolve(const ecs::const_entity& ent) const noexcept;
 
         vector<gobject_iptr> find_gobject(str_hash name) const noexcept;
-        node_iptr find_node(const node_iptr& root, str_hash name) const noexcept;
+        node_iptr find_child_node(const node_iptr& root, str_hash name) const noexcept;
+        node_iptr find_root_node(const node_iptr& child, str_hash name) const noexcept;
     private:
         ecs::registry registry_;
         hash_map<ecs::entity_id, gobject_iptr> gobjects_;

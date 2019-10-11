@@ -28,12 +28,13 @@ namespace
         struct scissor {
             b2u rect;
             u32 depth;
+            bool enabled;
         };
         static vector<item> pending_nodes, temp_nodes;
         static vector<scissor> scissor_stack;
         try {
             scissor_stack.clear();
-            scissor_stack.push_back({b2u(~0u, ~0u), 0});
+            scissor_stack.push_back({b2u(), 0, false});
             pending_nodes.push_back({root, 1});
 
             for (; !pending_nodes.empty(); ) {
@@ -43,11 +44,11 @@ namespace
                 if ( scissor_stack.back().depth == curr.depth ) {
                     scissor_stack.pop_back();
                     E2D_ASSERT(!scissor_stack.empty());
-                    ctx.set_scissor(scissor_stack.back().rect);
+                    ctx.set_scissor(scissor_stack.back().rect, scissor_stack.back().enabled);
                 }
                 if ( auto* sc = curr.node->owner()->entity().find_component<scissor_comp>() ) {
-                    scissor_stack.push_back({sc->rect(), curr.depth});
-                    ctx.set_scissor(scissor_stack.back().rect);
+                    scissor_stack.push_back({sc->rect(), curr.depth, true});
+                    ctx.set_scissor(scissor_stack.back().rect, true);
                 }
 
                 ctx.draw(curr.node);
