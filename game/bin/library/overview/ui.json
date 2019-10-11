@@ -4,9 +4,7 @@
         "actor": {},
         "ui_layout.root_tag": {}
     },
-    "children": [
-        {
-            "prototype": "../res/prefabs/window_prefab.json"
-        }
-    ]
+    "children": [{
+        "prototype": "../res/prefabs/window_prefab.json"
+    }]
 }

@@ -1,16 +1,99 @@
 {
-    "prototype": "sprite_prefab.json",
-    "components": {
-        "actor": {},
-        "padding_layout": {
+    "prototype" : "sprite_prefab.json",
+    "components" : {
+        "actor" : {},
+        "padding_layout" : {
             "left": 100,
             "right": 100,
             "bottom": 200,
             "top": 200
         },
-        "padding_layout.dirty": {},
-        "sprite_renderer": {
-            "sprite": "../sprites/blue_panel.json"
+        "padding_layout.dirty" : {},
+        "sprite_renderer" : {
+            "sprite" : "../sprites/blue_panel.json"
         }
-    }
+    },
+    "children" : [{
+        "prototype" : "sprite_prefab.json",
+        "components" : {
+            "actor" : {},
+            "dock_layout" : {
+                "vdock" : "top",
+                "hdock" :  "fill"
+            },
+            "dock_layout.dirty" : {}
+        },
+        "children" : [{
+            "prototype" : "sprite_prefab.json",
+            "components" : {
+                "actor" : {},
+                "stack_layout" : {
+                    "origin" : "top"
+                },
+                "stack_layout.dirty" : {},
+                "sprite_renderer" : {
+                    "sprite" : "../sprites/white_button.json",
+                    "tint" : [255, 0, 0, 255]
+                }
+            },
+            "children" : [{
+                "prototype" : "sprite_prefab.json",
+                "components" : {
+                    "actor" : {},
+                    "sized_dock_layout" : {
+                        "vdock" : "none",
+                        "hdock" : "fill",
+                        "size" : [0, 100]
+                    },
+                    "sized_dock_layout.dirty" : {}
+                },
+                "children" : [{
+                    "prototype": "label_sdf_prefab.json",
+                    "components" : {
+                        "actor" : {},
+                        "label_autoscale_layout": {
+                            "min_scale" : 0.5,
+                            "max_scale" : 1.0
+                        },
+                        "label_autoscale_layout.dirty" : {},
+                        "label" : {
+                            "text" : "title",
+                            "halign" : "center",
+                            "valign" : "center",
+                            "tint" : [255, 255, 255, 255]
+                        },
+                        "name_comp" : {
+                            "name" : "window_title"
+                        }
+                    }
+                }, {
+                    "components" : {
+                        "actor" : {},
+                        "sized_dock_layout" : {
+                            "vdock" : "center",
+                            "hdock" : "right",
+                            "size" :  [80, 80]
+                        },
+                        "sized_dock_layout.dirty" : {}
+                    },
+                    "children" : [{
+                        "prototype" : "sprite_prefab.json",
+                        "components" : {
+                            "actor" : {},
+                            "padding_layout" : {
+                                "padding" : 10
+                            },
+                            "padding_layout.dirty" : {},
+                            "sprite_renderer" : {
+                                "sprite" : "../sprites/cross.json"
+                            },
+                            "name_comp" : {
+                                "name" : "close_window_btn"
+                            }
+                        }
+                    }]
+                }]
+            }]
+        }]
+    }]
 }
