@@ -19,13 +19,44 @@ namespace
 
     using ui_style_state = ui_style::ui_style_state;
 
-    void process_buttons(ecs::registry& owner) {
-        // process touch up event
-        owner.for_joined_components<touch_up_event, ui_button, ui_style>(
-        [](ecs::entity e, const touch_up_event& touch, const ui_button&, ui_style& style) {
+    void update_style(ecs::registry& owner) {
+        // process touch down event
+        owner.for_joined_components<touch_down_event, ui_style>(
+        [](ecs::entity e, const touch_down_event&, ui_style& style) {
+            style.set(ui_style_state::touched, true);
             e.ensure_component<ui_style::style_changed_bits>()
                 .set(ui_style_state::touched);
+        });
+        
+        // process touch up event
+        owner.for_joined_components<touch_up_event, ui_style>(
+        [](ecs::entity e, const touch_up_event& touch, ui_style& style) {
             style.set(ui_style_state::touched, false);
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::touched);
+        });
+
+        // process mouse enter event
+        owner.for_joined_components<mouse_enter_event, ui_style>(
+        [](ecs::entity e, const mouse_enter_event&, ui_style& style) {
+            style.set(ui_style_state::mouse_over, true);
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::mouse_over);
+        });
+        
+        // process mouse leave event
+        owner.for_joined_components<mouse_leave_event, ui_style>(
+        [](ecs::entity e, const mouse_leave_event&, ui_style& style) {
+            style.set(ui_style_state::mouse_over, false);
+            e.ensure_component<ui_style::style_changed_bits>()
+                .set(ui_style_state::mouse_over);
+        });
+    }
+
+    void process_buttons(ecs::registry& owner) {
+        // process touch up event
+        owner.for_joined_components<touch_up_event, ui_button>(
+        [](ecs::entity e, const touch_up_event& touch, const ui_button&) {
             e.ensure_component<ui_controller_events>()
                 .add_event(ui_button::click_evt{touch.data->center});
         });
@@ -36,9 +67,7 @@ namespace
         owner.for_joined_components<touch_up_event, ui_selectable, ui_style>(
         [](ecs::entity e, const touch_up_event&, ui_selectable& sel, ui_style& style) {
             e.ensure_component<ui_style::style_changed_bits>()
-                .set(ui_style_state::touched)
                 .set(ui_style_state::selected);
-            style.set(ui_style_state::touched, false);
             sel.selected(!sel.selected());
             style.set(ui_style_state::selected, sel.selected());
             e.ensure_component<ui_controller_events>()
@@ -57,11 +86,8 @@ namespace
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_draggable, ui_style>(
         [](ecs::entity e, const touch_up_event&, const ui_draggable&, ui_style& style) {
-            e.ensure_component<ui_style::style_changed_bits>()
-                .set(ui_style_state::dragging)
-                .set(ui_style_state::touched);
+            e.ensure_component<ui_style::style_changed_bits>().set(ui_style_state::dragging);
             style.set(ui_style_state::dragging, false);
-            style.set(ui_style_state::touched, false);
 
             auto& drg = e.ensure_component<ui_draggable_private>();
             if ( drg.started ) {
@@ -200,9 +226,6 @@ namespace
         // process touch up event
         owner.for_joined_components<touch_up_event, ui_scrollable, ui_style>(
         [time](ecs::entity e, const touch_up_event&, const ui_scrollable&, ui_style& style) {
-            e.ensure_component<ui_style::style_changed_bits>().set(ui_style_state::touched);
-            style.set(ui_style_state::touched, false);
-
             auto& scr_p = e.ensure_component<ui_scrollable_private>();
             if ( scr_p.mode == scroll_mode::manual ) {
                 scr_p.velocity *= velocity_attenuation(time - scr_p.last_touch_time);
@@ -358,30 +381,7 @@ namespace
 namespace e2d
 {
     void ui_controller_system::process(ecs::registry& owner) {
-        // process touch down event
-        owner.for_joined_components<touch_down_event, ui_style>(
-        [](ecs::entity e, const touch_down_event&, ui_style& style) {
-            style.set(ui_style_state::touched, true);
-            e.ensure_component<ui_style::style_changed_bits>()
-                .set(ui_style_state::touched);
-        });
-        
-        // process mouse enter event
-        owner.for_joined_components<mouse_enter_event, ui_style>(
-        [](ecs::entity e, const mouse_enter_event&, ui_style& style) {
-            style.set(ui_style_state::mouse_over, true);
-            e.ensure_component<ui_style::style_changed_bits>()
-                .set(ui_style_state::mouse_over);
-        });
-        
-        // process mouse leave event
-        owner.for_joined_components<mouse_leave_event, ui_style>(
-        [](ecs::entity e, const mouse_leave_event&, ui_style& style) {
-            style.set(ui_style_state::mouse_over, false);
-            e.ensure_component<ui_style::style_changed_bits>()
-                .set(ui_style_state::mouse_over);
-        });
-
+        update_style(owner);
         process_buttons(owner);
         process_selectable(owner);
         process_draggable(owner);
