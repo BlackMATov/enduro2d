@@ -682,3 +682,60 @@ namespace e2d
             const collect_context& ctx) const;
     };
 }
+
+namespace e2d
+{
+    class split_layout final {
+    public:
+        class dirty final {};
+
+        enum class split_direction : u8 {
+            left,
+            right,
+            top,
+            bottom
+        };
+    public:
+        split_layout() = default;
+
+        split_layout& direction(split_direction value) noexcept;
+        split_direction direction() const noexcept;
+
+        split_layout& offset_relative(f32 value) noexcept;
+        split_layout& offset_pixels(f32 value) noexcept;
+        f32 offset() const noexcept;
+        bool is_relative_offset() const noexcept;
+    private:
+        split_direction direction_ = split_direction::left;
+        f32 offset_ = 0.0f;
+        bool relative_offset_ = false;
+    };
+    
+    template <>
+    class factory_loader<split_layout> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            split_layout& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+
+    template <>
+    class factory_loader<split_layout::dirty> final : factory_loader<> {
+    public:
+        static const char* schema_source;
+
+        bool operator()(
+            split_layout::dirty& component,
+            const fill_context& ctx) const;
+            
+        bool operator()(
+            asset_dependencies& dependencies,
+            const collect_context& ctx) const;
+    };
+}

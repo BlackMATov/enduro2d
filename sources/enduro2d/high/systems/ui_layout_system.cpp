@@ -607,6 +607,63 @@ namespace
 
         update_bounded_layout2(e, parent_rect, node, childs);
     }
+
+    void update_split_layout(
+        ecs::entity& e,
+        const b2f& parent_rect,
+        const node_iptr& node,
+        std::vector<ui_layout::layout_state>& childs)
+    {
+        const b2f local = project_to_local(node, parent_rect);
+        const auto& sl = e.get_component<split_layout>();
+
+        E2D_ASSERT(childs.empty() || childs.size() == 2);
+
+        const auto calc_size = [&sl, &local](f32 size) {
+            return sl.is_relative_offset() ? size * sl.offset() : sl.offset();
+        };
+
+        b2f first_r;
+        b2f second_r;
+        switch ( sl.direction() ) {
+            case split_layout::split_direction::left: {
+                f32 s = calc_size(local.size.x);
+                first_r.position = v2f(0.f, 0.f);
+                second_r.position = v2f(s, 0.f);
+                first_r.size = second_r.size = local.size - v2f(s, 0.f);
+                break;
+            }
+            case split_layout::split_direction::right: {
+                f32 s = calc_size(local.size.x);
+                first_r.position = v2f(local.size.x - s, 0.f);
+                second_r.position = v2f(0.f, 0.f);
+                first_r.size = second_r.size = local.size - v2f(s, 0.f);
+                break;
+            }
+            case split_layout::split_direction::bottom: {
+                f32 s = calc_size(local.size.y);
+                first_r.position = v2f(0.f, 0.f);
+                second_r.position = v2f(0.f, s);
+                first_r.size = second_r.size = local.size - v2f(0.f, s);
+                break;
+            }
+            case split_layout::split_direction::top: {
+                f32 s = calc_size(local.size.y);
+                first_r.position = v2f(0.f, local.size.y - s);
+                second_r.position = v2f(0.f, 0.f);
+                first_r.size = second_r.size = local.size - v2f(0.f, s);
+                break;
+            }
+        }
+
+        for ( size_t i = 0; i < childs.size(); ++i ) {
+            if ( i ) {
+                childs[i].parent_rect = second_r;
+            } else {
+                childs[i].parent_rect = first_r;
+            }
+        }
+    }
 }
 
 namespace
@@ -870,6 +927,15 @@ namespace
             layout.depends_on_parent(true);
         });
         owner.remove_all_components<bounded_layout::dirty>();
+        
+        owner.for_joined_components<split_layout::dirty, split_layout>(
+        [](ecs::entity e, split_layout::dirty, const split_layout&) {
+            auto& layout = e.ensure_component<ui_layout>();
+            layout.update_fn(&update_split_layout);
+            layout.depends_on_childs(false);
+            layout.depends_on_parent(true);
+        });
+        owner.remove_all_components<split_layout::dirty>();
     }
 
     void update_shape_size(ecs::registry& owner) {

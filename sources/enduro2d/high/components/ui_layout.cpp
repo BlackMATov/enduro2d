@@ -1249,3 +1249,121 @@ namespace e2d
         return true;
     }
 }
+
+namespace e2d
+{
+    split_layout& split_layout::direction(split_direction value) noexcept {
+        direction_ = value;
+        return *this;
+    }
+
+    split_layout::split_direction split_layout::direction() const noexcept {
+        return direction_;
+    }
+
+    split_layout& split_layout::offset_relative(f32 value) noexcept {
+        relative_offset_ = true;
+        offset_ = value;
+        return *this;
+    }
+
+    split_layout& split_layout::offset_pixels(f32 value) noexcept {
+        relative_offset_ = false;
+        offset_ = value;
+        return *this;
+    }
+
+    f32 split_layout::offset() const noexcept {
+        return offset_;
+    }
+
+    bool split_layout::is_relative_offset() const noexcept {
+        return relative_offset_;
+    }
+    
+    const char* factory_loader<split_layout>::schema_source = R"json({
+        "type" : "object",
+        "required" : [ "direction" ],
+        "additionalProperties" : false,
+        "properties" : {
+            "offset_rel" : { "type" : "number" },
+            "offset_px" : { "type" : "number" },
+            "direction" : { "$ref": "#/definitions/split_direction" },
+        },
+        "definitions" : {
+            "split_direction" : {
+                "type" : "string",
+                "enum" : [
+                    "left",
+                    "right",
+                    "bottom",
+                    "top"
+                ]
+            }
+        }
+    })json";
+
+    bool factory_loader<split_layout>::operator()(
+        split_layout& component,
+        const fill_context& ctx) const
+    {
+        if ( ctx.root.HasMember("offset_rel") ) {
+            E2D_ASSERT(!ctx.root.HasMember("offset_px"));
+            component.offset_relative(ctx.root["offset_rel"].GetFloat());
+        } else if ( ctx.root.HasMember("offset_px") ) {
+            E2D_ASSERT(!ctx.root.HasMember("offset_rel"));
+            component.offset_pixels(ctx.root["offset_px"].GetFloat());
+        } else {
+            the<debug>().error("SPLIT_LAYOUT: One of the property 'offset_px' or 'offset_rel' is required");
+            return false;
+        }
+
+        E2D_ASSERT(ctx.root.HasMember("direction"));
+        str_view dir = ctx.root["direction"].GetString();
+        if ( dir == "left" ) {
+            component.direction(split_layout::split_direction::left);
+        } else if ( dir == "right" ) {
+            component.direction(split_layout::split_direction::right);
+        } else if ( dir == "top" ) {
+            component.direction(split_layout::split_direction::top);
+        } else if ( dir == "bottom" ) {
+            component.direction(split_layout::split_direction::bottom);
+        } else {
+            the<debug>().error("SPLIT_LAYOUT: Incorrect formatting of 'direction' property");
+            return false;
+        }
+
+        return true;
+    }
+
+    bool factory_loader<split_layout>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+    
+    const char* factory_loader<split_layout::dirty>::schema_source = R"json({
+        "type" : "object",
+        "required" : [],
+        "additionalProperties" : false,
+        "properties" : {}
+    })json";
+
+    bool factory_loader<split_layout::dirty>::operator()(
+        split_layout::dirty& component,
+        const fill_context& ctx) const
+    {
+        E2D_UNUSED(component, ctx);
+        return true;
+    }
+
+    bool factory_loader<split_layout::dirty>::operator()(
+        asset_dependencies& dependencies,
+        const collect_context& ctx) const
+    {
+        E2D_UNUSED(dependencies, ctx);
+        return true;
+    }
+}
