@@ -62,19 +62,15 @@ namespace
 
             // shared
             callbacks_["close_window_btn"] = [this](ecs::entity& e){
-                auto n = the<world>().find_root_node(
-                    e.get_component<actor>().node(),
-                    "window_bg_mask");
-                if ( n && n->parent() ) {
-                    E2D_ASSERT(has_window(n->parent()->owner()));
-                    close_animated_window(n->parent()->owner());
+                auto wnd_go = get_window_(e);
+                if ( wnd_go ) {
+                    close_animated_window(wnd_go);
                 }
             };
             callbacks_["window_bg_mask"] = [this](ecs::entity& e){
-                auto n = e.get_component<actor>().node();
-                if ( n && n->parent() ) {
-                    E2D_ASSERT(has_window(n->parent()->owner()));
-                    close_animated_window(n->parent()->owner());
+                auto wnd_go = get_window_(e);
+                if ( wnd_go ) {
+                    close_animated_window(wnd_go);
                 }
             };
         }
@@ -145,7 +141,8 @@ namespace
                 ui_animation::custom([wnd_node](f32 f) {
                     wnd_node->scale(v3f(v2f(math::lerp(0.2f, 1.0f, f)), 1.0f));
                 })
-                .duration(secf(0.5f)));
+                .duration(secf(0.5f))
+                .ease([](f32 t) { return easing::out_back(t, 2.0f); }));
             show_window(gobj);
         }
         
@@ -201,7 +198,8 @@ namespace
                 ui_animation::custom([wnd_node](f32 f) {
                     wnd_node->scale(v3f(v2f(math::lerp(1.0f, 0.2f, f)), 1.0f));
                 })
-                .duration(secf(0.5f)));
+                .duration(secf(0.5f))
+                .ease(easing::in_cubic));
         }
 
         void close_animated_window(const str& name) {
@@ -221,6 +219,27 @@ namespace
             }
             iter->second(e);
         }
+
+    private:
+        gobject_iptr get_window_(const ecs::entity& el_e) {
+            auto* el_a = el_e.find_component<actor>();
+            if ( !el_a || !el_a->node() ) {
+                return nullptr;
+            }
+            for ( auto wnd = window_stack_.rbegin(); wnd != window_stack_.rend(); ++wnd ) {
+                auto* wnd_a = (*wnd)->entity().find_component<actor>();
+                if ( !wnd_a || !wnd_a->node() ) {
+                    continue;
+                }
+                for ( auto n = el_a->node(); n; n = n->parent() ) {
+                    if ( n == wnd_a->node() ) {
+                        return *wnd;
+                    }
+                }
+            }
+            return nullptr;
+        }
+
     private:
         using callback_t = std::function<void (ecs::entity& e)>;
         hash_map<str_hash, callback_t> callbacks_;

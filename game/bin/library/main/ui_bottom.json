@@ -69,7 +69,7 @@
                 "stack_layout.dirty": {}
             },
             "children": [{
-                "prototype": "ui_game_view_btn.json"
+                "prototype": "ui_overview_btn.json"
             }, {
                 "prototype": "ui_map_btn.json"
             }, {
