@@ -1,0 +1,87 @@
+{
+    "prototype": "sprite_prefab.json",
+    "components" : {
+        "actor" : {},
+        "fixed_layout" : {
+            "size" : [ 100, 100 ]
+        },
+        "fixed_layout.dirty" : {},
+        "sprite_renderer": {
+            "sprite": "../sprites/blue_panel.json"
+        }
+    },
+    "children" : [{
+        "components" : {
+            "actor" : {
+                "translation" : [10, 55, 0]
+            },
+            "fixed_layout" : {
+                "size" : [80, 40]
+            },
+            "fixed_layout.dirty" : {}
+        },
+        "children" : [{
+            "prototype": "label_sdf_prefab.json",
+            "components" : {
+                "actor" : {},
+                "label_autoscale_layout" : {
+                    "max_scale" : 0.75,
+                    "min_scale" : 0.75
+                },
+                "label_autoscale_layout.dirty" : {},
+                "label": {
+                    "text": "level",
+                    "halign": "center",
+                    "valign": "bottom",
+                    "tint": [ 255, 255, 255, 255 ],
+                    "outline_width" : 0.5,
+                    "outline_color" : [0, 0, 0, 255]
+                }
+            }
+        }]
+    }, {
+        "components" : {
+            "actor" : {
+                "translation" : [10, 15, 0]
+            },
+            "fixed_layout" : {
+                "size" : [80, 40]
+            },
+            "fixed_layout.dirty" : {}
+        },
+        "children" : [{
+            "prototype": "label_sdf_prefab.json",
+            "components" : {
+                "actor" : {},
+                "label_autoscale_layout" : {
+                    "max_scale" : 0.75,
+                    "min_scale" : 0.75
+                },
+                "label_autoscale_layout.dirty" : {},
+                "label": {
+                    "text": "10",
+                    "halign": "center",
+                    "valign": "top",
+                    "tint": [ 255, 255, 255, 255 ],
+                    "outline_width" : 0.5,
+                    "outline_color" : [0, 0, 0, 255]
+                }
+            }
+        }]
+    }, {
+        "prototype": "sprite_prefab.json",
+        "components" : {
+            "actor" : {
+                "translation" : [-30, 80, 0]
+            },
+            "fixed_layout" : {
+                "size" : [60, 60]
+            },
+            "fixed_layout.dirty" : {},
+            "sprite_renderer": {
+                "sprite": "../sprites/arrow_up.json",
+                "tint" : [255, 255, 0, 255]
+            }
+        }
+    }]
+}

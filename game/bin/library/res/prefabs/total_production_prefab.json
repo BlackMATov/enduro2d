@@ -1,0 +1,127 @@
+{
+    "prototype": "sprite_prefab.json",
+    "components" : {
+        "actor" : {},
+        "anchor_layout": {
+            "left_bottom": {
+                "position": [ 0, 1 ],
+                "offset_px": [ 0, -100 ]
+            },
+            "right_top": {
+                "position": [ 1, 1 ],
+                "offset_px": [ 0, 0 ]
+            }
+        },
+        "anchor_layout.dirty": {},
+        "sprite_renderer": {
+            "sprite": "../sprites/white_button.json",
+            "tint": [ 0, 0, 250, 255 ]
+        }
+    },
+    "children" : [{
+        "prototype": "label_sdf_prefab.json",
+        "components" : {
+            "actor" : {},
+            "label_autoscale_layout": {
+                "min_scale": 0.5,
+                "max_scale": 1.0
+            },
+            "label_autoscale_layout.dirty": {},
+            "label": {
+                "text": " *** total production",
+                "halign": "left",
+                "valign": "center",
+                "tint": [ 255, 255, 255, 255 ],
+                "outline_width" : 0.5,
+                "outline_color" : [50, 50, 50, 255]
+            }
+        }
+    }, {
+        "prototype": "sprite_prefab.json",
+        "components" : {
+            "actor" : {},
+            "anchor_layout": {
+                "left_bottom": {
+                    "position": [ 1, 1 ],
+                    "offset_px": [ -300, -90 ]
+                },
+                "right_top": {
+                    "position": [ 1, 1 ],
+                    "offset_px": [ -20, -10 ]
+                }
+            },
+            "anchor_layout.dirty": {},
+            "sprite_renderer": {
+                "sprite": "../sprites/white_button.json",
+                "tint": [ 0, 0, 150, 255 ]
+            }
+        },
+        "children" : [{
+            "components": {
+                "actor": {},
+                "dock_layout": {
+                    "vdock": "fill",
+                    "hdock": "right"
+                },
+                "dock_layout.dirty": {}
+            },
+            "children": [{
+                "components": {
+                    "actor": {},
+                    "stack_layout": {
+                        "origin" : "left",
+                        "spacing" :  10
+                    },
+                    "stack_layout.dirty": {}
+                },
+                "children": [{
+                    "prototype": "sprite_prefab.json",
+                    "components" : {
+                        "actor" :  {},
+                        "sized_dock_layout": {
+                            "vdock":  "center",
+                            "size": [ 50, 50 ]
+                        },
+                        "sized_dock_layout.dirty": {},
+                        "sprite_renderer": {
+                            "sprite": "../sprites/yellow_circle.json"
+                        }
+                    }
+                }, {
+                    "components" : {
+                        "actor" : {},
+                        "dock_layout" : {
+                            "vdock" : "center",
+                            "hdock" : "left"
+                        },
+                        "dock_layout.dirty" : {}
+                    },
+                    "children" : [{
+                        "prototype": "label_sdf_prefab.json",
+                        "components" : {
+                            "actor" : {
+                                "scale" :  0.75
+                            },
+                            "label_layout": {},
+                            "label_layout.dirty": {},
+                            "label": {
+                                "text": "3.72K/s",
+                                "halign": "left",
+                                "valign": "center",
+                                "tint": [ 255, 255, 255, 255 ]
+                            }
+                        }
+                    }]
+                }, {
+                    "components" : {
+                        "actor" : {},
+                        "fixed_layout" : {
+                            "size" : [10, 0]
+                        },
+                        "fixed_layout.dirty" : {}
+                    }
+                }]
+            }]
+        }]
+    }]
+}

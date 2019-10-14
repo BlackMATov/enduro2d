@@ -1,0 +1,100 @@
+{
+    "components" : {
+        "actor" : {},
+        "sized_dock_layout" : {
+            "hdock" : "fill",
+            "size" : [0, 400]
+        },
+        "sized_dock_layout.dirty" : {}
+    },
+    "children" : [{
+        "prototype" : "../res/prefabs/total_production_prefab.json",
+        "children" : [{
+            "components" : {
+                "label": {
+                    "text": " truck total transportation:"
+                }
+            }
+        }, {
+            "children" : [{
+                "children": [{
+                    "children": [{
+                    }, {
+                        "children" : [{
+                            "components" : {
+                                "label": {
+                                    "text": "780/s"
+                                }
+                            }
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    }, {
+        "prototype": "../res/prefabs/sprite_prefab.json",
+        "components" : {
+            "actor" :  {},
+            "anchor_layout" : {
+                "left_bottom": {
+                    "position": [ 0, 0 ],
+                    "offset_px": [ 0, 0 ]
+                },
+                "right_top": {
+                    "position": [ 1, 1 ],
+                    "offset_px": [ 0, -100 ]
+                }
+            },
+            "anchor_layout.dirty" : {},
+            "sprite_renderer": {
+                "sprite": "../res/sprites/white_button.json",
+                "tint": [ 255, 0, 0, 255 ]
+            }
+        },
+        "children" : [{
+            "components" : {
+                "actor" : {},
+                "dock_layout" : {
+                    "vdock" : "center",
+                    "hdock" :  "left"
+                },
+                "dock_layout.dirty" : {}
+            },
+            "children" : [{
+                "prototype": "../res/prefabs/sprite_prefab.json",
+                "components" : {
+                    "actor" : {
+                        "translation" : [50, 0, 0]
+                    },
+                    "fixed_layout": {
+                        "size" : [200, 200]
+                    },
+                    "fixed_layout.dirty": {},
+                    "sprite_renderer": {
+                        "sprite": "../res/sprites/white_button.json"
+                    }
+                }
+            }]
+        }, {
+            "components" : {
+                "actor" : {},
+                "dock_layout" : {
+                    "vdock" : "center",
+                    "hdock" : "right"
+                },
+                "dock_layout.dirty" : {}
+            },
+            "children" : [{             
+                "prototype" : "../res/prefabs/level_btn_prefab.json",
+                "components" : {
+                    "actor" : {
+                        "translation" : [-50, 0, 0]
+                    },
+                    "name_comp" : {
+                        "name" : "truck_level_up_btn"
+                    }
+                }
+            }]
+        }]
+    }]
+}
