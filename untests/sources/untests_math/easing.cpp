@@ -108,9 +108,57 @@ TEST_CASE("easing") {
         REQUIRE(is_decelerating(easing::inout_expo, 0.5f, 1.0f));
         REQUIRE(is_decelerating(easing::outin_expo, 0.0f, 0.5f));
         REQUIRE(is_accelerating(easing::outin_expo, 0.5f, 1.0f));
-        REQUIRE(math::approximately(easing::in_expo(0.0f), 0.0f, 0.001f));
-        REQUIRE(math::approximately(easing::in_expo(1.0f), 1.0f, 0.001f));
-        REQUIRE(math::approximately(easing::out_expo(0.0f), 0.0f, 0.001f));
-        REQUIRE(math::approximately(easing::out_expo(1.0f), 1.0f, 0.001f));
+        f32 eps = 0.001f;
+        REQUIRE(math::approximately(easing::in_expo(0.0f), 0.0f, eps));
+        REQUIRE(math::approximately(easing::in_expo(1.0f), 1.0f, eps));
+        REQUIRE(math::approximately(easing::out_expo(0.0f), 0.0f, eps));
+        REQUIRE(math::approximately(easing::out_expo(1.0f), 1.0f, eps));
+        REQUIRE(math::approximately(easing::inout_expo(0.0f), 0.0f, eps));
+        REQUIRE(math::approximately(easing::inout_expo(1.0f), 1.0f, eps));
+        REQUIRE(math::approximately(easing::outin_expo(0.0f), 0.0f, eps));
+        REQUIRE(math::approximately(easing::outin_expo(1.0f), 1.0f, eps));
+        
+        REQUIRE(is_accelerating(easing::in_sine));
+        REQUIRE(is_decelerating(easing::out_sine));
+        REQUIRE(is_accelerating(easing::inout_sine, 0.0f, 0.5f));
+        REQUIRE(is_decelerating(easing::inout_sine, 0.5f, 1.0f));
+        REQUIRE(is_decelerating(easing::outin_sine, 0.0f, 0.5f));
+        REQUIRE(is_accelerating(easing::outin_sine, 0.5f, 1.0f));
+        REQUIRE(math::approximately(easing::in_sine(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::in_sine(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::out_sine(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::out_sine(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::inout_sine(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::inout_sine(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::outin_sine(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::outin_sine(1.0f), 1.0f));
+        
+        REQUIRE(is_accelerating(easing::in_circ));
+        REQUIRE(is_decelerating(easing::out_circ));
+        REQUIRE(is_accelerating(easing::inout_circ, 0.0f, 0.5f));
+        REQUIRE(is_decelerating(easing::inout_circ, 0.5f, 1.0f));
+        REQUIRE(is_decelerating(easing::outin_circ, 0.0f, 0.5f));
+        REQUIRE(is_accelerating(easing::outin_circ, 0.5f, 1.0f));
+        REQUIRE(math::approximately(easing::in_circ(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::in_circ(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::out_circ(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::out_circ(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::inout_circ(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::inout_circ(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::outin_circ(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::outin_circ(1.0f), 1.0f));
+        
+        REQUIRE(is_decelerating([](f32 t) { return easing::in_back(t); }, 0.0f, 0.5f));
+        REQUIRE(is_accelerating([](f32 t) { return easing::in_back(t); }, 0.5f, 1.0f));
+        REQUIRE(is_accelerating([](f32 t) { return easing::out_back(t); }, 0.0f, 0.5f));
+        REQUIRE(is_decelerating([](f32 t) { return easing::out_back(t); }, 0.5f, 1.0f));
+        REQUIRE(math::approximately(easing::in_back(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::in_back(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::out_back(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::out_back(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::inout_back(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::inout_back(1.0f), 1.0f));
+        REQUIRE(math::approximately(easing::outin_back(0.0f), 0.0f));
+        REQUIRE(math::approximately(easing::outin_back(1.0f), 1.0f));
     }
 }
