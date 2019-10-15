@@ -29,15 +29,19 @@ namespace e2d
         ui_layout& update_fn(update_fn_t fn) noexcept;
         update_fn_t update_fn() const noexcept;
 
-        ui_layout& depends_on_childs(bool enable) noexcept;
+        ui_layout& depends_on_childs(bool value) noexcept;
         bool depends_on_childs() const noexcept;
         
-        ui_layout& depends_on_parent(bool enable) noexcept;
+        ui_layout& depends_on_parent(bool value) noexcept;
         bool depends_on_parent() const noexcept;
+
+        ui_layout& enable(bool value) noexcept;
+        bool enabled() const noexcept;
     private:
         update_fn_t update_ = nullptr;
         bool depends_on_childs_ = false; // set true if size depends on child sizes
         bool depends_on_parent_ = false; // set true if size depends on parent size
+        bool enabled_ = true;
     };
     
     struct ui_layout::layout_state {
@@ -100,11 +104,15 @@ namespace e2d
         class dirty final {};
     public:
         fixed_layout() = default;
-        explicit fixed_layout(const v2f& size);
+        fixed_layout(const v2f& pos, const v2f& size);
 
         fixed_layout& size(const v2f& value) noexcept;
         const v2f& size() const noexcept;
+        
+        fixed_layout& position(const v2f& value) noexcept;
+        const v2f& position() const noexcept;
     private:
+        v2f position_;
         v2f size_;
     };
     

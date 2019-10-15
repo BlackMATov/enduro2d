@@ -17,8 +17,8 @@ namespace e2d
         return update_;
     }
 
-    ui_layout& ui_layout::depends_on_childs(bool enable) noexcept {
-        depends_on_childs_ = enable;
+    ui_layout& ui_layout::depends_on_childs(bool value) noexcept {
+        depends_on_childs_ = value;
         return *this;
     }
 
@@ -26,8 +26,8 @@ namespace e2d
         return depends_on_childs_;
     }
 
-    ui_layout& ui_layout::depends_on_parent(bool enable) noexcept {
-        depends_on_parent_ = enable;
+    ui_layout& ui_layout::depends_on_parent(bool value) noexcept {
+        depends_on_parent_ = value;
         return *this;
     }
 
@@ -35,6 +35,15 @@ namespace e2d
         return depends_on_parent_;
     }
     
+    ui_layout& ui_layout::enable(bool value) noexcept {
+        enabled_ = value;
+        return *this;
+    }
+
+    bool ui_layout::enabled() const noexcept {
+        return enabled_;
+    }
+
     const char* factory_loader<ui_layout::root_tag>::schema_source = R"json({
         "type" : "object",
         "required" : [],
@@ -107,8 +116,9 @@ namespace e2d
 
 namespace e2d
 {
-    fixed_layout::fixed_layout(const v2f& size)
-    : size_(size) {}
+    fixed_layout::fixed_layout(const v2f& pos, const v2f& size)
+    : position_(pos)
+    , size_(size) {}
 
     fixed_layout& fixed_layout::size(const v2f& value) noexcept {
         size_ = value;
@@ -118,12 +128,22 @@ namespace e2d
     const v2f& fixed_layout::size() const noexcept {
         return size_;
     }
+    
+    fixed_layout& fixed_layout::position(const v2f& value) noexcept {
+        position_ = value;
+        return *this;
+    }
+
+    const v2f& fixed_layout::position() const noexcept {
+        return position_;
+    }
 
     const char* factory_loader<fixed_layout>::schema_source = R"json({
         "type" : "object",
         "required" : [ "size" ],
         "additionalProperties" : false,
         "properties" : {
+            "position" : { "$ref": "#/common_definitions/v2" },
             "size" : { "$ref": "#/common_definitions/v2" }
         }
     })json";
@@ -132,8 +152,16 @@ namespace e2d
         fixed_layout& component,
         const fill_context& ctx) const
     {
+        if ( ctx.root.HasMember("position") ) {
+            v2f pos;
+            if ( !json_utils::try_parse_value(ctx.root["position"], pos) ) {
+                the<debug>().error("FIXED_LAYOUT: Incorrect formatting of 'position' property");
+                return false;
+            }
+            component.position(pos);
+        }
+        
         E2D_ASSERT(ctx.root.HasMember("size"));
-
         v2f size;
         if ( !json_utils::try_parse_value(ctx.root["size"], size) ) {
             the<debug>().error("FIXED_LAYOUT: Incorrect formatting of 'size' property");
@@ -531,7 +559,7 @@ namespace e2d
 
     const char* factory_loader<sized_dock_layout>::schema_source = R"json({
         "type" : "object",
-        "required" : [ "hdock", "vdock" ],
+        "required" : [],
         "additionalProperties" : false,
         "properties" : {
             "hdock" : { "$ref": "#/definitions/horizontal_dock_type" },
@@ -566,18 +594,19 @@ namespace e2d
         sized_dock_layout& component,
         const fill_context& ctx) const
     {
-        E2D_ASSERT(ctx.root.HasMember("hdock"));
-        E2D_ASSERT(ctx.root.HasMember("vdock"));
-
         dock_type dock = dock_type::none;
 
-        if ( !parse_hdock(ctx.root["hdock"], dock) ) {
-            the<debug>().error("SIZED_DOCK_LAYOUT: Incorrect formatting of 'hdock' property");
-            return false;
+        if ( ctx.root.HasMember("hdock") ) {
+            if ( !parse_hdock(ctx.root["hdock"], dock) ) {
+                the<debug>().error("SIZED_DOCK_LAYOUT: Incorrect formatting of 'hdock' property");
+                return false;
+            }
         }
-        if ( !parse_vdock(ctx.root["vdock"], dock) ) {
-            the<debug>().error("SIZED_DOCK_LAYOUT: Incorrect formatting of 'vdock' property");
-            return false;
+        if ( ctx.root.HasMember("vdock") ) {
+            if ( !parse_vdock(ctx.root["vdock"], dock) ) {
+                the<debug>().error("SIZED_DOCK_LAYOUT: Incorrect formatting of 'vdock' property");
+                return false;
+            }
         }
         component.dock(dock);
 
@@ -1252,13 +1281,13 @@ namespace e2d
 
 namespace e2d
 {
-    split_layout& split_layout::direction(split_direction value) noexcept {
-        direction_ = value;
+    split_layout& split_layout::origin(origin_type value) noexcept {
+        origin_ = value;
         return *this;
     }
 
-    split_layout::split_direction split_layout::direction() const noexcept {
-        return direction_;
+    split_layout::origin_type split_layout::origin() const noexcept {
+        return origin_;
     }
 
     split_layout& split_layout::offset_relative(f32 value) noexcept {
@@ -1283,15 +1312,15 @@ namespace e2d
     
     const char* factory_loader<split_layout>::schema_source = R"json({
         "type" : "object",
-        "required" : [ "direction" ],
+        "required" : [ "origin" ],
         "additionalProperties" : false,
         "properties" : {
             "offset_rel" : { "type" : "number" },
             "offset_px" : { "type" : "number" },
-            "direction" : { "$ref": "#/definitions/split_direction" },
+            "origin" : { "$ref": "#/definitions/origin_type" }
         },
         "definitions" : {
-            "split_direction" : {
+            "origin_type" : {
                 "type" : "string",
                 "enum" : [
                     "left",
@@ -1318,18 +1347,18 @@ namespace e2d
             return false;
         }
 
-        E2D_ASSERT(ctx.root.HasMember("direction"));
-        str_view dir = ctx.root["direction"].GetString();
+        E2D_ASSERT(ctx.root.HasMember("origin"));
+        str_view dir = ctx.root["origin"].GetString();
         if ( dir == "left" ) {
-            component.direction(split_layout::split_direction::left);
+            component.origin(split_layout::origin_type::left);
         } else if ( dir == "right" ) {
-            component.direction(split_layout::split_direction::right);
+            component.origin(split_layout::origin_type::right);
         } else if ( dir == "top" ) {
-            component.direction(split_layout::split_direction::top);
+            component.origin(split_layout::origin_type::top);
         } else if ( dir == "bottom" ) {
-            component.direction(split_layout::split_direction::bottom);
+            component.origin(split_layout::origin_type::bottom);
         } else {
-            the<debug>().error("SPLIT_LAYOUT: Incorrect formatting of 'direction' property");
+            the<debug>().error("SPLIT_LAYOUT: Incorrect formatting of 'origin' property");
             return false;
         }
 
